@@ -1,4 +1,4 @@
-# AGENTS.md — gw-agent-scraper
+# AGENTS.md — gw-re-agent-scraper
 
 ## Current Status
 **Phase: Agent Data Enrichment (Playwright pipeline BUILT — running)**

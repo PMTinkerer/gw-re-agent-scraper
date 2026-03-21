@@ -1,4 +1,4 @@
-# PROJECT_PLAN.md — gw-agent-scraper
+# PROJECT_PLAN.md — gw-re-agent-scraper
 
 ## Objective
 Identify the top real estate listing agents across 10 southern Maine towns using 3 years of publicly visible sold data.

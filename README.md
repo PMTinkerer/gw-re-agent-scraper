@@ -1,4 +1,4 @@
-# gw-agent-scraper
+# gw-re-agent-scraper
 
 Identifies the top real estate listing agents in southern coastal Maine using publicly visible sold property data from Redfin.
 

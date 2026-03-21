@@ -1,4 +1,4 @@
-# gw-agent-scraper — Project Context
+# gw-re-agent-scraper — Project Context
 
 ## What This Project Does
 Scrapes publicly visible sold property data from Redfin for 10 southern coastal Maine towns, then enriches each transaction with listing agent and brokerage data by visiting individual Redfin property pages via Playwright. The primary deliverable is `data/agent_leaderboard.md` — a ranked leaderboard of agents by listing volume. Runs on GitHub Actions free tier with resumable chunk-based processing.
@@ -93,7 +93,7 @@ Cape Neddick → York, Moody → Wells, Ocean Park → Old Orchard Beach, Cape P
 
 ## File Structure
 ```
-gw-agent-scraper/
+gw-re-agent-scraper/
 ├── src/
 │   ├── main.py        # CLI orchestrator (argparse, 10 flags incl --enrich, --batch-size)
 │   ├── scraper.py     # Redfin CSV + Playwright agent enrichment
