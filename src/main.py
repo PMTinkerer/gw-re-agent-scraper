@@ -11,9 +11,10 @@ import sys
 
 from .database import (
     get_connection, init_db, fuzzy_merge_agents, rebuild_rankings, get_stats,
+    get_enrichment_stats,
 )
 from .report import generate_leaderboard
-from .scraper import discover_redfin_region_id, scrape_redfin, scrape_realtor
+from .scraper import discover_redfin_region_id, scrape_redfin, scrape_realtor, enrich_agents_from_redfin
 from .state import (
     TOWNS, load_state, save_state, get_next_chunks,
     mark_started, mark_complete, mark_failed,
@@ -111,6 +112,14 @@ def main() -> int:
         help='Reset scrape state (clear all progress)',
     )
     parser.add_argument(
+        '--enrich', action='store_true',
+        help='Run Playwright agent enrichment on existing transactions',
+    )
+    parser.add_argument(
+        '--batch-size', type=int, default=100,
+        help='Number of URLs to process per enrichment run (default: 100)',
+    )
+    parser.add_argument(
         '--db', type=str, default=None,
         help='Path to SQLite database file',
     )
@@ -160,6 +169,34 @@ def main() -> int:
         path = generate_leaderboard(conn)
         stats = get_stats(conn)
         logger.info('Report generated: %s (%d transactions)', path, stats['total_transactions'])
+        conn.close()
+        return 0
+
+    if args.enrich:
+        import os
+        headless = os.environ.get('CI') == 'true'
+        logger.info('Starting Playwright agent enrichment (batch_size=%d, headless=%s)',
+                     args.batch_size, headless)
+        result = enrich_agents_from_redfin(conn, batch_size=args.batch_size, headless=headless)
+        logger.info('Enrichment: %d enriched, %d no agent, %d errors (of %d attempted)',
+                     result['enriched'], result['no_agent'], result['errors'],
+                     result['total_attempted'])
+
+        if result['enriched'] > 0:
+            merges = fuzzy_merge_agents(conn)
+            if merges:
+                logger.info('Merged %d agent name variants', len(merges))
+
+        rebuild_rankings(conn)
+        generate_leaderboard(conn)
+
+        e_stats = get_enrichment_stats(conn)
+        if e_stats['pending'] == 0:
+            logger.info('All enrichment complete! %d success, %d no agent, %d errors',
+                         e_stats['success'], e_stats['no_agent'], e_stats['error'])
+        else:
+            logger.info('%d URLs still pending enrichment', e_stats['pending'])
+
         conn.close()
         return 0
 

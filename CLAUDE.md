@@ -5,8 +5,8 @@ Scrapes publicly visible sold property data from Redfin for 10 southern coastal 
 
 ## Current State (as of 2026-03-21)
 - **2,371 transactions in SQLite** with full property data (address, price, MLS#, sold date, beds, baths, sqft)
-- **0 transactions have agent data** — Playwright enrichment script is the next step
-- **62 unit tests passing**
+- **10 transactions enriched with agent data** — Playwright enrichment pipeline built and tested; 2,361 URLs pending
+- **97 unit tests passing**
 - **Not yet pushed to GitHub**
 
 ## Service Territory (10 Towns)
@@ -21,12 +21,16 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 - Hardcoded region IDs in `src/scraper.py` `_REDFIN_REGIONS` dict
 - Date format: Redfin uses "June-30-2025" — parsed by `_parse_redfin_date()`
 
-### Phase 2: Playwright Agent Enrichment (TO BUILD)
-- Visit each Redfin property URL (stored in `source_url` column) with stealth Playwright
-- Extract listing agent name and brokerage from the page
-- Update existing transaction records — only visit URLs where `listing_agent IS NULL`
-- Stealth patterns: copy from `~/competitor-scraper/utils/stealth.py` (user-agent rotation, viewport randomization, webdriver masking)
-- Rate limit: 5-10 seconds between page visits
+### Phase 2: Playwright Agent Enrichment (BUILT — RUNNING)
+- Visits each Redfin property URL (stored in `source_url` column) with stealth Playwright
+- Extracts listing agent name and brokerage from the page via DOM selectors
+- Two DOM structures: `.agent-card-wrapper` (Redfin-agent listings) and `.listing-agent-item` (non-Redfin agents)
+- Tracks enrichment status per URL: `enrichment_status` column (NULL/success/no_agent/error) with retry up to 3 attempts
+- Fresh browser context per page to avoid Redfin CDN session fingerprinting
+- Rate limit: 10-20 seconds between page visits (lower causes CloudFront 403 blocks)
+- Batch size: 100 URLs per run (~35 min, fits 45-min GitHub Actions timeout)
+- React hydration wait: `wait_for_selector('.agent-card-wrapper, .agent-info-section', timeout=8000)`
+- CLI: `python -m src.main --enrich --batch-size 100`
 
 ## Key Decisions
 - **Redfin CSV** for property data (reliable, structured, no browser needed)
@@ -35,6 +39,9 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 - **SQLite** for storage — single file committed to repo
 - **MLS number** as dedup key
 - **rapidfuzz** for agent name fuzzy matching (>90% + same office)
+- **Fresh browser context per page** — Redfin CloudFront blocks repeated requests from the same session; rotating context + user-agent + viewport avoids 403s
+- **DB-level enrichment tracking** (`enrichment_status` column) instead of state.py chunks — simpler for per-URL tracking
+- **10-20 second delay** between enrichment page visits — 5-10s caused CDN blocks
 
 ## Verification Commands
 ```bash
@@ -46,6 +53,9 @@ python -m src.main --mode initial --max-chunks 1 --towns "York, ME"
 
 # Discover/verify Redfin region IDs
 python -m src.main --discover-regions
+
+# Run Playwright agent enrichment (100 URLs per batch)
+python -m src.main --enrich --batch-size 100
 
 # Run fuzzy agent merge
 python -m src.main --merge-agents
@@ -62,14 +72,21 @@ python -m pytest tests/
 # Check database stats
 sqlite3 data/agent_data.db "SELECT city, COUNT(*) FROM transactions GROUP BY city ORDER BY COUNT(*) DESC;"
 sqlite3 data/agent_data.db "SELECT COUNT(*), COUNT(listing_agent) FROM transactions;"
+
+# Check enrichment progress
+sqlite3 data/agent_data.db "SELECT enrichment_status, COUNT(*) FROM transactions GROUP BY enrichment_status;"
 ```
 
 ## Known Constraints
 - Redfin CSV max 350 rows per request — pagination returns overlapping data, so unique records plateau
 - Minorcivildivision towns (York, Ogunquit, Wells) have lower transaction counts via county query
 - Redfin blocks non-browser requests (403) — Playwright required for property pages
+- **Redfin CloudFront blocks rapid sequential requests** — must use fresh browser context per page + 10-20s delay
+- **Two DOM structures for agent data** — Redfin-agent listings use `.agent-card-wrapper`, non-Redfin agents use `.listing-agent-item`
+- **React hydration timing** — agent cards take 3-8s to render after `domcontentloaded`; must use `wait_for_selector` not fixed timeout
 - GitHub Actions job max 45-min timeout, 2000 min/month free tier
 - Agent name normalization fuzzy threshold (90%) may need tuning after real data
+- Some Redfin property URLs return CloudFront 403 intermittently — marked as `error` and retried (up to 3 attempts)
 
 ## City Normalization
 Cape Neddick → York, Moody → Wells, Ocean Park → Old Orchard Beach, Cape Porpoise → Kennebunkport, Biddeford Pool → Biddeford, etc. See `src/scraper.py` CITY_NORMALIZATION dict.
@@ -78,15 +95,15 @@ Cape Neddick → York, Moody → Wells, Ocean Park → Old Orchard Beach, Cape P
 ```
 gw-agent-scraper/
 ├── src/
-│   ├── main.py        # CLI orchestrator (argparse, 8 flags)
-│   ├── scraper.py     # Redfin CSV + Playwright enrichment (TO ADD)
-│   ├── database.py    # SQLite schema, upsert, normalization, rankings
+│   ├── main.py        # CLI orchestrator (argparse, 10 flags incl --enrich, --batch-size)
+│   ├── scraper.py     # Redfin CSV + Playwright agent enrichment
+│   ├── database.py    # SQLite schema, upsert, normalization, rankings, enrichment tracking
 │   ├── report.py      # Leaderboard markdown generator
 │   └── state.py       # Chunk-based resumable state machine
-├── tests/             # 62 unit tests (all passing)
+├── tests/             # 97 unit tests (all passing)
 ├── data/
-│   ├── agent_data.db       # 2,371 transactions (no agent data yet)
-│   ├── agent_leaderboard.md # Generated report (empty until agents populated)
+│   ├── agent_data.db       # 2,371 transactions (10 enriched with agent data)
+│   ├── agent_leaderboard.md # Generated report
 │   └── scrape_state.json   # Tracks scraping progress
 ├── .github/workflows/scrape_agents.yml
 ├── CLAUDE.md, AGENTS.md, PROJECT_PLAN.md, README.md

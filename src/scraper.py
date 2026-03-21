@@ -497,3 +497,399 @@ def scrape_realtor(town: str, year: int, conn, state_dict: dict | None = None) -
 
     logger.info('Realtor.com %s %d total: %d rows', town, year, total_rows)
     return total_rows
+
+
+# ---------------------------------------------------------------------------
+# Phase 2: Playwright Agent Enrichment
+# ---------------------------------------------------------------------------
+
+# Desktop viewports for stealth randomization (from competitor-scraper)
+_VIEWPORTS = [
+    {'width': 1920, 'height': 1080},
+    {'width': 1536, 'height': 864},
+    {'width': 1440, 'height': 900},
+    {'width': 1366, 'height': 768},
+    {'width': 1280, 'height': 720},
+]
+
+# Regex patterns for text-based agent extraction
+_LISTED_BY_RE = re.compile(
+    r'Listed\s+by\s+(.+?)(?:\s*[•·]\s*(.+?))?(?:\n|$)',
+    re.IGNORECASE,
+)
+_BOUGHT_WITH_RE = re.compile(
+    r'Bought\s+with\s+(.+?)(?:\s*[•·]\s*(.+?))?(?:\n|$)',
+    re.IGNORECASE,
+)
+_COURTESY_RE = re.compile(
+    r'Listing\s+(?:provided|courtesy)\s+(?:by|of)\s+(.+?)(?:\n|$)',
+    re.IGNORECASE,
+)
+
+
+def _launch_stealth_browser(playwright, headless: bool = True):
+    """Launch a Chromium browser with stealth configuration.
+
+    Returns (browser, context, page) — caller must close browser when done.
+    """
+    launch_args = {
+        'headless': headless,
+        'args': [
+            '--disable-blink-features=AutomationControlled',
+            '--no-first-run',
+            '--no-default-browser-check',
+        ],
+    }
+    if headless:
+        launch_args['args'].append('--disable-gpu')
+
+    browser = playwright.chromium.launch(**launch_args)
+
+    viewport = random.choice(_VIEWPORTS)
+    user_agent = random.choice(_USER_AGENTS)
+
+    context = browser.new_context(
+        user_agent=user_agent,
+        viewport=viewport,
+        locale='en-US',
+        timezone_id='America/New_York',
+    )
+
+    page = context.new_page()
+
+    # Hide navigator.webdriver property
+    page.add_init_script(
+        'Object.defineProperty(navigator, "webdriver", {get: () => undefined});'
+    )
+
+    # Apply playwright-stealth patches if available
+    try:
+        from playwright_stealth import Stealth
+        stealth = Stealth()
+        stealth.apply_stealth_sync(page)
+        logger.debug('playwright-stealth patches applied')
+    except ImportError:
+        logger.warning('playwright-stealth not installed — basic stealth only')
+
+    return browser, context, page
+
+
+def _check_page_status(page) -> str:
+    """Check page status: 'ok', 'captcha' (stop batch), or 'error' (skip URL).
+
+    Returns:
+        'ok': Normal page, proceed with extraction.
+        'captcha': Captcha/rate-limit — stop entire batch.
+        'error': CDN error or transient failure — mark URL as error, continue.
+    """
+    try:
+        text = (page.text_content('body') or '').lower()
+        # Hard blocks — stop the batch
+        captcha_indicators = [
+            'verify you are a human',
+            'please verify',
+            'captcha',
+            'are you a robot',
+        ]
+        if any(ind in text for ind in captcha_indicators):
+            return 'captcha'
+        # Soft blocks — transient/CDN errors
+        error_indicators = [
+            'the request could not be satisfied',  # CloudFront 403
+            'access denied',
+            'request blocked',
+        ]
+        if any(ind in text for ind in error_indicators):
+            return 'error'
+        return 'ok'
+    except Exception:
+        return 'error'
+
+
+def _extract_agent_data(page) -> dict:
+    """Extract listing agent and brokerage from a Redfin property page.
+
+    Tries multiple strategies in order of reliability:
+    1. Redfin agent card DOM selectors (.agent-card-wrapper structure)
+    2. Text pattern matching on page content ("Bought with", "Seller's agent")
+    3. JSON-LD structured data (rarely has agent info, but worth checking)
+
+    Returns dict with keys: listing_agent, listing_office, buyer_agent, buyer_office
+    (any may be None).
+    """
+    result = {
+        'listing_agent': None,
+        'listing_office': None,
+        'buyer_agent': None,
+        'buyer_office': None,
+    }
+
+    # Strategy 1: Redfin agent card DOM structure
+    # Seller's agent: .agent-card-wrapper containing .agent-card-title "Seller's agent"
+    #   Name: .agent-basic-details--heading a (or img[alt] in .agent-photo)
+    #   Office: .agent-basic-details--broker span
+    try:
+        agent_data = page.evaluate("""() => {
+            const result = {};
+
+            // Helper: extract broker name from .agent-basic-details--broker
+            function getBroker(container) {
+                const brokerEl = container.querySelector('.agent-basic-details--broker');
+                if (!brokerEl) return null;
+                // The broker text is inside nested spans with a dot separator
+                // Structure: <span><span> <span class="font-dot">•</span> BrokerName </span></span>
+                const text = brokerEl.textContent?.trim()
+                    ?.replace(/^[•·\\s]+/, '')  // strip leading dot/spaces
+                    ?.replace(/[•·\\s]+$/, '')  // strip trailing dot/spaces
+                    ?.trim();
+                return text || null;
+            }
+
+            // Structure A: Redfin-agent listings (.agent-card-wrapper)
+            const cards = document.querySelectorAll('.agent-card-wrapper');
+            for (const card of cards) {
+                const title = card.querySelector('.agent-card-title')?.textContent?.trim();
+                if (!title) continue;
+
+                const nameEl = card.querySelector('.agent-basic-details--heading a');
+                const name = nameEl?.textContent?.trim()
+                    || card.querySelector('.agent-photo img')?.alt?.trim();
+                const office = getBroker(card);
+
+                if (title.toLowerCase().includes('seller')) {
+                    result.listing_agent = name || null;
+                    result.listing_office = office || null;
+                } else if (title.toLowerCase().includes('buyer')) {
+                    result.buyer_agent = name || null;
+                    result.buyer_office = office || null;
+                }
+            }
+
+            // Structure B: Non-Redfin agent listings (.agent-info-section .agent-item)
+            if (!result.listing_agent) {
+                const listingItem = document.querySelector('.listing-agent-item .agent-basic-details--heading');
+                if (listingItem) {
+                    // Name is in a child <span> (after "Listed by" text)
+                    const nameSpan = listingItem.querySelector('span');
+                    result.listing_agent = nameSpan?.textContent?.trim() || null;
+                    // Broker from sibling
+                    const agentInfoItem = listingItem.closest('.agent-info-item') || listingItem.closest('.agent-item');
+                    if (agentInfoItem) {
+                        result.listing_office = getBroker(agentInfoItem);
+                    }
+                }
+            }
+            if (!result.buyer_agent) {
+                const buyerItem = document.querySelector('.buyer-agent-item .agent-basic-details--heading');
+                if (buyerItem) {
+                    const nameSpan = buyerItem.querySelector('span');
+                    result.buyer_agent = nameSpan?.textContent?.trim() || null;
+                    const agentInfoItem = buyerItem.closest('.agent-info-item') || buyerItem.closest('.agent-item');
+                    if (agentInfoItem) {
+                        result.buyer_office = getBroker(agentInfoItem);
+                    }
+                }
+            }
+
+            return result;
+        }""")
+        if agent_data:
+            for key in result:
+                if agent_data.get(key):
+                    result[key] = agent_data[key]
+
+        if result['listing_agent'] or result['listing_office']:
+            logger.debug('Strategy 1 (agent cards) found: %s', result)
+            return result
+    except Exception as e:
+        logger.debug('Strategy 1 (agent cards) failed: %s', e)
+
+    # Strategy 2: Text pattern matching
+    # "Bought with Agent Name  • Office Name" (buyer agent in .agent-info-container)
+    # "Seller's agentName Office" (sometimes concatenated without clear delimiters)
+    try:
+        body_text = page.text_content('body') or ''
+
+        m = _BOUGHT_WITH_RE.search(body_text)
+        if m:
+            result['buyer_agent'] = m.group(1).strip()
+            if m.group(2):
+                result['buyer_office'] = m.group(2).strip()
+
+        m = _LISTED_BY_RE.search(body_text)
+        if m:
+            result['listing_agent'] = m.group(1).strip()
+            if m.group(2):
+                result['listing_office'] = m.group(2).strip()
+
+        if not result['listing_office']:
+            m = _COURTESY_RE.search(body_text)
+            if m:
+                result['listing_office'] = m.group(1).strip()
+
+        if any(result.values()):
+            logger.debug('Strategy 2 (text patterns) found: %s', result)
+            return result
+    except Exception as e:
+        logger.debug('Strategy 2 (text patterns) failed: %s', e)
+
+    # Strategy 3: JSON-LD structured data (Redfin rarely includes agent info here)
+    try:
+        json_ld_text = page.evaluate("""() => {
+            const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+            for (const s of scripts) {
+                try {
+                    const data = JSON.parse(s.textContent);
+                    const types = Array.isArray(data['@type']) ? data['@type'] : [data['@type']];
+                    if (types.includes('RealEstateListing') || types.includes('Product')) {
+                        return s.textContent;
+                    }
+                } catch {}
+            }
+            return null;
+        }""")
+        if json_ld_text:
+            import json as _json
+            data = _json.loads(json_ld_text)
+            if 'agent' in data:
+                agent = data['agent']
+                result['listing_agent'] = agent.get('name')
+            if 'broker' in data:
+                broker = data['broker']
+                result['listing_office'] = broker.get('name') if isinstance(broker, dict) else str(broker)
+            if any(result.values()):
+                logger.debug('Strategy 3 (JSON-LD) found: %s', result)
+    except Exception as e:
+        logger.debug('Strategy 3 (JSON-LD) failed: %s', e)
+
+    return result
+
+
+def enrich_agents_from_redfin(
+    conn,
+    batch_size: int = 200,
+    headless: bool = True,
+) -> dict:
+    """Visit Redfin property pages to extract agent data.
+
+    Returns dict with keys: enriched, no_agent, errors, total_attempted.
+    """
+    from .database import get_enrichment_queue, set_enrichment_status
+
+    queue = get_enrichment_queue(conn, batch_size)
+    if not queue:
+        logger.info('No URLs pending enrichment.')
+        return {'enriched': 0, 'no_agent': 0, 'errors': 0, 'total_attempted': 0}
+
+    logger.info('Enrichment batch: %d URLs to process', len(queue))
+
+    from playwright.sync_api import sync_playwright
+
+    enriched = 0
+    no_agent = 0
+    errors = 0
+    consecutive_errors = 0
+
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch(
+            headless=headless,
+            args=[
+                '--disable-blink-features=AutomationControlled',
+                '--no-first-run',
+                '--no-default-browser-check',
+            ] + (['--disable-gpu'] if headless else []),
+        )
+
+        try:
+            for i, row in enumerate(queue):
+                mls = row['mls_number']
+                url = row['source_url']
+                logger.info('[%d/%d] Enriching MLS %s: %s', i + 1, len(queue), mls, url)
+
+                # Fresh context per page to avoid CDN session fingerprinting
+                viewport = random.choice(_VIEWPORTS)
+                user_agent = random.choice(_USER_AGENTS)
+                context = browser.new_context(
+                    user_agent=user_agent,
+                    viewport=viewport,
+                    locale='en-US',
+                    timezone_id='America/New_York',
+                )
+                page = context.new_page()
+                page.add_init_script(
+                    'Object.defineProperty(navigator, "webdriver", {get: () => undefined});'
+                )
+                try:
+                    from playwright_stealth import Stealth
+                    Stealth().apply_stealth_sync(page)
+                except ImportError:
+                    pass
+
+                try:
+                    page.goto(url, wait_until='domcontentloaded', timeout=30000)
+                    # Wait for agent info to render (React hydration)
+                    # Two possible structures: .agent-card-wrapper (Redfin) or .agent-info-section (non-Redfin)
+                    try:
+                        page.wait_for_selector('.agent-card-wrapper, .agent-info-section', timeout=8000)
+                    except Exception:
+                        page.wait_for_timeout(3000)
+
+                    page_status = _check_page_status(page)
+                    if page_status == 'captcha':
+                        logger.warning('Captcha detected. Stopping batch.')
+                        set_enrichment_status(conn, mls, 'error')
+                        errors += 1
+                        context.close()
+                        break
+                    if page_status == 'error':
+                        logger.warning('  CDN/access error — marking for retry.')
+                        set_enrichment_status(conn, mls, 'error')
+                        errors += 1
+                        consecutive_errors += 1
+                        context.close()
+                        if consecutive_errors >= 3:
+                            logger.warning('3 consecutive errors — stopping batch early.')
+                            break
+                        if i < len(queue) - 1:
+                            random_delay(10, 20)
+                        continue
+
+                    agent_data = _extract_agent_data(page)
+
+                    if agent_data.get('listing_agent') or agent_data.get('listing_office'):
+                        set_enrichment_status(conn, mls, 'success', agent_data)
+                        enriched += 1
+                        consecutive_errors = 0
+                        logger.info('  Found: agent=%s, office=%s',
+                                    agent_data.get('listing_agent'), agent_data.get('listing_office'))
+                    else:
+                        set_enrichment_status(conn, mls, 'no_agent')
+                        no_agent += 1
+                        consecutive_errors = 0
+                        logger.info('  No agent data found on page.')
+
+                except Exception as e:
+                    logger.error('  Error enriching MLS %s: %s', mls, e)
+                    set_enrichment_status(conn, mls, 'error')
+                    errors += 1
+                    consecutive_errors += 1
+
+                    if consecutive_errors >= 3:
+                        logger.warning('3 consecutive errors — stopping batch early.')
+                        context.close()
+                        break
+
+                finally:
+                    context.close()
+
+                # Rate limit between pages (skip delay after last URL)
+                if i < len(queue) - 1:
+                    random_delay(10, 20)
+
+        finally:
+            browser.close()
+
+    total = enriched + no_agent + errors
+    logger.info('Enrichment complete: %d enriched, %d no_agent, %d errors (of %d attempted)',
+                enriched, no_agent, errors, total)
+    return {'enriched': enriched, 'no_agent': no_agent, 'errors': errors, 'total_attempted': total}

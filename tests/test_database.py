@@ -8,6 +8,7 @@ import pytest
 from src.database import (
     get_connection, init_db, normalize_agent_name, upsert_transaction,
     rebuild_rankings, get_stats, _to_int, _to_float,
+    get_enrichment_queue, set_enrichment_status, get_enrichment_stats,
 )
 
 
@@ -188,6 +189,170 @@ class TestGetStats:
         assert stats['total_transactions'] == 1
         assert stats['with_listing_agent'] == 1
         assert 'redfin' in stats['sources']
+
+
+class TestGetEnrichmentQueue:
+    def test_returns_unenriched(self, db):
+        upsert_transaction(db, {
+            'mls_number': 'MLS1', 'source_url': 'https://redfin.com/1',
+            'data_source': 'redfin',
+        })
+        upsert_transaction(db, {
+            'mls_number': 'MLS2', 'source_url': 'https://redfin.com/2',
+            'data_source': 'redfin',
+        })
+        db.commit()
+        queue = get_enrichment_queue(db, batch_size=10)
+        assert len(queue) == 2
+        assert queue[0]['mls_number'] == 'MLS1'
+
+    def test_skips_no_agent_status(self, db):
+        upsert_transaction(db, {
+            'mls_number': 'MLS1', 'source_url': 'https://redfin.com/1',
+            'data_source': 'redfin',
+        })
+        db.commit()
+        set_enrichment_status(db, 'MLS1', 'no_agent')
+        queue = get_enrichment_queue(db, batch_size=10)
+        assert len(queue) == 0
+
+    def test_retries_errors_under_limit(self, db):
+        upsert_transaction(db, {
+            'mls_number': 'MLS1', 'source_url': 'https://redfin.com/1',
+            'data_source': 'redfin',
+        })
+        db.commit()
+        set_enrichment_status(db, 'MLS1', 'error')
+        queue = get_enrichment_queue(db, batch_size=10)
+        assert len(queue) == 1  # attempt 1 < 3
+
+    def test_skips_errors_at_limit(self, db):
+        upsert_transaction(db, {
+            'mls_number': 'MLS1', 'source_url': 'https://redfin.com/1',
+            'data_source': 'redfin',
+        })
+        db.commit()
+        set_enrichment_status(db, 'MLS1', 'error')
+        set_enrichment_status(db, 'MLS1', 'error')
+        set_enrichment_status(db, 'MLS1', 'error')
+        queue = get_enrichment_queue(db, batch_size=10)
+        assert len(queue) == 0  # 3 attempts exhausted
+
+    def test_respects_batch_size(self, db):
+        for i in range(5):
+            upsert_transaction(db, {
+                'mls_number': f'MLS{i}', 'source_url': f'https://redfin.com/{i}',
+                'data_source': 'redfin',
+            })
+        db.commit()
+        queue = get_enrichment_queue(db, batch_size=2)
+        assert len(queue) == 2
+
+    def test_skips_no_source_url(self, db):
+        upsert_transaction(db, {
+            'mls_number': 'MLS1', 'source_url': None,
+            'data_source': 'redfin',
+        })
+        db.commit()
+        queue = get_enrichment_queue(db, batch_size=10)
+        assert len(queue) == 0
+
+    def test_skips_success_status(self, db):
+        upsert_transaction(db, {
+            'mls_number': 'MLS1', 'source_url': 'https://redfin.com/1',
+            'data_source': 'redfin',
+        })
+        db.commit()
+        set_enrichment_status(db, 'MLS1', 'success', {
+            'listing_agent': 'Jane Doe', 'listing_office': 'ABC Realty',
+        })
+        queue = get_enrichment_queue(db, batch_size=10)
+        assert len(queue) == 0
+
+
+class TestSetEnrichmentStatus:
+    def test_success_with_agent_data(self, db):
+        upsert_transaction(db, {
+            'mls_number': 'MLS1', 'source_url': 'https://redfin.com/1',
+            'data_source': 'redfin',
+        })
+        db.commit()
+        set_enrichment_status(db, 'MLS1', 'success', {
+            'listing_agent': 'Jane Doe, CRS',
+            'listing_office': 'ABC Realty',
+        })
+        row = db.execute('SELECT * FROM transactions WHERE mls_number = ?', ('MLS1',)).fetchone()
+        assert row['enrichment_status'] == 'success'
+        assert row['listing_agent'] == 'Jane Doe'  # normalized
+        assert row['listing_office'] == 'ABC Realty'
+        assert row['enrichment_attempts'] == 1
+
+    def test_error_increments_attempts(self, db):
+        upsert_transaction(db, {
+            'mls_number': 'MLS1', 'source_url': 'https://redfin.com/1',
+            'data_source': 'redfin',
+        })
+        db.commit()
+        set_enrichment_status(db, 'MLS1', 'error')
+        set_enrichment_status(db, 'MLS1', 'error')
+        row = db.execute('SELECT enrichment_attempts FROM transactions WHERE mls_number = ?', ('MLS1',)).fetchone()
+        assert row['enrichment_attempts'] == 2
+
+    def test_no_agent_status(self, db):
+        upsert_transaction(db, {
+            'mls_number': 'MLS1', 'source_url': 'https://redfin.com/1',
+            'data_source': 'redfin',
+        })
+        db.commit()
+        set_enrichment_status(db, 'MLS1', 'no_agent')
+        row = db.execute('SELECT enrichment_status FROM transactions WHERE mls_number = ?', ('MLS1',)).fetchone()
+        assert row['enrichment_status'] == 'no_agent'
+
+
+class TestGetEnrichmentStats:
+    def test_empty_db(self, db):
+        stats = get_enrichment_stats(db)
+        assert stats == {'total': 0, 'pending': 0, 'success': 0, 'no_agent': 0, 'error': 0}
+
+    def test_mixed_statuses(self, db):
+        for i, (status, url) in enumerate([
+            (None, 'https://redfin.com/1'),
+            (None, 'https://redfin.com/2'),
+            ('success', 'https://redfin.com/3'),
+            ('no_agent', 'https://redfin.com/4'),
+            ('error', 'https://redfin.com/5'),
+        ]):
+            upsert_transaction(db, {
+                'mls_number': f'MLS{i}', 'source_url': url,
+                'data_source': 'redfin',
+            })
+        db.commit()
+        # Set statuses for the non-None ones
+        set_enrichment_status(db, 'MLS2', 'success', {'listing_agent': 'Agent A'})
+        set_enrichment_status(db, 'MLS3', 'no_agent')
+        set_enrichment_status(db, 'MLS4', 'error')
+
+        stats = get_enrichment_stats(db)
+        assert stats['total'] == 5
+        assert stats['pending'] == 2
+        assert stats['success'] == 1
+        assert stats['no_agent'] == 1
+        assert stats['error'] == 1
+
+
+class TestSchemaMigrationIdempotent:
+    def test_double_init(self):
+        """init_db can be called multiple times without error."""
+        conn = sqlite3.connect(':memory:')
+        conn.row_factory = sqlite3.Row
+        init_db(conn)
+        init_db(conn)  # Should not raise
+        # Verify enrichment columns exist
+        row = conn.execute("PRAGMA table_info(transactions)").fetchall()
+        col_names = [r['name'] for r in row]
+        assert 'enrichment_status' in col_names
+        assert 'enrichment_attempts' in col_names
+        conn.close()
 
 
 class TestHelpers:

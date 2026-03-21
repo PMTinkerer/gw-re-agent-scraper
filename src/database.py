@@ -65,7 +65,9 @@ def init_db(conn: sqlite3.Connection) -> None:
             data_source TEXT NOT NULL,
             scraped_at TEXT NOT NULL,
             raw_listing_agent TEXT,
-            raw_buyer_agent TEXT
+            raw_buyer_agent TEXT,
+            enrichment_status TEXT,
+            enrichment_attempts INTEGER DEFAULT 0
         );
 
         CREATE TABLE IF NOT EXISTS agent_rankings (
@@ -84,6 +86,18 @@ def init_db(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_transactions_listing_agent ON transactions(listing_agent);
         CREATE INDEX IF NOT EXISTS idx_transactions_sale_date ON transactions(sale_date);
     ''')
+
+    # Migrate existing databases: add enrichment columns (no-op for new databases)
+    for col, typedef in [
+        ('enrichment_status', 'TEXT'),
+        ('enrichment_attempts', 'INTEGER DEFAULT 0'),
+    ]:
+        try:
+            conn.execute(f'ALTER TABLE transactions ADD COLUMN {col} {typedef}')
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+
+    conn.execute('CREATE INDEX IF NOT EXISTS idx_transactions_enrichment ON transactions(enrichment_status)')
     conn.commit()
 
 
@@ -317,6 +331,82 @@ def get_stats(conn: sqlite3.Connection) -> dict:
         'date_range': (date_range[0], date_range[1]) if date_range else (None, None),
         'sources': {r[0]: r[1] for r in sources},
         'towns': {r[0]: r[1] for r in towns},
+    }
+
+
+# --- Enrichment helpers ---
+
+def get_enrichment_queue(conn: sqlite3.Connection, batch_size: int = 200) -> list[dict]:
+    """Return transactions needing agent enrichment.
+
+    Includes records never attempted (NULL) and failed records with < 3 attempts.
+    """
+    rows = conn.execute('''
+        SELECT id, mls_number, source_url
+        FROM transactions
+        WHERE (enrichment_status IS NULL
+               OR (enrichment_status = 'error' AND enrichment_attempts < 3))
+          AND source_url IS NOT NULL
+        ORDER BY id
+        LIMIT ?
+    ''', (batch_size,)).fetchall()
+    return [dict(r) for r in rows]
+
+
+def set_enrichment_status(
+    conn: sqlite3.Connection,
+    mls_number: str,
+    status: str,
+    agent_data: dict | None = None,
+) -> None:
+    """Update the enrichment status for a transaction.
+
+    Args:
+        status: 'success', 'no_agent', or 'error'
+        agent_data: If provided, dict with listing_agent/listing_office/buyer_agent/buyer_office
+                    keys — merged into the record via upsert_transaction.
+    """
+    if status == 'success' and agent_data:
+        # Use upsert to merge agent data (COALESCE preserves existing values)
+        record = {
+            'mls_number': mls_number,
+            'data_source': 'redfin',
+            **agent_data,
+        }
+        upsert_transaction(conn, record)
+
+    conn.execute('''
+        UPDATE transactions
+        SET enrichment_status = ?,
+            enrichment_attempts = COALESCE(enrichment_attempts, 0) + 1
+        WHERE mls_number = ?
+    ''', (status, mls_number))
+    conn.commit()
+
+
+def get_enrichment_stats(conn: sqlite3.Connection) -> dict:
+    """Return enrichment progress counts."""
+    total = conn.execute(
+        'SELECT COUNT(*) FROM transactions WHERE source_url IS NOT NULL'
+    ).fetchone()[0]
+    pending = conn.execute(
+        'SELECT COUNT(*) FROM transactions WHERE source_url IS NOT NULL AND enrichment_status IS NULL'
+    ).fetchone()[0]
+    success = conn.execute(
+        "SELECT COUNT(*) FROM transactions WHERE enrichment_status = 'success'"
+    ).fetchone()[0]
+    no_agent = conn.execute(
+        "SELECT COUNT(*) FROM transactions WHERE enrichment_status = 'no_agent'"
+    ).fetchone()[0]
+    error = conn.execute(
+        "SELECT COUNT(*) FROM transactions WHERE enrichment_status = 'error'"
+    ).fetchone()[0]
+    return {
+        'total': total,
+        'pending': pending,
+        'success': success,
+        'no_agent': no_agent,
+        'error': error,
     }
 
 

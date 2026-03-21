@@ -12,7 +12,9 @@ Identifies the top real estate listing agents in southern coastal Maine using pu
 ## Current status
 
 - 2,371 transactions collected across 10 towns (March 2023–March 2026)
-- Agent enrichment via Playwright is the next step to build
+- Playwright agent enrichment pipeline built and validated (10/10 test URLs enriched)
+- 2,361 URLs pending enrichment (~24 automated runs to complete)
+- 97 unit tests passing
 - Not yet pushed to GitHub
 
 ## Setup
@@ -31,8 +33,8 @@ python -m src.main --discover-regions
 # Run Redfin CSV collection (3 chunks at a time)
 python -m src.main --mode initial --max-chunks 3 --source redfin
 
-# Enrich agent data from Redfin pages (TO BUILD)
-python -m src.main --enrich-agents
+# Enrich agent data from Redfin property pages (100 URLs per batch)
+python -m src.main --enrich --batch-size 100
 
 # Regenerate leaderboard from existing data
 python -m src.main --report-only
@@ -49,11 +51,12 @@ python -m pytest tests/
 
 ## GitHub Actions
 
-The scraper runs automatically on GitHub Actions (not yet configured):
+The scraper runs automatically on GitHub Actions (not yet pushed):
 - **During initial collection:** 4x/day (every 6 hours)
 - **After collection is complete:** Auto-detects and switches to 1x/day at midnight UTC
+- **Agent enrichment** runs automatically after CSV scraping, processing 100 URLs per run
 
-Manual trigger available via Actions tab → "Scrape RE Agent Data" → "Run workflow".
+Manual trigger available via Actions tab → "Scrape RE Agent Data" → "Run workflow" (supports `enrich_batch_size` input).
 
 ## Reading the leaderboard
 
@@ -77,6 +80,10 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 ## Architecture notes
 
 - **Redfin CSV no longer includes agent columns** (as of 2026) — agent data must be extracted from individual property pages via Playwright
+- **Two Redfin DOM structures** for agent data: `.agent-card-wrapper` (Redfin-agent listings) and `.listing-agent-item` (non-Redfin agents) — both handled automatically
+- **Fresh browser context per page** with randomized user-agent/viewport — Redfin CloudFront blocks repeated requests from same session
+- **10-20 second delay** between enrichment page visits — lower causes CDN 403 blocks
 - Three towns (York, Ogunquit, Wells) are classified as "minorcivildivision" on Redfin, not "city" — CSV API queries use York County with city filtering
 - Agent name normalization uses `rapidfuzz` (>90% similarity + same office = merge)
 - Chunk-based resumable processing for GitHub Actions free tier (45-min timeout, 2000 min/month)
+- Enrichment tracked per-URL via `enrichment_status` column (NULL → success/no_agent/error) with up to 3 retry attempts

@@ -2,9 +2,10 @@ name: Scrape RE Agent Data
 
 on:
   schedule:
-    # During initial collection: run 4x/day (UTC times)
-    # After initial collection is complete, update to weekly: '0 10 * * 0'
+    # During backfill (initial/enriching): runs 4x/day
+    # After backfill complete (maintenance): only Sunday midnight UTC fires
     - cron: '0 6,12,18,0 * * *'
+    - cron: '0 0 * * 0'
   workflow_dispatch:
     inputs:
       max_chunks:
@@ -16,6 +17,9 @@ on:
       source:
         description: 'Source filter (redfin or realtor, leave empty for both)'
         default: ''
+      enrich_batch_size:
+        description: 'Enrichment batch size (0 to skip enrichment)'
+        default: '100'
 
 permissions:
   contents: write
@@ -28,19 +32,40 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Phase-aware scheduling: skip 3 of 4 daily runs once initial collection is done
-      - name: Check if maintenance mode
+      # Phase-aware scheduling:
+      #   initial    = CSV chunks still pending → run all 4 daily triggers
+      #   enriching  = CSV done, enrichment backlog >10 → run all 4 daily triggers
+      #   maintenance = everything done → only run Sunday midnight UTC
+      - name: Detect phase
         if: github.event_name == 'schedule'
         id: phase
         run: |
           if [ -f data/scrape_state.json ]; then
             PHASE=$(python3 -c "
-          import json
+          import json, sqlite3
+
           state = json.load(open('data/scrape_state.json'))
           chunks = state.get('chunks', {})
           total = len(chunks)
           complete = sum(1 for c in chunks.values() if c.get('status') == 'complete')
-          print('maintenance' if total > 0 and complete >= total else 'initial')
+          csv_done = total > 0 and complete >= total
+
+          enrichment_pending = 0
+          try:
+              conn = sqlite3.connect('data/agent_data.db')
+              enrichment_pending = conn.execute(
+                  \"SELECT COUNT(*) FROM transactions WHERE (enrichment_status IS NULL OR (enrichment_status = 'error' AND enrichment_attempts < 3)) AND source_url IS NOT NULL\"
+              ).fetchone()[0]
+              conn.close()
+          except Exception:
+              enrichment_pending = 9999
+
+          if not csv_done:
+              print('initial')
+          elif enrichment_pending > 10:
+              print('enriching')
+          else:
+              print('maintenance')
           ")
           else
             PHASE="initial"
@@ -48,12 +73,13 @@ jobs:
           echo "phase=$PHASE" >> $GITHUB_OUTPUT
           echo "Phase: $PHASE"
 
-      - name: Skip non-midnight runs in maintenance mode
+      - name: Skip if maintenance and not Sunday midnight
         if: github.event_name == 'schedule' && steps.phase.outputs.phase == 'maintenance'
         run: |
+          DAY=$(date -u +%u)   # 7 = Sunday
           HOUR=$(date -u +%H)
-          if [ "$HOUR" != "00" ]; then
-            echo "Maintenance mode — only running at midnight UTC. Skipping."
+          if [ "$DAY" != "7" ] || [ "$HOUR" != "00" ]; then
+            echo "Maintenance mode — only running Sunday midnight UTC. Skipping."
             exit 1
           fi
 
@@ -87,6 +113,111 @@ jobs:
 
           echo "Running: $CMD"
           $CMD
+
+      - name: Run agent enrichment
+        id: enrich
+        env:
+          CI: 'true'
+        run: |
+          BATCH="${{ github.event.inputs.enrich_batch_size || '100' }}"
+          if [ "$BATCH" = "0" ]; then
+            echo "Enrichment skipped (batch_size=0)."
+            echo "skipped=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          PENDING=$(python3 -c "
+          import sqlite3
+          conn = sqlite3.connect('data/agent_data.db')
+          try:
+              count = conn.execute(
+                  'SELECT COUNT(*) FROM transactions WHERE (enrichment_status IS NULL OR (enrichment_status = \"error\" AND enrichment_attempts < 3)) AND source_url IS NOT NULL'
+              ).fetchone()[0]
+          except Exception:
+              count = conn.execute(
+                  'SELECT COUNT(*) FROM transactions WHERE listing_agent IS NULL AND source_url IS NOT NULL'
+              ).fetchone()[0]
+          print(count)
+          conn.close()
+          ")
+          echo "pending_before=$PENDING" >> $GITHUB_OUTPUT
+          echo "Pending enrichment: $PENDING"
+          if [ "$PENDING" -gt "0" ]; then
+            python -m src.main --enrich --batch-size "$BATCH"
+          else
+            echo "No URLs pending enrichment, skipping."
+          fi
+
+      - name: Health check
+        id: health
+        if: always() && steps.enrich.outputs.skipped != 'true'
+        run: |
+          python3 -c "
+          import sqlite3, os
+
+          conn = sqlite3.connect('data/agent_data.db')
+
+          total = conn.execute('SELECT COUNT(*) FROM transactions WHERE source_url IS NOT NULL').fetchone()[0]
+          success = conn.execute(\"SELECT COUNT(*) FROM transactions WHERE enrichment_status = 'success'\").fetchone()[0]
+          no_agent = conn.execute(\"SELECT COUNT(*) FROM transactions WHERE enrichment_status = 'no_agent'\").fetchone()[0]
+          errors = conn.execute(\"SELECT COUNT(*) FROM transactions WHERE enrichment_status = 'error'\").fetchone()[0]
+          pending = conn.execute(\"SELECT COUNT(*) FROM transactions WHERE (enrichment_status IS NULL OR (enrichment_status = 'error' AND enrichment_attempts < 3)) AND source_url IS NOT NULL\").fetchone()[0]
+          conn.close()
+
+          pending_before = int(os.environ.get('PENDING_BEFORE', '0'))
+          attempted = pending_before - pending if pending_before > pending else 0
+          newly_enriched = attempted  # approximate
+
+          alert = False
+          reasons = []
+
+          # Were there pending URLs but zero got enriched?
+          if pending_before > 10 and attempted == 0:
+              alert = True
+              reasons.append(f'Zero URLs enriched despite {pending_before} pending. Redfin DOM may have changed.')
+
+          # High error rate this run?
+          if attempted > 0 and errors > 0:
+              # Check recent errors (rough: if more than half of attempted were errors)
+              recent_errors = pending_before - pending - (success - (total - pending_before - no_agent - errors + pending))
+              # Simpler: just check if no new successes happened
+              pass
+
+          # Overall: if >50% of all attempted URLs across all runs are errors
+          total_attempted = success + no_agent + errors
+          if total_attempted > 20 and errors / total_attempted > 0.5:
+              alert = True
+              reasons.append(f'Error rate is {errors}/{total_attempted} ({100*errors//total_attempted}%). Redfin may be blocking.')
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f'ALERT={\"true\" if alert else \"false\"}\n')
+              msg = f'Agent Scraper Health Check FAILED\n\nTotal: {total} | Success: {success} | No Agent: {no_agent} | Errors: {errors} | Pending: {pending}\n\nIssues:\n' + '\n'.join(f'- {r}' for r in reasons)
+              # Escape newlines for GitHub Actions output
+              msg_escaped = msg.replace('\n', '%0A')
+              f.write(f'ALERT_MSG={msg_escaped}\n')
+
+          print(f'Health check: total={total} success={success} no_agent={no_agent} errors={errors} pending={pending}')
+          if alert:
+              print(f'ALERT: {reasons}')
+          else:
+              print('All good.')
+          "
+        env:
+          PENDING_BEFORE: ${{ steps.enrich.outputs.pending_before || '0' }}
+
+      - name: Alert on enrichment failure
+        if: always() && steps.health.outputs.ALERT == 'true'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.GMAIL_USER }}
+          password: ${{ secrets.GMAIL_APP_PASSWORD }}
+          subject: "⚠️ Agent Scraper Alert — enrichment issue detected"
+          to: lucas.knowles@grandwelcome.com
+          from: ${{ secrets.GMAIL_USER }}
+          body: ${{ steps.health.outputs.ALERT_MSG }}
 
       - name: Commit and push results
         run: |
