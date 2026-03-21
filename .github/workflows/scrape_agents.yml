@@ -207,17 +207,30 @@ jobs:
 
       - name: Alert on enrichment failure
         if: always() && steps.health.outputs.ALERT == 'true'
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 465
-          secure: true
-          username: ${{ secrets.GMAIL_USER }}
-          password: ${{ secrets.GMAIL_APP_PASSWORD }}
-          subject: "⚠️ Agent Scraper Alert — enrichment issue detected"
-          to: lucas.knowles@grandwelcome.com
-          from: ${{ secrets.GMAIL_USER }}
-          body: ${{ steps.health.outputs.ALERT_MSG }}
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          ALERT_MSG: ${{ steps.health.outputs.ALERT_MSG }}
+        run: |
+          python3 -c "
+          import smtplib, os
+          from email.mime.text import MIMEText
+
+          user = os.environ['GMAIL_USER'].strip().replace('\xa0', '')
+          pwd = os.environ['GMAIL_APP_PASSWORD'].strip().replace('\xa0', '')
+          body = os.environ.get('ALERT_MSG', 'Enrichment alert triggered but no details available.')
+
+          msg = MIMEText(body)
+          msg['Subject'] = 'Agent Scraper Alert - enrichment issue detected'
+          msg['From'] = user
+          msg['To'] = 'lucas.knowles@grandwelcome.com'
+
+          with smtplib.SMTP('smtp.gmail.com', 587) as server:
+              server.starttls()
+              server.login(user, pwd)
+              server.send_message(msg)
+              print('Alert email sent to lucas.knowles@grandwelcome.com')
+          "
 
       - name: Commit and push results
         run: |
