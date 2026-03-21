@@ -8,14 +8,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send test email
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 465
-          secure: true
-          username: ${{ secrets.GMAIL_USER }}
-          password: ${{ secrets.GMAIL_APP_PASSWORD }}
-          subject: "✅ Agent Scraper — Email alerts working!"
-          to: lucas.knowles@grandwelcome.com
-          from: ${{ secrets.GMAIL_USER }}
-          body: "This is a test email from the gw-agent-scraper GitHub Actions workflow. If you're reading this, email alerts are wired up correctly."
+        run: |
+          python3 -c "
+          import smtplib
+          from email.mime.text import MIMEText
+
+          msg = MIMEText('This is a test email from the gw-agent-scraper GitHub Actions workflow. If you are reading this, email alerts are wired up correctly.')
+          msg['Subject'] = 'Agent Scraper - Email alerts working'
+          msg['From'] = '${{ secrets.GMAIL_USER }}'
+          msg['To'] = 'lucas.knowles@grandwelcome.com'
+
+          with smtplib.SMTP('smtp.gmail.com', 587) as server:
+              server.ehlo()
+              server.starttls()
+              server.ehlo()
+              server.login('${{ secrets.GMAIL_USER }}', '${{ secrets.GMAIL_APP_PASSWORD }}')
+              server.send_message(msg)
+              print('Email sent successfully')
+          "
