@@ -1,0 +1,161 @@
+{
+  "mode": "initial",
+  "region_ids": {
+    "kittery": 23512,
+    "york": 956,
+    "ogunquit": 958,
+    "wells": 947,
+    "kennebunk": 23470,
+    "kennebunkport": 23484,
+    "biddeford": 1283,
+    "saco": 16583,
+    "old_orchard_beach": 35638,
+    "scarborough": 25626
+  },
+  "chunks": {
+    "redfin_kittery": {
+      "status": "complete",
+      "rows": 319,
+      "completed_at": "2026-03-21T17:37:25.974066"
+    },
+    "realtor_kittery_2023": {
+      "status": "pending"
+    },
+    "realtor_kittery_2024": {
+      "status": "pending"
+    },
+    "realtor_kittery_2025": {
+      "status": "pending"
+    },
+    "redfin_york": {
+      "status": "complete",
+      "rows": 10287,
+      "completed_at": "2026-03-21T18:06:27.725585"
+    },
+    "realtor_york_2023": {
+      "status": "pending"
+    },
+    "realtor_york_2024": {
+      "status": "pending"
+    },
+    "realtor_york_2025": {
+      "status": "pending"
+    },
+    "redfin_ogunquit": {
+      "status": "complete",
+      "rows": 10461,
+      "completed_at": "2026-03-21T17:44:21.435593"
+    },
+    "realtor_ogunquit_2023": {
+      "status": "pending"
+    },
+    "realtor_ogunquit_2024": {
+      "status": "pending"
+    },
+    "realtor_ogunquit_2025": {
+      "status": "pending"
+    },
+    "redfin_wells": {
+      "status": "complete",
+      "rows": 10287,
+      "completed_at": "2026-03-21T17:59:50.407202"
+    },
+    "realtor_wells_2023": {
+      "status": "pending"
+    },
+    "realtor_wells_2024": {
+      "status": "pending"
+    },
+    "realtor_wells_2025": {
+      "status": "pending"
+    },
+    "redfin_kennebunk": {
+      "status": "complete",
+      "rows": 7245,
+      "completed_at": "2026-03-21T17:34:30.575471"
+    },
+    "realtor_kennebunk_2023": {
+      "status": "pending"
+    },
+    "realtor_kennebunk_2024": {
+      "status": "pending"
+    },
+    "realtor_kennebunk_2025": {
+      "status": "pending"
+    },
+    "redfin_kennebunkport": {
+      "status": "complete",
+      "rows": 4137,
+      "completed_at": "2026-03-21T17:37:19.430684"
+    },
+    "realtor_kennebunkport_2023": {
+      "status": "pending"
+    },
+    "realtor_kennebunkport_2024": {
+      "status": "pending"
+    },
+    "realtor_kennebunkport_2025": {
+      "status": "pending"
+    },
+    "redfin_biddeford": {
+      "status": "complete",
+      "rows": 6762,
+      "completed_at": "2026-03-21T17:31:48.629116"
+    },
+    "realtor_biddeford_2023": {
+      "status": "pending"
+    },
+    "realtor_biddeford_2024": {
+      "status": "pending"
+    },
+    "realtor_biddeford_2025": {
+      "status": "pending"
+    },
+    "redfin_saco": {
+      "status": "complete",
+      "rows": 7287,
+      "completed_at": "2026-03-21T17:50:04.164648"
+    },
+    "realtor_saco_2023": {
+      "status": "pending"
+    },
+    "realtor_saco_2024": {
+      "status": "pending"
+    },
+    "realtor_saco_2025": {
+      "status": "pending"
+    },
+    "redfin_old_orchard_beach": {
+      "status": "complete",
+      "rows": 7119,
+      "completed_at": "2026-03-21T17:47:21.252803"
+    },
+    "realtor_old_orchard_beach_2023": {
+      "status": "pending"
+    },
+    "realtor_old_orchard_beach_2024": {
+      "status": "pending"
+    },
+    "realtor_old_orchard_beach_2025": {
+      "status": "pending"
+    },
+    "redfin_scarborough": {
+      "status": "complete",
+      "rows": 7140,
+      "completed_at": "2026-03-21T17:53:01.471816"
+    },
+    "realtor_scarborough_2023": {
+      "status": "pending"
+    },
+    "realtor_scarborough_2024": {
+      "status": "pending"
+    },
+    "realtor_scarborough_2025": {
+      "status": "pending"
+    }
+  },
+  "rapidapi_calls_this_month": 0,
+  "rapidapi_month": null,
+  "last_run": "2026-03-21T18:06:27.725794",
+  "created_at": "2026-03-21T17:28:42.388121"
+}

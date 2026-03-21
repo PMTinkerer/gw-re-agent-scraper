@@ -1,0 +1,98 @@
+name: Scrape RE Agent Data
+
+on:
+  schedule:
+    # During initial collection: run 4x/day (UTC times)
+    # After initial collection is complete, update to weekly: '0 10 * * 0'
+    - cron: '0 6,12,18,0 * * *'
+  workflow_dispatch:
+    inputs:
+      max_chunks:
+        description: 'Number of chunks to process'
+        default: '3'
+      mode:
+        description: 'initial, incremental, or auto'
+        default: 'auto'
+      source:
+        description: 'Source filter (redfin or realtor, leave empty for both)'
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Phase-aware scheduling: skip 3 of 4 daily runs once initial collection is done
+      - name: Check if maintenance mode
+        if: github.event_name == 'schedule'
+        id: phase
+        run: |
+          if [ -f data/scrape_state.json ]; then
+            PHASE=$(python3 -c "
+          import json
+          state = json.load(open('data/scrape_state.json'))
+          chunks = state.get('chunks', {})
+          total = len(chunks)
+          complete = sum(1 for c in chunks.values() if c.get('status') == 'complete')
+          print('maintenance' if total > 0 and complete >= total else 'initial')
+          ")
+          else
+            PHASE="initial"
+          fi
+          echo "phase=$PHASE" >> $GITHUB_OUTPUT
+          echo "Phase: $PHASE"
+
+      - name: Skip non-midnight runs in maintenance mode
+        if: github.event_name == 'schedule' && steps.phase.outputs.phase == 'maintenance'
+        run: |
+          HOUR=$(date -u +%H)
+          if [ "$HOUR" != "00" ]; then
+            echo "Maintenance mode — only running at midnight UTC. Skipping."
+            exit 1
+          fi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('requirements.txt') }}
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          python -m playwright install chromium --with-deps
+
+      - name: Run scraper
+        env:
+          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+        run: |
+          CHUNKS="${{ github.event.inputs.max_chunks || '3' }}"
+          MODE="${{ github.event.inputs.mode || 'auto' }}"
+          SOURCE="${{ github.event.inputs.source || '' }}"
+
+          CMD="python -m src.main --mode $MODE --max-chunks $CHUNKS"
+          if [ -n "$SOURCE" ]; then
+            CMD="$CMD --source $SOURCE"
+          fi
+
+          echo "Running: $CMD"
+          $CMD
+
+      - name: Commit and push results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "data: agent scrape $(date -u +%Y-%m-%d-%H%M)"
+          git push
