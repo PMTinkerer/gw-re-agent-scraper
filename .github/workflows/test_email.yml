@@ -22,7 +22,9 @@ jobs:
               server.ehlo()
               server.starttls()
               server.ehlo()
-              server.login('${{ secrets.GMAIL_USER }}', '${{ secrets.GMAIL_APP_PASSWORD }}')
+              user = '${{ secrets.GMAIL_USER }}'.strip().replace('\xa0', '')
+              pwd = '${{ secrets.GMAIL_APP_PASSWORD }}'.strip().replace('\xa0', '')
+              server.login(user, pwd)
               server.send_message(msg)
               print('Email sent successfully')
           "
