@@ -574,6 +574,42 @@ def _launch_stealth_browser(playwright, headless: bool = True):
     return browser, context, page
 
 
+def _simulate_human(page) -> None:
+    """Add human-like behavior to avoid bot detection.
+
+    Scrolls the page, moves the mouse, and pauses naturally.
+    """
+    try:
+        # Random mouse movement
+        page.mouse.move(
+            random.randint(100, 700),
+            random.randint(100, 500),
+        )
+        time.sleep(random.uniform(0.3, 0.8))
+
+        # Scroll down gradually (like reading the page)
+        for _ in range(random.randint(2, 4)):
+            page.mouse.wheel(0, random.randint(150, 400))
+            time.sleep(random.uniform(0.4, 1.0))
+
+        # Scroll back up to the agent section area
+        page.mouse.wheel(0, -random.randint(200, 500))
+        time.sleep(random.uniform(0.3, 0.6))
+    except Exception:
+        pass  # Non-critical — extraction still works without this
+
+
+# Extended init script to mask additional headless browser tells
+_STEALTH_INIT_SCRIPT = """
+Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+Object.defineProperty(navigator, 'languages', {get: () => ['en-US', 'en']});
+Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
+Object.defineProperty(navigator, 'hardwareConcurrency', {get: () => 8});
+Object.defineProperty(navigator, 'deviceMemory', {get: () => 8});
+window.chrome = {runtime: {}};
+"""
+
+
 def _check_page_status(page) -> str:
     """Check page status: 'ok', 'captcha' (stop batch), or 'error' (skip URL).
 
@@ -790,6 +826,11 @@ def enrich_agents_from_redfin(
     errors = 0
     consecutive_errors = 0
 
+    # Random startup delay (30-90s) so runs don't look automated
+    startup_delay = random.uniform(30, 90)
+    logger.info('Startup delay: %.0fs', startup_delay)
+    time.sleep(startup_delay)
+
     with sync_playwright() as pw:
         browser = pw.chromium.launch(
             headless=headless,
@@ -797,8 +838,34 @@ def enrich_agents_from_redfin(
                 '--disable-blink-features=AutomationControlled',
                 '--no-first-run',
                 '--no-default-browser-check',
+                '--disable-dev-shm-usage',
             ] + (['--disable-gpu'] if headless else []),
         )
+
+        # Pre-warm: visit Redfin homepage to establish cookies and a normal session
+        try:
+            warmup_ctx = browser.new_context(
+                user_agent=random.choice(_USER_AGENTS),
+                viewport=random.choice(_VIEWPORTS),
+                locale='en-US',
+                timezone_id='America/New_York',
+            )
+            warmup_page = warmup_ctx.new_page()
+            warmup_page.add_init_script(_STEALTH_INIT_SCRIPT)
+            try:
+                from playwright_stealth import Stealth
+                Stealth().apply_stealth_sync(warmup_page)
+            except ImportError:
+                pass
+            logger.info('Pre-warming session on Redfin homepage...')
+            warmup_page.goto('https://www.redfin.com/', wait_until='domcontentloaded', timeout=30000)
+            warmup_page.wait_for_timeout(random.randint(2000, 4000))
+            _simulate_human(warmup_page)
+            warmup_ctx.close()
+            logger.info('Pre-warm complete.')
+            random_delay(3, 6)
+        except Exception as e:
+            logger.warning('Pre-warm failed (non-fatal): %s', e)
 
         try:
             for i, row in enumerate(queue):
@@ -816,9 +883,7 @@ def enrich_agents_from_redfin(
                     timezone_id='America/New_York',
                 )
                 page = context.new_page()
-                page.add_init_script(
-                    'Object.defineProperty(navigator, "webdriver", {get: () => undefined});'
-                )
+                page.add_init_script(_STEALTH_INIT_SCRIPT)
                 try:
                     from playwright_stealth import Stealth
                     Stealth().apply_stealth_sync(page)
@@ -827,8 +892,9 @@ def enrich_agents_from_redfin(
 
                 try:
                     page.goto(url, wait_until='domcontentloaded', timeout=30000)
+                    # Simulate human browsing before extracting data
+                    _simulate_human(page)
                     # Wait for agent info to render (React hydration)
-                    # Two possible structures: .agent-card-wrapper (Redfin) or .agent-info-section (non-Redfin)
                     try:
                         page.wait_for_selector('.agent-card-wrapper, .agent-info-section', timeout=8000)
                     except Exception:
