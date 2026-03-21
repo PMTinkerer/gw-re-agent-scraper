@@ -239,4 +239,5 @@ jobs:
           git add data/
           git diff --cached --quiet && echo "No changes to commit" && exit 0
           git commit -m "data: agent scrape $(date -u +%Y-%m-%d-%H%M)"
+          git pull --rebase origin main
           git push
