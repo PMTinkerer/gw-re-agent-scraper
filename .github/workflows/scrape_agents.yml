@@ -19,7 +19,7 @@ on:
         default: ''
       enrich_batch_size:
         description: 'Enrichment batch size (0 to skip enrichment)'
-        default: '100'
+        default: '80'
 
 permissions:
   contents: write
@@ -119,7 +119,7 @@ jobs:
         env:
           CI: 'true'
         run: |
-          BATCH="${{ github.event.inputs.enrich_batch_size || '100' }}"
+          BATCH="${{ github.event.inputs.enrich_batch_size || '80' }}"
           if [ "$BATCH" = "0" ]; then
             echo "Enrichment skipped (batch_size=0)."
             echo "skipped=true" >> $GITHUB_OUTPUT
@@ -177,11 +177,8 @@ jobs:
               reasons.append(f'Zero URLs enriched despite {pending_before} pending. Redfin DOM may have changed.')
 
           # High error rate this run?
-          if attempted > 0 and errors > 0:
-              # Check recent errors (rough: if more than half of attempted were errors)
-              recent_errors = pending_before - pending - (success - (total - pending_before - no_agent - errors + pending))
-              # Simpler: just check if no new successes happened
-              pass
+          # Note: per-run error rate is covered by the cumulative check below.
+          # 'attempted' = URLs that changed from pending this run.
 
           # Overall: if >50% of all attempted URLs across all runs are errors
           total_attempted = success + no_agent + errors
@@ -239,5 +236,14 @@ jobs:
           git add data/
           git diff --cached --quiet && echo "No changes to commit" && exit 0
           git commit -m "data: agent scrape $(date -u +%Y-%m-%d-%H%M)"
-          git pull --rebase origin main
-          git push
+          # Try rebase first (cleanest history), fall back to merge on conflict
+          git pull --rebase origin main || {
+            echo "Rebase failed, aborting and trying merge..."
+            git rebase --abort
+            git pull --no-rebase origin main
+          }
+          git push || {
+            echo "Push failed, retrying once..."
+            git pull --rebase origin main
+            git push
+          }

@@ -88,10 +88,13 @@ def init_db(conn: sqlite3.Connection) -> None:
     ''')
 
     # Migrate existing databases: add enrichment columns (no-op for new databases)
+    # Safety: SQLite doesn't support parameterized DDL, so col/typedef are
+    # validated below. These values come ONLY from this hardcoded list.
     for col, typedef in [
         ('enrichment_status', 'TEXT'),
         ('enrichment_attempts', 'INTEGER DEFAULT 0'),
     ]:
+        assert col.isidentifier(), f'Invalid column name for migration: {col}'
         try:
             conn.execute(f'ALTER TABLE transactions ADD COLUMN {col} {typedef}')
         except sqlite3.OperationalError:
@@ -167,7 +170,9 @@ def upsert_transaction(conn: sqlite3.Connection, record: dict) -> bool:
                 listing_office = COALESCE(excluded.listing_office, transactions.listing_office),
                 buyer_office = COALESCE(excluded.buyer_office, transactions.buyer_office),
                 sale_date = COALESCE(excluded.sale_date, transactions.sale_date),
-                scraped_at = excluded.scraped_at
+                scraped_at = excluded.scraped_at,
+                raw_listing_agent = COALESCE(excluded.raw_listing_agent, transactions.raw_listing_agent),
+                raw_buyer_agent = COALESCE(excluded.raw_buyer_agent, transactions.raw_buyer_agent)
         ''', {
             'mls_number': str(mls).strip(),
             'address': record.get('address'),
@@ -209,49 +214,56 @@ def fuzzy_merge_agents(conn: sqlite3.Connection, threshold: int = 90) -> list[tu
         logger.warning('rapidfuzz not installed — skipping fuzzy merge')
         return []
 
-    # Get agents sorted by frequency (most common first)
-    rows = conn.execute('''
-        SELECT listing_agent, listing_office, COUNT(*) as cnt
-        FROM transactions
-        WHERE listing_agent IS NOT NULL
-        GROUP BY listing_agent, listing_office
-        ORDER BY cnt DESC
-    ''').fetchall()
+    # Convergence loop: re-run until no new merges (handles transitive chains)
+    all_merges = []
+    while True:
+        # Get agents sorted by frequency (most common first)
+        rows = conn.execute('''
+            SELECT listing_agent, listing_office, COUNT(*) as cnt
+            FROM transactions
+            WHERE listing_agent IS NOT NULL
+            GROUP BY listing_agent, listing_office
+            ORDER BY cnt DESC
+        ''').fetchall()
 
-    merges = []
-    merged_away = set()  # Names already merged into something else
+        merges = []
+        merged_away = set()  # Names already merged into something else
 
-    for i, row_i in enumerate(rows):
-        name_i = row_i['listing_agent']
-        office_i = row_i['listing_office']
-        if name_i in merged_away:
-            continue
-
-        for j in range(i + 1, len(rows)):
-            name_j = rows[j]['listing_agent']
-            office_j = rows[j]['listing_office']
-            if name_j in merged_away:
+        for i, row_i in enumerate(rows):
+            name_i = row_i['listing_agent']
+            office_i = row_i['listing_office']
+            if name_i in merged_away:
                 continue
 
-            # Must share office (or both None)
-            if office_i != office_j:
-                continue
+            for j in range(i + 1, len(rows)):
+                name_j = rows[j]['listing_agent']
+                office_j = rows[j]['listing_office']
+                if name_j in merged_away:
+                    continue
 
-            score = fuzz.ratio(name_i, name_j)
-            if score >= threshold:
-                # Merge less common into more common
-                logger.info(
-                    'Merging agent "%s" (%d sales) into "%s" (%d sales) [score=%d]',
-                    name_j, rows[j]['cnt'], name_i, row_i['cnt'], score,
-                )
-                conn.execute(
-                    'UPDATE transactions SET listing_agent = ? WHERE listing_agent = ?',
-                    (name_i, name_j),
-                )
-                merges.append((name_j, name_i))
-                merged_away.add(name_j)
+                # Must share office (or both None)
+                if office_i != office_j:
+                    continue
 
-    if merges:
+                score = fuzz.ratio(name_i, name_j)
+                if score >= threshold:
+                    # Merge less common into more common
+                    logger.info(
+                        'Merging agent "%s" (%d sales) into "%s" (%d sales) [score=%d]',
+                        name_j, rows[j]['cnt'], name_i, row_i['cnt'], score,
+                    )
+                    conn.execute(
+                        'UPDATE transactions SET listing_agent = ? WHERE listing_agent = ?',
+                        (name_i, name_j),
+                    )
+                    merges.append((name_j, name_i))
+                    merged_away.add(name_j)
+
+        all_merges.extend(merges)
+        if not merges:
+            break  # Convergence: no new merges found
+
+    if all_merges:
         conn.commit()
     return merges
 
@@ -366,22 +378,26 @@ def set_enrichment_status(
         agent_data: If provided, dict with listing_agent/listing_office/buyer_agent/buyer_office
                     keys — merged into the record via upsert_transaction.
     """
-    if status == 'success' and agent_data:
-        # Use upsert to merge agent data (COALESCE preserves existing values)
-        record = {
-            'mls_number': mls_number,
-            'data_source': 'redfin',
-            **agent_data,
-        }
-        upsert_transaction(conn, record)
+    try:
+        if status == 'success' and agent_data:
+            # Use upsert to merge agent data (COALESCE preserves existing values)
+            record = {
+                'mls_number': mls_number,
+                'data_source': 'redfin',
+                **agent_data,
+            }
+            upsert_transaction(conn, record)
 
-    conn.execute('''
-        UPDATE transactions
-        SET enrichment_status = ?,
-            enrichment_attempts = COALESCE(enrichment_attempts, 0) + 1
-        WHERE mls_number = ?
-    ''', (status, mls_number))
-    conn.commit()
+        conn.execute('''
+            UPDATE transactions
+            SET enrichment_status = ?,
+                enrichment_attempts = COALESCE(enrichment_attempts, 0) + 1
+            WHERE mls_number = ?
+        ''', (status, mls_number))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
 
 
 def get_enrichment_stats(conn: sqlite3.Connection) -> dict:

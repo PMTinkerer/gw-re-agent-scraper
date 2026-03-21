@@ -789,7 +789,7 @@ def _extract_agent_data(page) -> dict:
             data = _json.loads(json_ld_text)
             if 'agent' in data:
                 agent = data['agent']
-                result['listing_agent'] = agent.get('name')
+                result['listing_agent'] = agent.get('name') if isinstance(agent, dict) else str(agent)
             if 'broker' in data:
                 broker = data['broker']
                 result['listing_office'] = broker.get('name') if isinstance(broker, dict) else str(broker)
@@ -896,7 +896,7 @@ def enrich_agents_from_redfin(
                     _simulate_human(page)
                     # Wait for agent info to render (React hydration)
                     try:
-                        page.wait_for_selector('.agent-card-wrapper, .agent-info-section', timeout=8000)
+                        page.wait_for_selector('.agent-card-wrapper, .listing-agent-item, .buyer-agent-item', timeout=8000)
                     except Exception:
                         page.wait_for_timeout(3000)
 

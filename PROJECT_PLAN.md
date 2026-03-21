@@ -10,14 +10,14 @@ Identify the top real estate listing agents across 10 southern Maine towns using
 - [x] Phase 4: Report generator and CLI orchestrator
 - [x] Phase 5: GitHub Actions workflow and project docs
 - [x] **Phase 6: Playwright agent enrichment** — built, tested, 10 URLs enriched successfully
-- [ ] Phase 7: Run full enrichment (~24 batches of 100 URLs)
+- [ ] Phase 7: Run full enrichment (~30 batches of 80 URLs)
 - [ ] Phase 8: Agent name normalization tuning with real data
 - [ ] Phase 9: Push to GitHub and first automated Actions run
 - [ ] Phase 10: Leaderboard review and incremental mode
 
 ## Current Priority: Phase 7 — Run Full Enrichment
 
-Phase 6 (Playwright enrichment pipeline) is complete and validated. 10/10 test URLs enriched with correct agent/brokerage data. 2,361 URLs remain.
+Phase 6 (Playwright enrichment pipeline) is complete and validated. 30/31 test URLs enriched with correct agent/brokerage data. 2,340 URLs remain.
 
 **What was built:**
 - `enrich_agents_from_redfin(conn, batch_size, headless)` in `src/scraper.py`
@@ -25,10 +25,10 @@ Phase 6 (Playwright enrichment pipeline) is complete and validated. 10/10 test U
 - `_check_page_status(page)` — distinguishes captcha (stop batch) from CDN errors (retry)
 - Fresh browser context per page with viewport/user-agent rotation
 - `enrichment_status` + `enrichment_attempts` columns in DB for per-URL tracking
-- CLI: `python -m src.main --enrich --batch-size 100`
+- CLI: `python -m src.main --enrich --batch-size 80`
 - GitHub Actions step runs enrichment automatically after CSV scraping
 
-**Estimated runtime:** ~24 runs × 100 URLs × ~20s/URL ≈ 33 min/run, fits 45-min Actions timeout
+**Estimated runtime:** ~30 runs × 80 URLs × ~20s/URL ≈ 27 min/run, fits 45-min Actions timeout
 
 ## Decision Log
 | Date | Decision | Rationale |

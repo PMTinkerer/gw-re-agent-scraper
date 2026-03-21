@@ -174,6 +174,22 @@ class TestExtractAgentData:
         result = _extract_agent_data(page)
         assert all(v is None for v in result.values())
 
+    def test_json_ld_string_agent(self):
+        """Strategy 3: JSON-LD where agent is a plain string, not a dict."""
+        page = MagicMock()
+        call_count = [0]
+        def mock_evaluate(script):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                return {}  # Strategy 1: no agent cards
+            # Strategy 3: JSON-LD with string agent and string broker
+            return '{"@type": ["RealEstateListing"], "agent": "Jane Doe", "broker": "ABC Realty"}'
+        page.evaluate.side_effect = mock_evaluate
+        page.text_content.return_value = 'No patterns here'
+        result = _extract_agent_data(page)
+        assert result['listing_agent'] == 'Jane Doe'
+        assert result['listing_office'] == 'ABC Realty'
+
 
 # --- enrich_agents_from_redfin tests ---
 

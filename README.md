@@ -33,8 +33,8 @@ python -m src.main --discover-regions
 # Run Redfin CSV collection (3 chunks at a time)
 python -m src.main --mode initial --max-chunks 3 --source redfin
 
-# Enrich agent data from Redfin property pages (100 URLs per batch)
-python -m src.main --enrich --batch-size 100
+# Enrich agent data from Redfin property pages (80 URLs per batch)
+python -m src.main --enrich --batch-size 80
 
 # Regenerate leaderboard from existing data
 python -m src.main --report-only
@@ -54,7 +54,7 @@ python -m pytest tests/
 The scraper runs automatically on GitHub Actions (not yet pushed):
 - **During initial collection:** 4x/day (every 6 hours)
 - **After collection is complete:** Auto-detects and switches to 1x/day at midnight UTC
-- **Agent enrichment** runs automatically after CSV scraping, processing 100 URLs per run
+- **Agent enrichment** runs automatically after CSV scraping, processing 80 URLs per run
 
 Manual trigger available via Actions tab → "Scrape RE Agent Data" → "Run workflow" (supports `enrich_batch_size` input).
 

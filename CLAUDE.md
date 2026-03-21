@@ -28,9 +28,9 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 - Tracks enrichment status per URL: `enrichment_status` column (NULL/success/no_agent/error) with retry up to 3 attempts
 - Fresh browser context per page to avoid Redfin CDN session fingerprinting
 - Rate limit: 10-20 seconds between page visits (lower causes CloudFront 403 blocks)
-- Batch size: 100 URLs per run (~35 min, fits 45-min GitHub Actions timeout)
-- React hydration wait: `wait_for_selector('.agent-card-wrapper, .agent-info-section', timeout=8000)`
-- CLI: `python -m src.main --enrich --batch-size 100`
+- Batch size: 80 URLs per run (~27 min, fits 45-min GitHub Actions timeout)
+- React hydration wait: `wait_for_selector('.agent-card-wrapper, .listing-agent-item, .buyer-agent-item', timeout=8000)`
+- CLI: `python -m src.main --enrich --batch-size 80`
 
 ## Key Decisions
 - **Redfin CSV** for property data (reliable, structured, no browser needed)
@@ -54,8 +54,8 @@ python -m src.main --mode initial --max-chunks 1 --towns "York, ME"
 # Discover/verify Redfin region IDs
 python -m src.main --discover-regions
 
-# Run Playwright agent enrichment (100 URLs per batch)
-python -m src.main --enrich --batch-size 100
+# Run Playwright agent enrichment (80 URLs per batch)
+python -m src.main --enrich --batch-size 80
 
 # Run fuzzy agent merge
 python -m src.main --merge-agents

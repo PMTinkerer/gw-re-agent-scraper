@@ -6,3 +6,14 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+
+# SQLite WAL mode temporary files
+*.db-shm
+*.db-wal
+
+# OS files
+.DS_Store
+
+# IDE settings
+.vscode/
+.idea/

@@ -130,6 +130,30 @@ class TestUpsertTransaction:
         row = db.execute('SELECT sale_price FROM transactions WHERE mls_number = ?', ('MLS456',)).fetchone()
         assert row['sale_price'] == 1234567
 
+    def test_upsert_updates_raw_agent_columns(self, db):
+        """ON CONFLICT should update raw_listing_agent and raw_buyer_agent."""
+        upsert_transaction(db, {
+            'mls_number': 'MLS_RAW',
+            'data_source': 'redfin',
+            'city': 'York',
+            'source_url': 'https://redfin.com/1',
+        })
+        db.commit()
+        # Re-upsert with agent data (simulates enrichment)
+        upsert_transaction(db, {
+            'mls_number': 'MLS_RAW',
+            'data_source': 'redfin',
+            'listing_agent': 'Jane Doe, CRS',
+            'buyer_agent': 'John Smith, ABR',
+        })
+        db.commit()
+        row = db.execute(
+            'SELECT raw_listing_agent, raw_buyer_agent FROM transactions WHERE mls_number = ?',
+            ('MLS_RAW',),
+        ).fetchone()
+        assert row['raw_listing_agent'] == 'Jane Doe, CRS'
+        assert row['raw_buyer_agent'] == 'John Smith, ABR'
+
 
 class TestRebuildRankings:
     def test_rankings(self, db):
