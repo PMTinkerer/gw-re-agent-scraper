@@ -1,10 +1,19 @@
 # gw-agent-scraper
 
-Identifies the top real estate listing agents in southern coastal Maine using publicly visible sold property data from Redfin and Realtor.com.
+Identifies the top real estate listing agents in southern coastal Maine using publicly visible sold property data from Redfin.
 
 ## What it does
 
-Scrapes 3 years of sold property data across 10 towns (Kittery to Scarborough), extracts listing agent and brokerage info, normalizes names, and generates a ranked leaderboard at `data/agent_leaderboard.md`.
+1. **Collects sold property data** from Redfin's CSV endpoint (address, price, MLS#, sold date, beds, baths, sqft)
+2. **Enriches with agent data** by visiting individual Redfin property pages via Playwright to extract listing agent name and brokerage
+3. **Normalizes agent names** and fuzzy-merges near-duplicates
+4. **Generates a ranked leaderboard** at `data/agent_leaderboard.md`
+
+## Current status
+
+- 2,371 transactions collected across 10 towns (March 2023–March 2026)
+- Agent enrichment via Playwright is the next step to build
+- Not yet pushed to GitHub
 
 ## Setup
 
@@ -16,17 +25,14 @@ playwright install chromium
 ## Local usage
 
 ```bash
-# Discover Redfin region IDs (required first time)
+# Discover Redfin region IDs (already cached in scrape_state.json)
 python -m src.main --discover-regions
 
-# Run initial collection (3 chunks at a time)
-python -m src.main --mode initial --max-chunks 3
+# Run Redfin CSV collection (3 chunks at a time)
+python -m src.main --mode initial --max-chunks 3 --source redfin
 
-# Test with a single town
-python -m src.main --mode initial --max-chunks 1 --towns "York, ME"
-
-# Only Redfin source
-python -m src.main --source redfin --max-chunks 5
+# Enrich agent data from Redfin pages (TO BUILD)
+python -m src.main --enrich-agents
 
 # Regenerate leaderboard from existing data
 python -m src.main --report-only
@@ -36,18 +42,18 @@ python -m src.main --merge-agents
 
 # Reset all progress
 python -m src.main --reset-state
+
+# Run tests
+python -m pytest tests/
 ```
 
 ## GitHub Actions
 
-The scraper runs automatically on GitHub Actions:
+The scraper runs automatically on GitHub Actions (not yet configured):
 - **During initial collection:** 4x/day (every 6 hours)
 - **After collection is complete:** Auto-detects and switches to 1x/day at midnight UTC
 
 Manual trigger available via Actions tab → "Scrape RE Agent Data" → "Run workflow".
-
-### Required secrets
-- `RAPIDAPI_KEY` (optional) — for Realtor.com API. Without it, only Redfin is scraped.
 
 ## Reading the leaderboard
 
@@ -59,11 +65,18 @@ The output is `data/agent_leaderboard.md` with four sections:
 
 ## Data sources
 
-- **Redfin** — CSV download endpoint with sold property data including agent names
-- **Realtor.com** — RapidAPI wrapper (unofficial) for supplementary agent data
+- **Redfin CSV endpoint** — property data (address, price, beds, baths, MLS#, sold date)
+- **Redfin property pages via Playwright** — listing agent name and brokerage (extracted from individual sold listing pages)
 
 Uses only publicly visible data. No MLS access or real estate license required.
 
 ## Towns covered
 
 Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old Orchard Beach, Scarborough — all in Maine.
+
+## Architecture notes
+
+- **Redfin CSV no longer includes agent columns** (as of 2026) — agent data must be extracted from individual property pages via Playwright
+- Three towns (York, Ogunquit, Wells) are classified as "minorcivildivision" on Redfin, not "city" — CSV API queries use York County with city filtering
+- Agent name normalization uses `rapidfuzz` (>90% similarity + same office = merge)
+- Chunk-based resumable processing for GitHub Actions free tier (45-min timeout, 2000 min/month)
