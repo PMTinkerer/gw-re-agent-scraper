@@ -5,7 +5,7 @@
 
 Redfin property data collected: 2,371 transactions across all 10 towns (March 2023–March 2026). Property fields are complete (address, price, MLS#, sold date, beds, baths, sqft).
 
-**Playwright enrichment pipeline built, tested, and validated.** 30 URLs enriched successfully (30/31 success rate). 2,340 URLs pending. Estimated ~30 runs at 80 URLs/batch to complete all enrichment.
+**Playwright enrichment pipeline running in production** via GitHub Actions with residential proxy (IPRoyal). 192 URLs enriched successfully. ~2,177 URLs pending. Estimated ~27 runs at 80 URLs/batch to complete all enrichment.
 
 ## What's In the Database
 | Town | Transactions | Avg Price | Date Range |
@@ -36,10 +36,8 @@ Redfin property data collected: 2,371 transactions across all 10 towns (March 20
 10. **Some Redfin URLs return intermittent CloudFront 403s** ("The request could not be satisfied") — these are transient CDN errors, not captchas. Marked as `error` and retried up to 3 times.
 
 ## Open Issues
-- **2,340 URLs still pending enrichment** — pipeline works, just needs to run through full batch (~30 runs at 80/batch)
+- **~2,177 URLs still pending enrichment** — pipeline running, ~27 runs at 80/batch to complete
 - York (109), Wells (81), Ogunquit (19) have lower counts due to county query limitations
-- Not yet pushed to GitHub
-- GitHub Actions workflow not yet tested in production
 - Some pages may have `no_agent` (listing removed, very old, etc.) — accept this as data gap
 
 ## Next Steps (Priority Order)

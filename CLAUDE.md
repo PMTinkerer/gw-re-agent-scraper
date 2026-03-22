@@ -3,11 +3,11 @@
 ## What This Project Does
 Scrapes publicly visible sold property data from Redfin for 10 southern coastal Maine towns, then enriches each transaction with listing agent and brokerage data by visiting individual Redfin property pages via Playwright. The primary deliverable is `data/agent_leaderboard.md` — a ranked leaderboard of agents by listing volume. Runs on GitHub Actions free tier with resumable chunk-based processing.
 
-## Current State (as of 2026-03-21)
+## Current State (as of 2026-03-22)
 - **2,371 transactions in SQLite** with full property data (address, price, MLS#, sold date, beds, baths, sqft)
-- **10 transactions enriched with agent data** — Playwright enrichment pipeline built and tested; 2,361 URLs pending
-- **97 unit tests passing**
-- **Not yet pushed to GitHub**
+- **192 transactions enriched with agent data** — Playwright enrichment running via GitHub Actions; ~2,177 URLs pending
+- **99 unit tests passing**
+- **Pushed to GitHub** — automated enrichment running 4x/day via residential proxy (IPRoyal)
 
 ## Service Territory (10 Towns)
 Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old Orchard Beach, Scarborough — all in Maine.

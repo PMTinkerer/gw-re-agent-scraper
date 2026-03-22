@@ -12,10 +12,10 @@ Identifies the top real estate listing agents in southern coastal Maine using pu
 ## Current status
 
 - 2,371 transactions collected across 10 towns (March 2023–March 2026)
-- Playwright agent enrichment pipeline built and validated (10/10 test URLs enriched)
-- 2,361 URLs pending enrichment (~24 automated runs to complete)
-- 97 unit tests passing
-- Not yet pushed to GitHub
+- Playwright agent enrichment pipeline running via GitHub Actions with residential proxy
+- ~2,177 URLs pending enrichment (~27 automated runs to complete)
+- 99 unit tests passing
+- Live on GitHub with automated 4x/day enrichment
 
 ## Setup
 
@@ -51,7 +51,7 @@ python -m pytest tests/
 
 ## GitHub Actions
 
-The scraper runs automatically on GitHub Actions (not yet pushed):
+The scraper runs automatically on GitHub Actions:
 - **During initial collection:** 4x/day (every 6 hours)
 - **After collection is complete:** Auto-detects and switches to 1x/day at midnight UTC
 - **Agent enrichment** runs automatically after CSV scraping, processing 80 URLs per run

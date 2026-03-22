@@ -17,18 +17,19 @@ Identify the top real estate listing agents across 10 southern Maine towns using
 
 ## Current Priority: Phase 7 — Run Full Enrichment
 
-Phase 6 (Playwright enrichment pipeline) is complete and validated. 30/31 test URLs enriched with correct agent/brokerage data. 2,340 URLs remain.
+Phase 7 is in progress — enrichment running in production via GitHub Actions with IPRoyal residential proxy. 192 URLs enriched, ~2,177 remaining.
 
 **What was built:**
 - `enrich_agents_from_redfin(conn, batch_size, headless)` in `src/scraper.py`
 - `_extract_agent_data(page)` — handles two Redfin DOM structures (Redfin-agent vs non-Redfin agent listings)
 - `_check_page_status(page)` — distinguishes captcha (stop batch) from CDN errors (retry)
-- Fresh browser context per page with viewport/user-agent rotation
+- Fresh browser context per page with viewport/user-agent rotation + residential proxy (IPRoyal)
+- Resource blocking (images/fonts/stylesheets/media) to reduce proxy bandwidth ~70-80%
 - `enrichment_status` + `enrichment_attempts` columns in DB for per-URL tracking
 - CLI: `python -m src.main --enrich --batch-size 80`
-- GitHub Actions step runs enrichment automatically after CSV scraping
+- GitHub Actions step runs enrichment automatically 4x/day
 
-**Estimated runtime:** ~30 runs × 80 URLs × ~20s/URL ≈ 27 min/run, fits 45-min Actions timeout
+**Estimated runtime:** ~27 runs × 80 URLs × ~20s/URL ≈ 27 min/run, fits 45-min Actions timeout
 
 ## Decision Log
 | Date | Decision | Rationale |
