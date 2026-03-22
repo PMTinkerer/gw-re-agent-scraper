@@ -826,6 +826,24 @@ def enrich_agents_from_redfin(
     errors = 0
     consecutive_errors = 0
 
+    # Proxy configuration (optional — reads from PROXY_URL env var)
+    # Format: http://user:pass@host:port (supports HTTP and SOCKS5)
+    # IPRoyal example: http://user:pass_country-us_session-{rand}_lifetime-10m@geo.iproyal.com:12321
+    proxy_url = os.environ.get('PROXY_URL')
+    if proxy_url:
+        logger.info('Using residential proxy: %s', proxy_url.split('@')[-1] if '@' in proxy_url else 'configured')
+    else:
+        logger.info('No PROXY_URL set — connecting directly (may be blocked on datacenter IPs)')
+
+    # Resource types to block (saves ~70-80% bandwidth, we only need DOM text)
+    _BLOCKED_RESOURCE_TYPES = {'image', 'media', 'font', 'stylesheet'}
+
+    def _block_unnecessary_resources(route):
+        if route.request.resource_type in _BLOCKED_RESOURCE_TYPES:
+            route.abort()
+        else:
+            route.fallback()
+
     # Random startup delay (30-90s) so runs don't look automated
     startup_delay = random.uniform(30, 90)
     logger.info('Startup delay: %.0fs', startup_delay)
@@ -844,13 +862,16 @@ def enrich_agents_from_redfin(
 
         # Pre-warm: visit Redfin homepage to establish cookies and a normal session
         try:
+            warmup_proxy = {'server': proxy_url} if proxy_url else None
             warmup_ctx = browser.new_context(
                 user_agent=random.choice(_USER_AGENTS),
                 viewport=random.choice(_VIEWPORTS),
                 locale='en-US',
                 timezone_id='America/New_York',
+                **(dict(proxy=warmup_proxy) if warmup_proxy else {}),
             )
             warmup_page = warmup_ctx.new_page()
+            warmup_page.route('**/*', _block_unnecessary_resources)
             warmup_page.add_init_script(_STEALTH_INIT_SCRIPT)
             try:
                 from playwright_stealth import Stealth
@@ -876,13 +897,25 @@ def enrich_agents_from_redfin(
                 # Fresh context per page to avoid CDN session fingerprinting
                 viewport = random.choice(_VIEWPORTS)
                 user_agent = random.choice(_USER_AGENTS)
+
+                # Fresh proxy session per page (rotates residential IP)
+                page_proxy = None
+                if proxy_url:
+                    # Replace _session-{anything}_ with a fresh random session ID
+                    # This tells IPRoyal (and similar providers) to assign a new IP
+                    fresh_session = f'session-{random.randint(100000, 999999)}'
+                    rotated_url = re.sub(r'session-[^_&]+', fresh_session, proxy_url)
+                    page_proxy = {'server': rotated_url}
+
                 context = browser.new_context(
                     user_agent=user_agent,
                     viewport=viewport,
                     locale='en-US',
                     timezone_id='America/New_York',
+                    **(dict(proxy=page_proxy) if page_proxy else {}),
                 )
                 page = context.new_page()
+                page.route('**/*', _block_unnecessary_resources)
                 page.add_init_script(_STEALTH_INIT_SCRIPT)
                 try:
                     from playwright_stealth import Stealth

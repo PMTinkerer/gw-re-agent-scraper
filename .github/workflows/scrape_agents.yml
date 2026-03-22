@@ -118,6 +118,7 @@ jobs:
         id: enrich
         env:
           CI: 'true'
+          PROXY_URL: ${{ secrets.PROXY_URL }}
         run: |
           BATCH="${{ github.event.inputs.enrich_batch_size || '80' }}"
           if [ "$BATCH" = "0" ]; then

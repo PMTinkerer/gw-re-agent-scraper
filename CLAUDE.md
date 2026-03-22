@@ -27,6 +27,9 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 - Two DOM structures: `.agent-card-wrapper` (Redfin-agent listings) and `.listing-agent-item` (non-Redfin agents)
 - Tracks enrichment status per URL: `enrichment_status` column (NULL/success/no_agent/error) with retry up to 3 attempts
 - Fresh browser context per page to avoid Redfin CDN session fingerprinting
+- **Residential proxy** via `PROXY_URL` env var (IPRoyal) — GitHub Actions datacenter IPs get captcha'd
+- **Resource blocking** — images, fonts, stylesheets, media blocked to save ~70-80% proxy bandwidth
+- Fresh proxy session ID per page for IP rotation (replaces `session-{id}` in proxy URL)
 - Rate limit: 10-20 seconds between page visits (lower causes CloudFront 403 blocks)
 - Batch size: 80 URLs per run (~27 min, fits 45-min GitHub Actions timeout)
 - React hydration wait: `wait_for_selector('.agent-card-wrapper, .listing-agent-item, .buyer-agent-item', timeout=8000)`
@@ -40,6 +43,8 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 - **MLS number** as dedup key
 - **rapidfuzz** for agent name fuzzy matching (>90% + same office)
 - **Fresh browser context per page** — Redfin CloudFront blocks repeated requests from the same session; rotating context + user-agent + viewport avoids 403s
+- **Residential proxy (IPRoyal)** — GitHub Actions datacenter IPs get immediately captcha'd by Redfin CloudFront; residential IPs work reliably. Set `PROXY_URL` secret in GitHub repo settings.
+- **Resource blocking** — Playwright blocks images/fonts/stylesheets/media to reduce proxy bandwidth ~70-80%
 - **DB-level enrichment tracking** (`enrichment_status` column) instead of state.py chunks — simpler for per-URL tracking
 - **10-20 second delay** between enrichment page visits — 5-10s caused CDN blocks
 
@@ -81,6 +86,7 @@ sqlite3 data/agent_data.db "SELECT enrichment_status, COUNT(*) FROM transactions
 - Redfin CSV max 350 rows per request — pagination returns overlapping data, so unique records plateau
 - Minorcivildivision towns (York, Ogunquit, Wells) have lower transaction counts via county query
 - Redfin blocks non-browser requests (403) — Playwright required for property pages
+- **Redfin CloudFront captchas datacenter IPs** — GitHub Actions IPs are flagged; residential proxy (`PROXY_URL`) required
 - **Redfin CloudFront blocks rapid sequential requests** — must use fresh browser context per page + 10-20s delay
 - **Two DOM structures for agent data** — Redfin-agent listings use `.agent-card-wrapper`, non-Redfin agents use `.listing-agent-item`
 - **React hydration timing** — agent cards take 3-8s to render after `domcontentloaded`; must use `wait_for_selector` not fixed timeout
