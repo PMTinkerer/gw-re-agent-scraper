@@ -1,12 +1,12 @@
 # Real Estate Agent Leaderboard -- Southern Coastal Maine
-_Generated: 2026-03-22 14:18 UTC | Data: 2023-03-22 to 2026-03-20 | Sources: redfin_
-_Total sales analyzed: 2,371 | Unique listing agents: 117_
+_Generated: 2026-03-22 14:23 UTC | Data: 2023-03-22 to 2026-03-20 | Sources: redfin_
+_Total sales analyzed: 2,371 | Unique listing agents: 119_
 
 ## Top 30 Listing Agents by Total Volume
 
 | Rank | Agent | Office | Listing Sides | Total Volume | Avg Price | High-Value (>=500K) | Primary Towns | Most Recent |
 |------|-------|--------|--------------|-------------|-----------|-------------------|--------------|-------------|
-| 1 | David Marsden | Marsden Real Estate | 10 | $6.1M | $614K | 7 | Biddeford | 2026-03-19 |
+| 1 | David Marsden | Marsden Real Estate | 11 | $6.9M | $631K | 8 | Biddeford | 2026-03-19 |
 | 2 | Adam Parent | Maine Real Estate Co | 11 | $5.8M | $524K | 3 | Biddeford, Scarborough | 2026-02-20 |
 | 3 | Bob Letellier | Coldwell Banker Realty | 9 | $4.9M | $541K | 3 | Biddeford, Saco | 2025-07-18 |
 | 4 | Peter Mcpheeters | OceanView Properties | 3 | $3.8M | $1.3M | 2 | Biddeford | 2025-11-17 |
@@ -43,11 +43,11 @@ _Total sales analyzed: 2,371 | Unique listing agents: 117_
 |------|-----------|--------------|-------------|-----------|------------|
 | 1 | Coldwell Banker Realty | 32 | $15.1M | $472K | Bob Letellier, Margaret Mailman, Daniel Letellier |
 | 2 | OceanView Properties | 9 | $8.6M | $950K | Joey Radford, Peter Mcpheeters, Anne Mcpheeters |
-| 3 | Maine Real Estate Co | 13 | $7.9M | $611K | Adam Parent, Bailey Pate, Hayden Pomerleau |
+| 3 | Maine Real Estate Co | 14 | $8.3M | $591K | Adam Parent, Bailey Pate, Hayden Pomerleau |
 | 4 | Keller Williams Realty | 15 | $7.4M | $494K | Adam Parent, James Rathband, Autumn Potter |
 | 5 | Portside Real Estate Group | 15 | $7.2M | $480K | Erin Oldham, Cady Toussaint, Alyssa Bouthot |
 | 6 | EXP Realty | 15 | $6.9M | $463K | Roz Anton, Kathleen Mccallum, Theresa Greeley |
-| 7 | Marsden Real Estate | 10 | $6.1M | $614K | David Marsden |
+| 7 | Marsden Real Estate | 11 | $6.9M | $631K | David Marsden |
 | 8 | Legacy Properties Sotheby's International Realty | 2 | $3.9M | $1.9M | Adrienne Robinson, Marika Clark |
 | 9 | Anchor Real Estate | 2 | $3.3M | $1.7M | Anchor Real Estate |
 | 10 | Signature Homes Real Estate Group, LLC | 5 | $2.6M | $512K | Carrie Scoville Amy Foley, Tiffany Libb Pamela Starnes, Ashley Lutko Donna Galluzzo |
@@ -106,7 +106,7 @@ _Total sales analyzed: 2,371 | Unique listing agents: 117_
 
 | Rank | Agent | Office | Listing Sides | Total Volume |
 |------|-------|--------|--------------|-------------|
-| 1 | David Marsden | Marsden Real Estate | 10 | $6.1M |
+| 1 | David Marsden | Marsden Real Estate | 11 | $6.9M |
 | 2 | Bob Letellier | Coldwell Banker Realty | 8 | $4.2M |
 | 3 | Adam Parent | Maine Real Estate Co | 10 | $4.1M |
 | 4 | Peter Mcpheeters | OceanView Properties | 3 | $3.8M |
@@ -139,7 +139,7 @@ _Total sales analyzed: 2,371 | Unique listing agents: 117_
 ## Data Summary
 
 - **Total transactions:** 2,371
-- **With listing agent:** 189
+- **With listing agent:** 192
 - **Date range:** 2023-03-22 to 2026-03-20
 - **Sources:**
   - Redfin: 2,371 properties
@@ -154,4 +154,4 @@ _Total sales analyzed: 2,371 | Unique listing agents: 117_
   - Scarborough: 340 sales
   - Wells: 81 sales
   - York: 109 sales
-- **Report generated:** 2026-03-22 14:18 UTC
+- **Report generated:** 2026-03-22 14:23 UTC
