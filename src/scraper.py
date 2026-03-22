@@ -229,7 +229,7 @@ def scrape_redfin(town: str, region_id: int, conn, state_dict: dict | None = Non
             f'?al=1&num_homes=350&ord=redfin-recommended-asc'
             f'&page_number={page}&region_id={actual_region_id}&region_type={actual_region_type}'
             f'&sold_within_days=1095&status=9'
-            f'&uipt=1,2,3,4,5,6,7,8&v=8'
+            f'&uipt=1,2&v=8'
         )
 
         random_delay(5, 10)
@@ -290,6 +290,7 @@ def scrape_redfin(town: str, region_id: int, conn, state_dict: dict | None = Non
                 'listing_office': row.get('LISTING BROKER', '').strip() or None,
                 'buyer_office': row.get("BUYER'S BROKER", '').strip() or None,
                 'source_url': row.get('URL (SEE https://www.redfin.com/buy-a-home/comparative-market-analysis FOR INFO ON PRICING)', '').strip() or None,
+                'property_type': row.get('PROPERTY TYPE', '').strip() or None,
                 'data_source': 'redfin',
                 'scraped_at': datetime.utcnow().isoformat(),
             }

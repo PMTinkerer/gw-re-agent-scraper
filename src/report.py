@@ -178,8 +178,10 @@ def _get_report_stats(conn) -> dict:
     }
 
 
-def _query_top_agents(conn, limit: int = 30) -> list[dict]:
-    rows = conn.execute('''
+def _query_top_agents(conn, limit: int = 30, since_date: str | None = None) -> list[dict]:
+    date_filter = 'AND sale_date >= ?' if since_date else ''
+    params = (since_date, limit) if since_date else (limit,)
+    rows = conn.execute(f'''
         SELECT
             listing_agent,
             (
@@ -202,10 +204,12 @@ def _query_top_agents(conn, limit: int = 30) -> list[dict]:
             MAX(sale_date) as most_recent
         FROM transactions t
         WHERE listing_agent IS NOT NULL
+          AND (listing_office IS NULL OR LOWER(listing_agent) != LOWER(listing_office))
+          {date_filter}
         GROUP BY listing_agent
         ORDER BY volume DESC
         LIMIT ?
-    ''', (limit,)).fetchall()
+    ''', params).fetchall()
 
     return [
         {
@@ -270,7 +274,9 @@ def _query_top_agents_by_town(conn, town: str, limit: int = 5) -> list[dict]:
             COUNT(*) as sides,
             SUM(COALESCE(sale_price, list_price, 0)) as volume
         FROM transactions t
-        WHERE listing_agent IS NOT NULL AND LOWER(city) = LOWER(?)
+        WHERE listing_agent IS NOT NULL
+          AND (listing_office IS NULL OR LOWER(listing_agent) != LOWER(listing_office))
+          AND LOWER(city) = LOWER(?)
         GROUP BY listing_agent
         ORDER BY volume DESC
         LIMIT ?
@@ -285,3 +291,18 @@ def _query_top_agents_by_town(conn, town: str, limit: int = 5) -> list[dict]:
         }
         for r in rows
     ]
+
+
+# --- Public API (used by dashboard.py) ---
+
+def query_top_agents(conn, limit: int = 30, since_date: str | None = None) -> list[dict]:
+    return _query_top_agents(conn, limit, since_date=since_date)
+
+def query_top_brokerages(conn, limit: int = 15) -> list[dict]:
+    return _query_top_brokerages(conn, limit)
+
+def query_top_agents_by_town(conn, town: str, limit: int = 5) -> list[dict]:
+    return _query_top_agents_by_town(conn, town, limit)
+
+def get_report_stats(conn) -> dict:
+    return _get_report_stats(conn)

@@ -114,6 +114,25 @@ jobs:
           echo "Running: $CMD"
           $CMD
 
+      - name: Purge non-residential records
+        run: |
+          # Only purge if property_type column has been populated by the re-scrape
+          TAGGED=$(python3 -c "
+          import sqlite3
+          conn = sqlite3.connect('data/agent_data.db')
+          try:
+              print(conn.execute('SELECT COUNT(*) FROM transactions WHERE property_type IS NOT NULL').fetchone()[0])
+          except Exception:
+              print(0)
+          conn.close()
+          ")
+          echo "Records with property_type tagged: $TAGGED"
+          if [ "$TAGGED" -gt "100" ]; then
+            python -m src.main --purge-non-residential
+          else
+            echo "Not enough tagged records yet ($TAGGED). Skipping purge."
+          fi
+
       - name: Run agent enrichment
         id: enrich
         env:

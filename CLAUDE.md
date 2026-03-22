@@ -6,7 +6,10 @@ Scrapes publicly visible sold property data from Redfin for 10 southern coastal 
 ## Current State (as of 2026-03-22)
 - **2,371 transactions in SQLite** with full property data (address, price, MLS#, sold date, beds, baths, sqft)
 - **192 transactions enriched with agent data** — Playwright enrichment running via GitHub Actions; ~2,177 URLs pending
-- **99 unit tests passing**
+- **Property type filter active** — only Single Family Residential + Condo/Co-op (`uipt=1,2`); re-scrape in progress to tag `property_type`, auto-purge will remove land/multi-family/mobile records
+- **HTML dashboard** at `data/dashboard.html` — 4-section leaderboard with trend badges, auto-regenerated on every CI run
+- **Brokerage-as-agent exclusion** — agents where name = office (e.g., Anchor Real Estate) excluded from agent rankings but kept in brokerage rankings
+- **115 unit tests passing**
 - **Pushed to GitHub** — automated enrichment running 4x/day via residential proxy (IPRoyal)
 
 ## Service Territory (10 Towns)
@@ -47,10 +50,14 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 - **Resource blocking** — Playwright blocks images/fonts/stylesheets/media to reduce proxy bandwidth ~70-80%
 - **DB-level enrichment tracking** (`enrichment_status` column) instead of state.py chunks — simpler for per-URL tracking
 - **10-20 second delay** between enrichment page visits — 5-10s caused CDN blocks
+- **SFH + Condo only** — `uipt=1,2` filter on Redfin CSV API excludes land, multi-family, mobile homes from scraping
+- **Property type column** — `property_type` stored in DB; `--purge-non-residential` CLI flag deletes non-SFH/Condo records
+- **Brokerage-as-agent exclusion** — agent queries filter `WHERE LOWER(listing_agent) != LOWER(listing_office)` to exclude brokerages masquerading as agents (e.g., Anchor Real Estate)
+- **HTML dashboard** — `src/dashboard.py` generates `data/dashboard.html` with all-time rankings, 365-day rolling rankings with trend badges, brokerage rankings, and per-town breakdowns
 
 ## Verification Commands
 ```bash
-# Regenerate leaderboard from existing data
+# Regenerate leaderboard + HTML dashboard from existing data
 python -m src.main --report-only
 
 # Test a single Redfin CSV chunk locally
@@ -80,6 +87,9 @@ sqlite3 data/agent_data.db "SELECT COUNT(*), COUNT(listing_agent) FROM transacti
 
 # Check enrichment progress
 sqlite3 data/agent_data.db "SELECT enrichment_status, COUNT(*) FROM transactions GROUP BY enrichment_status;"
+
+# Purge non-residential records (after re-scrape tags property_type)
+python -m src.main --purge-non-residential
 ```
 
 ## Known Constraints
@@ -105,11 +115,13 @@ gw-re-agent-scraper/
 │   ├── scraper.py     # Redfin CSV + Playwright agent enrichment
 │   ├── database.py    # SQLite schema, upsert, normalization, rankings, enrichment tracking
 │   ├── report.py      # Leaderboard markdown generator
+│   ├── dashboard.py   # HTML dashboard generator (trend badges, 365-day rolling)
 │   └── state.py       # Chunk-based resumable state machine
-├── tests/             # 97 unit tests (all passing)
+├── tests/             # Unit tests (all passing)
 ├── data/
-│   ├── agent_data.db       # 2,371 transactions (10 enriched with agent data)
-│   ├── agent_leaderboard.md # Generated report
+│   ├── agent_data.db       # 2,371 transactions (192+ enriched with agent data)
+│   ├── agent_leaderboard.md # Generated markdown report
+│   ├── dashboard.html      # Generated HTML dashboard with trend indicators
 │   └── scrape_state.json   # Tracks scraping progress
 ├── .github/workflows/scrape_agents.yml
 ├── CLAUDE.md, AGENTS.md, PROJECT_PLAN.md, README.md

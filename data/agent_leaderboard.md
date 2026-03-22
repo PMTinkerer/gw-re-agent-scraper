@@ -1,5 +1,5 @@
 # Real Estate Agent Leaderboard -- Southern Coastal Maine
-_Generated: 2026-03-22 14:23 UTC | Data: 2023-03-22 to 2026-03-20 | Sources: redfin_
+_Generated: 2026-03-22 18:21 UTC | Data: 2023-03-22 to 2026-03-20 | Sources: redfin_
 _Total sales analyzed: 2,371 | Unique listing agents: 119_
 
 ## Top 30 Listing Agents by Total Volume
@@ -10,32 +10,32 @@ _Total sales analyzed: 2,371 | Unique listing agents: 119_
 | 2 | Adam Parent | Maine Real Estate Co | 11 | $5.8M | $524K | 3 | Biddeford, Scarborough | 2026-02-20 |
 | 3 | Bob Letellier | Coldwell Banker Realty | 9 | $4.9M | $541K | 3 | Biddeford, Saco | 2025-07-18 |
 | 4 | Peter Mcpheeters | OceanView Properties | 3 | $3.8M | $1.3M | 2 | Biddeford | 2025-11-17 |
-| 5 | Anchor Real Estate | Anchor Real Estate | 2 | $3.3M | $1.7M | 2 | York, Kittery | 2026-01-27 |
-| 6 | Joey Radford | OceanView Properties | 5 | $3.3M | $650K | 3 | Biddeford | 2025-01-29 |
-| 7 | Margaret Mailman | Coldwell Banker Realty | 7 | $3.2M | $459K | 2 | Biddeford | 2025-12-08 |
-| 8 | Alissa Saulnier | Forge Real Estate | 2 | $3.2M | $1.6M | 2 | Saco | 2025-10-28 |
-| 9 | Erin Oldham | Portside Real Estate Group | 6 | $2.4M | $406K | 1 | Biddeford | 2025-06-30 |
-| 10 | Fred Andrews | Spectrum Real Estate | 3 | $2.3M | $768K | 3 | Biddeford | 2024-07-22 |
-| 11 | Daniel Letellier | Coldwell Banker Realty | 5 | $2.3M | $457K | 2 | Biddeford | 2025-05-28 |
-| 12 | Jane Cyr | Redfin Corporation | 4 | $2.0M | $505K | 1 | Biddeford, Wells | 2026-01-15 |
-| 13 | Marika Clark | Legacy Properties Sotheby's International Realty | 1 | $2.0M | $2.0M | 1 | Biddeford | 2025-07-23 |
-| 14 | Adrienne Robinson | Legacy Properties Sotheby's International Realty | 1 | $1.9M | $1.9M | 1 | Kennebunkport | 2025-06-30 |
-| 15 | Deana Burke | Conlon Realty | 2 | $1.8M | $904K | 2 | Biddeford | 2024-09-24 |
-| 16 | Victoria Benenti | Pack Maynard and Associates | 1 | $1.8M | $1.8M | 1 | Kennebunk | 2023-08-10 |
-| 17 | James Rathband | Keller Williams Realty | 2 | $1.8M | $890K | 1 | Biddeford | 2026-01-02 |
-| 18 | Bailey Pate | Maine Real Estate Co | 1 | $1.8M | $1.8M | 1 | Ogunquit | 2025-04-30 |
-| 19 | Tiffany Libb Pamela Starnes | Signature Homes Real Estate Group, LLC | 3 | $1.7M | $580K | 1 | Biddeford | 2024-11-22 |
-| 20 | Roz Anton | EXP Realty | 3 | $1.7M | $571K | 2 | Biddeford | 2025-12-10 |
-| 21 | Jane Chase | Landvest, Inc. | 1 | $1.6M | $1.6M | 1 | Biddeford | 2025-09-19 |
-| 22 | Anne Mcpheeters | OceanView Properties | 1 | $1.5M | $1.5M | 1 | Biddeford | 2025-08-01 |
-| 23 | Mary Dolloff | Chamberlain Realty | 1 | $1.4M | $1.4M | 1 | Saco | 2025-07-16 |
-| 24 | Shanna Jadooram | N/A | 1 | $1.1M | $1.1M | 1 | Kennebunkport | 2025-06-27 |
-| 25 | Mary Rockett | The Aland Realty Group, LLC | 1 | $1.1M | $1.1M | 1 | York | 2025-05-15 |
-| 26 | April Cohen | Duston Leddy Real Estate | 2 | $1.1M | $532K | 1 | Biddeford | 2025-06-25 |
-| 27 | Jonathan Safford | Better Homes & Gardens Real Estate/The Masiello Group | 2 | $1.0M | $514K | 2 | Biddeford | 2025-06-02 |
-| 28 | Kathleen Mccallum | EXP Realty | 2 | $960K | $480K | 1 | Kennebunkport, Biddeford | 2025-06-27 |
-| 29 | Cady Toussaint | Portside Real Estate Group | 2 | $895K | $448K | 1 | Biddeford | 2025-11-07 |
-| 30 | Aaron Chadbourne | Demetria Real Estate | 2 | $880K | $440K | 1 | Biddeford | 2024-06-21 |
+| 5 | Joey Radford | OceanView Properties | 5 | $3.3M | $650K | 3 | Biddeford | 2025-01-29 |
+| 6 | Margaret Mailman | Coldwell Banker Realty | 7 | $3.2M | $459K | 2 | Biddeford | 2025-12-08 |
+| 7 | Alissa Saulnier | Forge Real Estate | 2 | $3.2M | $1.6M | 2 | Saco | 2025-10-28 |
+| 8 | Erin Oldham | Portside Real Estate Group | 6 | $2.4M | $406K | 1 | Biddeford | 2025-06-30 |
+| 9 | Fred Andrews | Spectrum Real Estate | 3 | $2.3M | $768K | 3 | Biddeford | 2024-07-22 |
+| 10 | Daniel Letellier | Coldwell Banker Realty | 5 | $2.3M | $457K | 2 | Biddeford | 2025-05-28 |
+| 11 | Jane Cyr | Redfin Corporation | 4 | $2.0M | $505K | 1 | Biddeford, Wells | 2026-01-15 |
+| 12 | Marika Clark | Legacy Properties Sotheby's International Realty | 1 | $2.0M | $2.0M | 1 | Biddeford | 2025-07-23 |
+| 13 | Adrienne Robinson | Legacy Properties Sotheby's International Realty | 1 | $1.9M | $1.9M | 1 | Kennebunkport | 2025-06-30 |
+| 14 | Deana Burke | Conlon Realty | 2 | $1.8M | $904K | 2 | Biddeford | 2024-09-24 |
+| 15 | Victoria Benenti | Pack Maynard and Associates | 1 | $1.8M | $1.8M | 1 | Kennebunk | 2023-08-10 |
+| 16 | James Rathband | Keller Williams Realty | 2 | $1.8M | $890K | 1 | Biddeford | 2026-01-02 |
+| 17 | Bailey Pate | Maine Real Estate Co | 1 | $1.8M | $1.8M | 1 | Ogunquit | 2025-04-30 |
+| 18 | Tiffany Libb Pamela Starnes | Signature Homes Real Estate Group, LLC | 3 | $1.7M | $580K | 1 | Biddeford | 2024-11-22 |
+| 19 | Roz Anton | EXP Realty | 3 | $1.7M | $571K | 2 | Biddeford | 2025-12-10 |
+| 20 | Jane Chase | Landvest, Inc. | 1 | $1.6M | $1.6M | 1 | Biddeford | 2025-09-19 |
+| 21 | Anne Mcpheeters | OceanView Properties | 1 | $1.5M | $1.5M | 1 | Biddeford | 2025-08-01 |
+| 22 | Mary Dolloff | Chamberlain Realty | 1 | $1.4M | $1.4M | 1 | Saco | 2025-07-16 |
+| 23 | Shanna Jadooram | N/A | 1 | $1.1M | $1.1M | 1 | Kennebunkport | 2025-06-27 |
+| 24 | Mary Rockett | The Aland Realty Group, LLC | 1 | $1.1M | $1.1M | 1 | York | 2025-05-15 |
+| 25 | April Cohen | Duston Leddy Real Estate | 2 | $1.1M | $532K | 1 | Biddeford | 2025-06-25 |
+| 26 | Jonathan Safford | Better Homes & Gardens Real Estate/The Masiello Group | 2 | $1.0M | $514K | 2 | Biddeford | 2025-06-02 |
+| 27 | Kathleen Mccallum | EXP Realty | 2 | $960K | $480K | 1 | Kennebunkport, Biddeford | 2025-06-27 |
+| 28 | Cady Toussaint | Portside Real Estate Group | 2 | $895K | $448K | 1 | Biddeford | 2025-11-07 |
+| 29 | Aaron Chadbourne | Demetria Real Estate | 2 | $880K | $440K | 1 | Biddeford | 2024-06-21 |
+| 30 | Lisa Andrade | Dream Home Realty LLC | 2 | $879K | $440K | 0 | Saco, Biddeford | 2025-12-10 |
 
 ## Top 15 Brokerages by Total Volume
 
@@ -63,15 +63,13 @@ _Total sales analyzed: 2,371 | Unique listing agents: 119_
 
 | Rank | Agent | Office | Listing Sides | Total Volume |
 |------|-------|--------|--------------|-------------|
-| 1 | Anchor Real Estate | Anchor Real Estate | 1 | $1.1M |
-| 2 | Carrie Alex | KW Coastal and Lakes & Mountains Realty/Rochester | 1 | $400K |
+| 1 | Carrie Alex | KW Coastal and Lakes & Mountains Realty/Rochester | 1 | $400K |
 
 ### York
 
 | Rank | Agent | Office | Listing Sides | Total Volume |
 |------|-------|--------|--------------|-------------|
-| 1 | Anchor Real Estate | Anchor Real Estate | 1 | $2.2M |
-| 2 | Mary Rockett | The Aland Realty Group, LLC | 1 | $1.1M |
+| 1 | Mary Rockett | The Aland Realty Group, LLC | 1 | $1.1M |
 
 ### Ogunquit
 
@@ -154,4 +152,4 @@ _Total sales analyzed: 2,371 | Unique listing agents: 119_
   - Scarborough: 340 sales
   - Wells: 81 sales
   - York: 109 sales
-- **Report generated:** 2026-03-22 14:23 UTC
+- **Report generated:** 2026-03-22 18:21 UTC

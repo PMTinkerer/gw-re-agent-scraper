@@ -93,6 +93,7 @@ def init_db(conn: sqlite3.Connection) -> None:
     for col, typedef in [
         ('enrichment_status', 'TEXT'),
         ('enrichment_attempts', 'INTEGER DEFAULT 0'),
+        ('property_type', 'TEXT'),
     ]:
         assert col.isidentifier(), f'Invalid column name for migration: {col}'
         try:
@@ -153,14 +154,14 @@ def upsert_transaction(conn: sqlite3.Connection, record: dict) -> bool:
                 year_built, days_on_market, sale_date,
                 listing_agent, buyer_agent, listing_office, buyer_office,
                 source_url, data_source, scraped_at,
-                raw_listing_agent, raw_buyer_agent
+                raw_listing_agent, raw_buyer_agent, property_type
             ) VALUES (
                 :mls_number, :address, :city, :state, :zip,
                 :sale_price, :list_price, :beds, :baths, :sqft,
                 :year_built, :days_on_market, :sale_date,
                 :listing_agent, :buyer_agent, :listing_office, :buyer_office,
                 :source_url, :data_source, :scraped_at,
-                :raw_listing_agent, :raw_buyer_agent
+                :raw_listing_agent, :raw_buyer_agent, :property_type
             )
             ON CONFLICT(mls_number) DO UPDATE SET
                 sale_price = COALESCE(excluded.sale_price, transactions.sale_price),
@@ -172,7 +173,8 @@ def upsert_transaction(conn: sqlite3.Connection, record: dict) -> bool:
                 sale_date = COALESCE(excluded.sale_date, transactions.sale_date),
                 scraped_at = excluded.scraped_at,
                 raw_listing_agent = COALESCE(excluded.raw_listing_agent, transactions.raw_listing_agent),
-                raw_buyer_agent = COALESCE(excluded.raw_buyer_agent, transactions.raw_buyer_agent)
+                raw_buyer_agent = COALESCE(excluded.raw_buyer_agent, transactions.raw_buyer_agent),
+                property_type = COALESCE(excluded.property_type, transactions.property_type)
         ''', {
             'mls_number': str(mls).strip(),
             'address': record.get('address'),
@@ -196,6 +198,7 @@ def upsert_transaction(conn: sqlite3.Connection, record: dict) -> bool:
             'scraped_at': record.get('scraped_at', datetime.utcnow().isoformat()),
             'raw_listing_agent': raw_listing,
             'raw_buyer_agent': raw_buyer,
+            'property_type': record.get('property_type'),
         })
         return True
     except sqlite3.IntegrityError as e:

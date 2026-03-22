@@ -14,6 +14,7 @@ from .database import (
     get_enrichment_stats,
 )
 from .report import generate_leaderboard
+from .dashboard import generate_dashboard
 from .scraper import discover_redfin_region_id, scrape_redfin, scrape_realtor, enrich_agents_from_redfin
 from .state import (
     TOWNS, load_state, save_state, get_next_chunks,
@@ -27,6 +28,13 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S',
 )
 logger = logging.getLogger(__name__)
+
+
+def _generate_reports(conn):
+    """Generate all reports (rankings table, markdown leaderboard, HTML dashboard)."""
+    rebuild_rankings(conn)
+    generate_leaderboard(conn)
+    generate_dashboard(conn)
 
 
 def _ensure_region_ids(state: dict) -> bool:
@@ -120,6 +128,10 @@ def main() -> int:
         help='Number of URLs to process per enrichment run (default: 100)',
     )
     parser.add_argument(
+        '--purge-non-residential', action='store_true',
+        help='Delete transactions that are not Single Family or Condo',
+    )
+    parser.add_argument(
         '--db', type=str, default=None,
         help='Path to SQLite database file',
     )
@@ -158,17 +170,49 @@ def main() -> int:
         logger.info('Running fuzzy agent name merge...')
         merges = fuzzy_merge_agents(conn)
         logger.info('Merged %d agent name variants', len(merges))
-        rebuild_rankings(conn)
-        generate_leaderboard(conn)
+        _generate_reports(conn)
         conn.close()
         return 0
 
     if args.report_only:
         logger.info('Regenerating report from existing data...')
-        rebuild_rankings(conn)
-        path = generate_leaderboard(conn)
+        _generate_reports(conn)
         stats = get_stats(conn)
-        logger.info('Report generated: %s (%d transactions)', path, stats['total_transactions'])
+        logger.info('Reports generated (%d transactions)', stats['total_transactions'])
+        conn.close()
+        return 0
+
+    if args.purge_non_residential:
+        _ALLOWED_TYPES = {'Single Family Residential', 'Condo/Co-op'}
+        # Count what we'll delete
+        total = conn.execute('SELECT COUNT(*) FROM transactions').fetchone()[0]
+        tagged = conn.execute(
+            'SELECT COUNT(*) FROM transactions WHERE property_type IS NOT NULL'
+        ).fetchone()[0]
+        to_keep = conn.execute(
+            'SELECT COUNT(*) FROM transactions WHERE property_type IN (?, ?)',
+            tuple(_ALLOWED_TYPES),
+        ).fetchone()[0]
+        to_delete_typed = tagged - to_keep
+        untagged = total - tagged
+        logger.info(
+            'Purge preview: %d total, %d tagged, %d to keep, %d non-residential to delete, '
+            '%d untagged (will also be deleted)',
+            total, tagged, to_keep, to_delete_typed, untagged,
+        )
+        if to_keep == 0:
+            logger.warning('No records with allowed property types found. '
+                           'Run a scrape first to populate property_type column.')
+            conn.close()
+            return 1
+        deleted = conn.execute(
+            'DELETE FROM transactions WHERE property_type IS NULL '
+            'OR property_type NOT IN (?, ?)',
+            tuple(_ALLOWED_TYPES),
+        ).rowcount
+        conn.commit()
+        logger.info('Purged %d non-residential records. %d remain.', deleted, to_keep)
+        _generate_reports(conn)
         conn.close()
         return 0
 
@@ -187,8 +231,7 @@ def main() -> int:
             if merges:
                 logger.info('Merged %d agent name variants', len(merges))
 
-        rebuild_rankings(conn)
-        generate_leaderboard(conn)
+        _generate_reports(conn)
 
         e_stats = get_enrichment_stats(conn)
         if e_stats['pending'] == 0:
@@ -229,9 +272,8 @@ def main() -> int:
 
     if not chunks:
         logger.info('No pending chunks to process.')
-        # Still regenerate report
-        rebuild_rankings(conn)
-        generate_leaderboard(conn)
+        # Still regenerate reports
+        _generate_reports(conn)
         conn.close()
         return 0
 
@@ -270,8 +312,7 @@ def main() -> int:
         if merges:
             logger.info('Merged %d agent name variants', len(merges))
 
-    rebuild_rankings(conn)
-    generate_leaderboard(conn)
+    _generate_reports(conn)
 
     # Check if initial collection just completed
     if is_initial_complete(state) and state.get('mode') == 'initial':
