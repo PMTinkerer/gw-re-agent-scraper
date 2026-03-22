@@ -830,8 +830,16 @@ def enrich_agents_from_redfin(
     # Format: http://user:pass@host:port (supports HTTP and SOCKS5)
     # IPRoyal example: http://user:pass_country-us_session-{rand}_lifetime-10m@geo.iproyal.com:12321
     proxy_url = os.environ.get('PROXY_URL')
+    _proxy_base = None  # Parsed proxy dict for Playwright (server, username, password)
     if proxy_url:
-        logger.info('Using residential proxy: %s', proxy_url.split('@')[-1] if '@' in proxy_url else 'configured')
+        from urllib.parse import urlparse
+        parsed = urlparse(proxy_url)
+        _proxy_base = {
+            'server': f'{parsed.scheme}://{parsed.hostname}:{parsed.port}',
+            'username': parsed.username or '',
+            'password': parsed.password or '',
+        }
+        logger.info('Using residential proxy: %s:%s', parsed.hostname, parsed.port)
     else:
         logger.info('No PROXY_URL set — connecting directly (may be blocked on datacenter IPs)')
 
@@ -862,13 +870,12 @@ def enrich_agents_from_redfin(
 
         # Pre-warm: visit Redfin homepage to establish cookies and a normal session
         try:
-            warmup_proxy = {'server': proxy_url} if proxy_url else None
             warmup_ctx = browser.new_context(
                 user_agent=random.choice(_USER_AGENTS),
                 viewport=random.choice(_VIEWPORTS),
                 locale='en-US',
                 timezone_id='America/New_York',
-                **(dict(proxy=warmup_proxy) if warmup_proxy else {}),
+                **(dict(proxy=_proxy_base) if _proxy_base else {}),
             )
             warmup_page = warmup_ctx.new_page()
             warmup_page.route('**/*', _block_unnecessary_resources)
@@ -900,12 +907,12 @@ def enrich_agents_from_redfin(
 
                 # Fresh proxy session per page (rotates residential IP)
                 page_proxy = None
-                if proxy_url:
-                    # Replace _session-{anything}_ with a fresh random session ID
+                if _proxy_base:
+                    # Replace session-{anything} in password with a fresh random ID
                     # This tells IPRoyal (and similar providers) to assign a new IP
                     fresh_session = f'session-{random.randint(100000, 999999)}'
-                    rotated_url = re.sub(r'session-[^_&]+', fresh_session, proxy_url)
-                    page_proxy = {'server': rotated_url}
+                    rotated_password = re.sub(r'session-[^_&]+', fresh_session, _proxy_base['password'])
+                    page_proxy = {**_proxy_base, 'password': rotated_password}
 
                 context = browser.new_context(
                     user_agent=user_agent,
