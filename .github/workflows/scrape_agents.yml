@@ -26,6 +26,10 @@ permissions:
   pages: write
   id-token: write
 
+concurrency:
+  group: scraper
+  cancel-in-progress: false
+
 jobs:
   scrape:
     runs-on: ubuntu-latest
