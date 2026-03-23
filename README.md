@@ -7,15 +7,20 @@ Identifies the top real estate listing agents in southern coastal Maine using pu
 1. **Collects sold property data** from Redfin's CSV endpoint (address, price, MLS#, sold date, beds, baths, sqft)
 2. **Enriches with agent data** by visiting individual Redfin property pages via Playwright to extract listing agent name and brokerage
 3. **Normalizes agent names** and fuzzy-merges near-duplicates
-4. **Generates a ranked leaderboard** at `data/agent_leaderboard.md`
+4. **Generates a ranked leaderboard** — HTML dashboard with trend badges + markdown report
+
+## Live dashboard
+
+**https://pmtinkerer.github.io/gw-re-agent-scraper/** — auto-updates after every CI run.
 
 ## Current status
 
-- 2,371 transactions collected across 10 towns (March 2023–March 2026)
-- Playwright agent enrichment pipeline running via GitHub Actions with residential proxy
-- ~2,177 URLs pending enrichment (~27 automated runs to complete)
-- 99 unit tests passing
-- Live on GitHub with automated 4x/day enrichment
+- 2,311 SFH/Condo transactions across 10 towns (March 2023–March 2026)
+- 383 transactions enriched with agent data, ~1,928 pending (~24 automated runs to complete)
+- Property type filter active — only Single Family Residential + Condo/Co-op
+- HTML dashboard with all-time rankings, 365-day rolling rankings with trend badges, brokerage rankings, per-town breakdowns
+- 115 unit tests passing
+- Public repo on GitHub with automated 4x/day enrichment via residential proxy
 
 ## Setup
 
@@ -36,8 +41,11 @@ python -m src.main --mode initial --max-chunks 3 --source redfin
 # Enrich agent data from Redfin property pages (80 URLs per batch)
 python -m src.main --enrich --batch-size 80
 
-# Regenerate leaderboard from existing data
+# Regenerate leaderboard + HTML dashboard from existing data
 python -m src.main --report-only
+
+# Purge non-residential records (land, multi-family, mobile)
+python -m src.main --purge-non-residential
 
 # Run fuzzy agent name merge
 python -m src.main --merge-agents
@@ -55,16 +63,19 @@ The scraper runs automatically on GitHub Actions:
 - **During initial collection:** 4x/day (every 6 hours)
 - **After collection is complete:** Auto-detects and switches to 1x/day at midnight UTC
 - **Agent enrichment** runs automatically after CSV scraping, processing 80 URLs per run
+- **Dashboard auto-deployed** to GitHub Pages after every run
 
 Manual trigger available via Actions tab → "Scrape RE Agent Data" → "Run workflow" (supports `enrich_batch_size` input).
 
 ## Reading the leaderboard
 
-The output is `data/agent_leaderboard.md` with four sections:
-1. **Top 30 Listing Agents** — ranked by total listing volume
-2. **Top 15 Brokerages** — ranked by total volume across all agents
-3. **Top 5 Agents per Town** — local leaders in each of the 10 towns
-4. **Data Summary** — transaction counts, date ranges, source breakdown
+The HTML dashboard (`data/dashboard.html`, hosted on GitHub Pages) and markdown report (`data/agent_leaderboard.md`) contain:
+1. **Top 30 Listing Agents — All-Time** — ranked by total listing volume
+2. **Top 30 Listing Agents — Last 365 Days** — rolling rankings with trend badges showing who's heating up vs cooling off
+3. **Top 15 Brokerages** — ranked by total volume across all agents
+4. **Top 5 Agents per Town** — local leaders in each of the 10 towns
+
+Agents where the name matches the brokerage (e.g., "Anchor Real Estate") are excluded from agent rankings but included in brokerage rankings.
 
 ## Data sources
 

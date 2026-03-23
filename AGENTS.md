@@ -1,11 +1,13 @@
 # AGENTS.md — gw-re-agent-scraper
 
 ## Current Status
-**Phase: Agent Data Enrichment (Playwright pipeline BUILT — running)**
+**Phase: Agent Data Enrichment (running) + Dashboard Live**
 
-Redfin property data collected: 2,371 transactions across all 10 towns (March 2023–March 2026). Property fields are complete (address, price, MLS#, sold date, beds, baths, sqft).
+2,311 SFH/Condo transactions across all 10 towns (March 2023–March 2026). Non-residential records (land, multi-family, mobile) have been purged. All records tagged with `property_type`.
 
-**Playwright enrichment pipeline running in production** via GitHub Actions with residential proxy (IPRoyal). 192 URLs enriched successfully. ~2,177 URLs pending. Estimated ~27 runs at 80 URLs/batch to complete all enrichment.
+**Playwright enrichment pipeline running in production** via GitHub Actions with residential proxy (IPRoyal). 383 URLs enriched successfully. ~1,928 URLs pending. Estimated ~24 runs at 80 URLs/batch to complete.
+
+**HTML dashboard live** at https://pmtinkerer.github.io/gw-re-agent-scraper/ — auto-deploys to GitHub Pages after every CI run.
 
 ## What's In the Database
 | Town | Transactions | Avg Price | Date Range |
@@ -36,17 +38,20 @@ Redfin property data collected: 2,371 transactions across all 10 towns (March 20
 10. **Some Redfin URLs return intermittent CloudFront 403s** ("The request could not be satisfied") — these are transient CDN errors, not captchas. Marked as `error` and retried up to 3 times.
 
 ## Open Issues
-- **~2,177 URLs still pending enrichment** — pipeline running, ~27 runs at 80/batch to complete
-- York (109), Wells (81), Ogunquit (19) have lower counts due to county query limitations
+- **~1,928 URLs still pending enrichment** — pipeline running, ~24 runs at 80/batch to complete
+- York (99), Wells (73), Ogunquit (18) have lower counts due to county query limitations
 - Some pages may have `no_agent` (listing removed, very old, etc.) — accept this as data gap
+- Realtor.com GraphQL API investigated as alternative enrichment source — has agent data but far less comprehensive than Redfin (1,066 vs 2,311 records, data months stale). Not viable as replacement.
 
 ## Next Steps (Priority Order)
-1. **Run full enrichment** — `python -m src.main --enrich --batch-size 80` repeatedly, or via GitHub Actions (runs automatically)
+1. **Let enrichment complete** — running automatically 4x/day via GitHub Actions
 2. **Review fuzzy agent merge results** after enrichment is mostly complete
-3. **Push to GitHub and configure Actions** — first automated run
-4. **Review leaderboard** output once agent data is populated across all towns
+3. **Review dashboard** at https://pmtinkerer.github.io/gw-re-agent-scraper/ as data fills in
 
 ## Session Log
 - 2026-03-21 (session 1): Initial build from spec. All modules, GitHub Actions workflow, unit tests, and docs created.
 - 2026-03-21 (session 2): Discovered Redfin region IDs, found agent columns missing from CSV, adapted scraper for county queries and date format. Collected 2,371 transactions across 10 towns. Decided to skip RapidAPI (not credible) and use Playwright to enrich agent data from individual Redfin property pages. Committed code + data to local repo.
 - 2026-03-21 (session 3): Built Playwright enrichment pipeline. Key learnings: (a) Redfin has two different DOM structures for agent data depending on whether the listing agent is a Redfin employee; (b) must create fresh browser context per page to avoid CloudFront 403 blocks; (c) React hydration requires `wait_for_selector` with 8s timeout, not fixed delay; (d) 10-20s delay between pages required (5-10s caused CDN blocks). Successfully enriched 10 test URLs with 100% accuracy. Added 35 new tests (97 total). Updated GitHub Actions workflow with enrichment step.
+- 2026-03-22 (session 4): Pushed to GitHub. Configured residential proxy (IPRoyal) via PROXY_URL secret. Fixed proxy auth (split URL into server/username/password for Playwright). Added resource blocking to save ~70-80% proxy bandwidth.
+- 2026-03-22 (session 5): Built HTML dashboard with 4 sections (all-time agents, 365-day rolling with trend badges, brokerages, per-town). Added property type filter (SFH + Condo only, `uipt=1,2`). Added brokerage-as-agent exclusion. Re-scraped to tag `property_type`, auto-purged 1,636 non-residential records. Set up GitHub Pages for auto-deployed dashboard.
+- 2026-03-23 (session 6): Fixed merge conflict in dashboard from concurrent CI runs — added workflow concurrency control. Investigated Realtor.com GraphQL API as alternative enrichment source — functional but far less comprehensive than Redfin (1,066 vs 2,311 records, months stale). Decided to keep Redfin Playwright as primary enrichment. Fixed Pages auto-deploy by moving deployment into scraper workflow (GitHub bot pushes don't trigger separate workflows).

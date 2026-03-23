@@ -1,16 +1,18 @@
 # gw-re-agent-scraper — Project Context
 
 ## What This Project Does
-Scrapes publicly visible sold property data from Redfin for 10 southern coastal Maine towns, then enriches each transaction with listing agent and brokerage data by visiting individual Redfin property pages via Playwright. The primary deliverable is `data/agent_leaderboard.md` — a ranked leaderboard of agents by listing volume. Runs on GitHub Actions free tier with resumable chunk-based processing.
+Scrapes publicly visible sold property data from Redfin for 10 southern coastal Maine towns, then enriches each transaction with listing agent and brokerage data by visiting individual Redfin property pages via Playwright. The primary deliverables are `data/dashboard.html` (HTML leaderboard with trend badges, hosted on GitHub Pages) and `data/agent_leaderboard.md` (markdown version). Runs on GitHub Actions free tier with resumable chunk-based processing.
 
-## Current State (as of 2026-03-22)
-- **2,371 transactions in SQLite** with full property data (address, price, MLS#, sold date, beds, baths, sqft)
-- **192 transactions enriched with agent data** — Playwright enrichment running via GitHub Actions; ~2,177 URLs pending
-- **Property type filter active** — only Single Family Residential + Condo/Co-op (`uipt=1,2`); re-scrape in progress to tag `property_type`, auto-purge will remove land/multi-family/mobile records
-- **HTML dashboard** at `data/dashboard.html` — 4-section leaderboard with trend badges, auto-regenerated on every CI run
+## Current State (as of 2026-03-23)
+- **2,311 SFH/Condo transactions in SQLite** — non-residential records purged, property type filter active
+- **383 transactions enriched with agent data** — Playwright enrichment running via GitHub Actions; ~1,928 URLs pending
+- **Property type filter active** — only Single Family Residential + Condo/Co-op (`uipt=1,2`); purge complete, all records tagged with `property_type`
+- **HTML dashboard** at `data/dashboard.html` — 4-section leaderboard with trend badges, auto-deployed to GitHub Pages
+- **GitHub Pages live** at `https://pmtinkerer.github.io/gw-re-agent-scraper/` — auto-updates after every CI run
 - **Brokerage-as-agent exclusion** — agents where name = office (e.g., Anchor Real Estate) excluded from agent rankings but kept in brokerage rankings
+- **Workflow concurrency control** — only one scraper run at a time to prevent merge conflicts
 - **115 unit tests passing**
-- **Pushed to GitHub** — automated enrichment running 4x/day via residential proxy (IPRoyal)
+- **Public repo on GitHub** — automated enrichment running 4x/day via residential proxy (IPRoyal)
 
 ## Service Territory (10 Towns)
 Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old Orchard Beach, Scarborough — all in Maine.
