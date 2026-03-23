@@ -28,9 +28,9 @@
       "status": "pending"
     },
     "redfin_york": {
-      "status": "pending",
-      "rows": 10287,
-      "completed_at": "2026-03-21T18:06:27.725585"
+      "status": "complete",
+      "rows": 11507,
+      "completed_at": "2026-03-23T20:44:57.375223"
     },
     "realtor_york_2023": {
       "status": "pending"
@@ -156,6 +156,6 @@
   },
   "rapidapi_calls_this_month": 0,
   "rapidapi_month": null,
-  "last_run": "2026-03-23T18:54:41.457189",
+  "last_run": "2026-03-23T20:44:57.377222",
   "created_at": "2026-03-21T17:28:42.388121"
 }
