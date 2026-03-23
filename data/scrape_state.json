@@ -70,9 +70,9 @@
       "status": "pending"
     },
     "redfin_kennebunk": {
-      "status": "pending",
-      "rows": 7245,
-      "completed_at": "2026-03-21T17:34:30.575471"
+      "status": "complete",
+      "rows": 7287,
+      "completed_at": "2026-03-23T01:31:07.539853"
     },
     "realtor_kennebunk_2023": {
       "status": "pending"
@@ -84,9 +84,9 @@
       "status": "pending"
     },
     "redfin_kennebunkport": {
-      "status": "pending",
-      "rows": 4137,
-      "completed_at": "2026-03-21T17:37:19.430684"
+      "status": "complete",
+      "rows": 4074,
+      "completed_at": "2026-03-23T01:33:55.375324"
     },
     "realtor_kennebunkport_2023": {
       "status": "pending"
@@ -98,9 +98,9 @@
       "status": "pending"
     },
     "redfin_biddeford": {
-      "status": "pending",
-      "rows": 6762,
-      "completed_at": "2026-03-21T17:31:48.629116"
+      "status": "complete",
+      "rows": 6825,
+      "completed_at": "2026-03-23T01:28:25.166107"
     },
     "realtor_biddeford_2023": {
       "status": "pending"
@@ -156,6 +156,6 @@
   },
   "rapidapi_calls_this_month": 0,
   "rapidapi_month": null,
-  "last_run": "2026-03-22T17:28:31.153390",
+  "last_run": "2026-03-23T01:33:55.375449",
   "created_at": "2026-03-21T17:28:42.388121"
 }
