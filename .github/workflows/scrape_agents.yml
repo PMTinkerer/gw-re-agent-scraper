@@ -23,6 +23,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   scrape:
@@ -267,3 +269,17 @@ jobs:
             git pull --rebase origin main
             git push
           }
+
+      - name: Prepare Pages artifact
+        if: always()
+        run: |
+          mkdir -p _site
+          cp data/dashboard.html _site/index.html
+      - name: Upload Pages artifact
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site/
+      - name: Deploy to GitHub Pages
+        if: always()
+        uses: actions/deploy-pages@v4
