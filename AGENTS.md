@@ -5,7 +5,7 @@
 
 2,311 SFH/Condo transactions across all 10 towns (March 2023–March 2026). Non-residential records (land, multi-family, mobile) have been purged. All records tagged with `property_type`.
 
-**Playwright enrichment pipeline running in production** via GitHub Actions with residential proxy (IPRoyal). 383 URLs enriched successfully. ~1,928 URLs pending. Estimated ~24 runs at 80 URLs/batch to complete.
+**Playwright enrichment pipeline running in production** via GitHub Actions with residential proxy (IPRoyal). 660 URLs enriched successfully. ~1,647 URLs pending. Estimated ~21 runs at 80 URLs/batch to complete.
 
 **HTML dashboard live** at https://pmtinkerer.github.io/gw-re-agent-scraper/ — auto-deploys to GitHub Pages after every CI run.
 
@@ -38,7 +38,7 @@
 10. **Some Redfin URLs return intermittent CloudFront 403s** ("The request could not be satisfied") — these are transient CDN errors, not captchas. Marked as `error` and retried up to 3 times.
 
 ## Open Issues
-- **~1,928 URLs still pending enrichment** — pipeline running, ~24 runs at 80/batch to complete
+- **~1,647 URLs still pending enrichment** — pipeline running, ~21 runs at 80/batch to complete
 - York (99), Wells (73), Ogunquit (18) have lower counts due to county query limitations
 - Some pages may have `no_agent` (listing removed, very old, etc.) — accept this as data gap
 - Realtor.com GraphQL API investigated as alternative enrichment source — has agent data but far less comprehensive than Redfin (1,066 vs 2,311 records, data months stale). Not viable as replacement.

@@ -19,7 +19,7 @@ Identify the top real estate listing agents across 10 southern Maine towns using
 
 ## Current Priority: Phase 10 — Enrichment Completion
 
-Enrichment running in production via GitHub Actions with IPRoyal residential proxy. 383 URLs enriched, ~1,928 remaining. Dashboard live at https://pmtinkerer.github.io/gw-re-agent-scraper/
+Enrichment running in production via GitHub Actions with IPRoyal residential proxy. 660 URLs enriched, ~1,647 remaining. Dashboard live at https://pmtinkerer.github.io/gw-re-agent-scraper/
 
 **What was built:**
 - `enrich_agents_from_redfin(conn, batch_size, headless)` in `src/scraper.py`
@@ -31,7 +31,7 @@ Enrichment running in production via GitHub Actions with IPRoyal residential pro
 - CLI: `python -m src.main --enrich --batch-size 80`
 - GitHub Actions step runs enrichment automatically 4x/day
 
-**Estimated runtime:** ~24 runs × 80 URLs × ~20s/URL ≈ 27 min/run, fits 45-min Actions timeout
+**Estimated runtime:** ~21 runs × 80 URLs × ~20s/URL ≈ 27 min/run, fits 45-min Actions timeout
 
 ## Decision Log
 | Date | Decision | Rationale |

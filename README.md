@@ -16,7 +16,7 @@ Identifies the top real estate listing agents in southern coastal Maine using pu
 ## Current status
 
 - 2,311 SFH/Condo transactions across 10 towns (March 2023–March 2026)
-- 383 transactions enriched with agent data, ~1,928 pending (~24 automated runs to complete)
+- 660 transactions enriched with agent data, ~1,647 pending (~21 automated runs to complete)
 - Property type filter active — only Single Family Residential + Condo/Co-op
 - HTML dashboard with all-time rankings, 365-day rolling rankings with trend badges, brokerage rankings, per-town breakdowns
 - 115 unit tests passing

@@ -3,9 +3,9 @@
 ## What This Project Does
 Scrapes publicly visible sold property data from Redfin for 10 southern coastal Maine towns, then enriches each transaction with listing agent and brokerage data by visiting individual Redfin property pages via Playwright. The primary deliverables are `data/dashboard.html` (HTML leaderboard with trend badges, hosted on GitHub Pages) and `data/agent_leaderboard.md` (markdown version). Runs on GitHub Actions free tier with resumable chunk-based processing.
 
-## Current State (as of 2026-03-23)
+## Current State (as of 2026-03-24)
 - **2,311 SFH/Condo transactions in SQLite** — non-residential records purged, property type filter active
-- **383 transactions enriched with agent data** — Playwright enrichment running via GitHub Actions; ~1,928 URLs pending
+- **660 transactions enriched with agent data** — Playwright enrichment running via GitHub Actions; ~1,647 URLs pending
 - **Property type filter active** — only Single Family Residential + Condo/Co-op (`uipt=1,2`); purge complete, all records tagged with `property_type`
 - **HTML dashboard** at `data/dashboard.html` — 4-section leaderboard with trend badges, auto-deployed to GitHub Pages
 - **GitHub Pages live** at `https://pmtinkerer.github.io/gw-re-agent-scraper/` — auto-updates after every CI run
