@@ -1,18 +1,18 @@
 # Real Estate Agent Leaderboard -- Southern Coastal Maine
-_Generated: 2026-03-26 19:27 UTC | Data: 2023-03-24 to 2026-03-20 | Sources: redfin_
-_Total sales analyzed: 2,311 | Unique listing agents: 518_
+_Generated: 2026-03-27 01:58 UTC | Data: 2023-03-24 to 2026-03-20 | Sources: redfin_
+_Total sales analyzed: 2,311 | Unique listing agents: 540_
 
 ## Top 30 Listing Agents by Total Volume
 
 | Rank | Agent | Office | Listing Sides | Total Volume | Avg Price | High-Value (>=500K) | Primary Towns | Most Recent |
 |------|-------|--------|--------------|-------------|-----------|-------------------|--------------|-------------|
 | 1 | William Gaynor | Legacy Properties Sotheby's International Realty | 7 | $37.1M | $5.3M | 7 | Kennebunkport, Kennebunk | 2025-08-07 |
-| 2 | Heidi Maynard | Pack Maynard and Associates | 16 | $23.3M | $1.5M | 15 | Kennebunkport, Kennebunk | 2024-12-02 |
-| 3 | Jessica Girard | Pack Maynard and Associates | 18 | $22.8M | $1.3M | 16 | Kennebunkport, Kennebunk | 2025-12-03 |
-| 4 | Tracy Jackson Mccarty | The Aland Realty Group, LLC | 22 | $21.8M | $991K | 21 | York | 2026-01-22 |
-| 5 | Troy Williams | Keller Williams Coastal and Lakes & Mountains Realty | 31 | $21.8M | $703K | 15 | Kittery, York, Wells | 2026-03-20 |
-| 6 | Victoria Benenti | Pack Maynard and Associates | 14 | $17.8M | $1.3M | 13 | Kennebunkport, Kennebunk | 2026-03-06 |
-| 7 | Anne Erwin Real Estate | Anne Erwin Sotheby's International Realty | 15 | $16.5M | $1.1M | 14 | Kittery, York, Ogunquit | 2026-01-15 |
+| 2 | Tracy Jackson Mccarty | The Aland Realty Group, LLC | 32 | $31.9M | $996K | 30 | York | 2026-02-04 |
+| 3 | Troy Williams | Keller Williams Coastal and Lakes & Mountains Realty | 37 | $26.2M | $708K | 18 | York, Kittery, Wells | 2026-03-20 |
+| 4 | Heidi Maynard | Pack Maynard and Associates | 16 | $23.3M | $1.5M | 15 | Kennebunkport, Kennebunk | 2024-12-02 |
+| 5 | Jessica Girard | Pack Maynard and Associates | 18 | $22.8M | $1.3M | 16 | Kennebunkport, Kennebunk | 2025-12-03 |
+| 6 | Anne Erwin Real Estate | Anne Erwin Sotheby's International Realty | 18 | $18.5M | $1.0M | 17 | Kittery, York, Ogunquit | 2026-02-27 |
+| 7 | Victoria Benenti | Pack Maynard and Associates | 14 | $17.8M | $1.3M | 13 | Kennebunkport, Kennebunk | 2026-03-06 |
 | 8 | Heidi Maynard Corey Tracy | Pack Maynard and Associates | 10 | $15.9M | $1.6M | 10 | Kennebunkport, Kennebunk, Wells | 2025-12-30 |
 | 9 | Rebecca Bassett | Portside Real Estate Group | 17 | $15.9M | $935K | 14 | Kennebunk, Kennebunkport | 2025-10-02 |
 | 10 | Peter Mcpheeters | OceanView Properties | 8 | $15.8M | $2.0M | 7 | Biddeford | 2025-11-17 |
@@ -20,20 +20,20 @@ _Total sales analyzed: 2,311 | Unique listing agents: 518_
 | 12 | Maureen Deleo | Keller Williams Realty | 8 | $14.8M | $1.8M | 8 | Kennebunk, Kennebunkport | 2025-04-23 |
 | 13 | Dennis Page | Dennis M. Page Real Estate | 24 | $13.6M | $568K | 20 | Kittery | 2025-10-17 |
 | 14 | Elise Wyman | Pack Maynard and Associates | 9 | $13.2M | $1.5M | 9 | Kennebunk, Kennebunkport | 2025-10-21 |
-| 15 | Jane Cyr | Redfin Corporation | 15 | $12.0M | $800K | 8 | Wells, Biddeford, Kennebunkport | 2026-01-15 |
-| 16 | Elizabeth Coughlan | Legacy Properties Sotheby's International Realty | 3 | $11.5M | $3.8M | 3 | Kennebunk, Kennebunkport | 2024-07-29 |
-| 17 | Bette Schofield | Pack Maynard and Associates | 7 | $10.8M | $1.5M | 6 | Kennebunkport, Kennebunk | 2025-12-10 |
-| 18 | Christopher Erikson | The Aland Realty Group, LLC | 8 | $10.6M | $1.3M | 8 | Kittery | 2025-09-18 |
-| 19 | Carrie Scoville Amy Foley | Signature Homes Real Estate Group, LLC | 18 | $9.9M | $552K | 9 | Kennebunk, Kittery, Biddeford | 2025-05-13 |
-| 20 | Adrienne Robinson | Legacy Properties Sotheby's International Realty | 6 | $9.4M | $1.6M | 6 | Kennebunkport, Kennebunk | 2025-06-30 |
-| 21 | Adam Parent | Maine Real Estate Co | 21 | $9.2M | $437K | 6 | Biddeford, Saco, Wells | 2026-02-20 |
-| 22 | David Marsden | Marsden Real Estate | 15 | $8.9M | $593K | 10 | Biddeford, Kennebunkport | 2025-08-15 |
-| 23 | Heather Shields | Legacy Properties Sotheby's International Realty | 1 | $8.4M | $8.4M | 1 | Kennebunkport | 2024-09-13 |
-| 24 | Julie Barros | Coldwell Banker Realty | 12 | $8.2M | $684K | 10 | Kennebunk, Kennebunkport | 2026-01-08 |
-| 25 | Heather Motes | Sand Dollar Real Estate | 8 | $8.1M | $1.0M | 5 | Kennebunkport | 2025-10-03 |
-| 26 | Jeffrey Jellison | CENTURY 21 Atlantic Realty | 6 | $7.8M | $1.3M | 5 | York, Kittery | 2025-10-21 |
-| 27 | Andrea Ladd | Keller Williams Realty | 3 | $7.7M | $2.6M | 3 | Kennebunk | 2025-12-05 |
-| 28 | Mary Rockett | The Aland Realty Group, LLC | 7 | $7.6M | $1.1M | 7 | York | 2026-03-20 |
+| 15 | Mary Rockett | The Aland Realty Group, LLC | 12 | $13.0M | $1.1M | 12 | York | 2026-03-20 |
+| 16 | Jane Cyr | Redfin Corporation | 15 | $12.0M | $800K | 8 | Wells, Biddeford, Kennebunkport | 2026-01-15 |
+| 17 | Elizabeth Coughlan | Legacy Properties Sotheby's International Realty | 3 | $11.5M | $3.8M | 3 | Kennebunk, Kennebunkport | 2024-07-29 |
+| 18 | Bette Schofield | Pack Maynard and Associates | 7 | $10.8M | $1.5M | 6 | Kennebunkport, Kennebunk | 2025-12-10 |
+| 19 | Christopher Erikson | The Aland Realty Group, LLC | 8 | $10.6M | $1.3M | 8 | Kittery | 2025-09-18 |
+| 20 | Carrie Scoville Amy Foley | Signature Homes Real Estate Group, LLC | 18 | $9.9M | $552K | 9 | Kennebunk, Kittery, Biddeford | 2025-05-13 |
+| 21 | Adam Parent | Maine Real Estate Co | 23 | $9.9M | $431K | 6 | Biddeford, Saco, Wells | 2026-02-20 |
+| 22 | Adrienne Robinson | Legacy Properties Sotheby's International Realty | 6 | $9.4M | $1.6M | 6 | Kennebunkport, Kennebunk | 2025-06-30 |
+| 23 | David Marsden | Marsden Real Estate | 15 | $8.9M | $593K | 10 | Biddeford, Kennebunkport | 2025-08-15 |
+| 24 | Heather Shields | Legacy Properties Sotheby's International Realty | 1 | $8.4M | $8.4M | 1 | Kennebunkport | 2024-09-13 |
+| 25 | Julie Barros | Coldwell Banker Realty | 12 | $8.2M | $684K | 10 | Kennebunk, Kennebunkport | 2026-01-08 |
+| 26 | Heather Motes | Sand Dollar Real Estate | 8 | $8.1M | $1.0M | 5 | Kennebunkport | 2025-10-03 |
+| 27 | Jeffrey Jellison | CENTURY 21 Atlantic Realty | 6 | $7.8M | $1.3M | 5 | York, Kittery | 2025-10-21 |
+| 28 | Andrea Ladd | Keller Williams Realty | 3 | $7.7M | $2.6M | 3 | Kennebunk | 2025-12-05 |
 | 29 | Hylah Riley | Berkshire Hathaway HomeServices Verani Realty | 10 | $7.5M | $753K | 7 | Kennebunk, Kennebunkport | 2025-06-23 |
 | 30 | Karen Schlegel | Schlegel Realty | 9 | $7.0M | $781K | 8 | Kennebunkport, Kennebunk | 2026-01-30 |
 
@@ -41,21 +41,21 @@ _Total sales analyzed: 2,311 | Unique listing agents: 518_
 
 | Rank | Brokerage | Listing Sides | Total Volume | Avg Price | Top Agents |
 |------|-----------|--------------|-------------|-----------|------------|
-| 1 | Pack Maynard and Associates | 105 | $135.9M | $1.3M | Jessica Girard, Heidi Maynard, Victoria Benenti |
+| 1 | Pack Maynard and Associates | 106 | $136.6M | $1.3M | Jessica Girard, Heidi Maynard, Victoria Benenti |
 | 2 | Legacy Properties Sotheby's International Realty | 34 | $90.7M | $2.7M | William Gaynor, Adrienne Robinson, Randal Simon |
-| 3 | Keller Williams Realty | 75 | $59.7M | $797K | Maureen Deleo, Michael Thomas, Cynthia Dubois-Cote |
-| 4 | Coldwell Banker Realty | 115 | $58.0M | $504K | Bob Letellier, Daniel Letellier, Keri Walker |
-| 5 | The Aland Realty Group, LLC | 62 | $56.6M | $914K | Tracy Jackson Mccarty, Christopher Erikson, Mary Rockett |
-| 6 | Portside Real Estate Group | 81 | $51.3M | $634K | Rebecca Bassett, Erin Oldham, Jeffrey Rioux |
-| 7 | Keller Williams Coastal and Lakes & Mountains Realty | 64 | $42.5M | $664K | Troy Williams, Alicia Goodwin, Janice Grady |
+| 3 | The Aland Realty Group, LLC | 78 | $72.5M | $930K | Tracy Jackson Mccarty, Mary Rockett, Christopher Erikson |
+| 4 | Keller Williams Realty | 83 | $66.9M | $806K | Maureen Deleo, Michael Thomas, Cynthia Dubois-Cote |
+| 5 | Coldwell Banker Realty | 120 | $60.0M | $500K | Bob Letellier, Daniel Letellier, Keri Walker |
+| 6 | Portside Real Estate Group | 85 | $54.5M | $641K | Rebecca Bassett, Erin Oldham, Jeffrey Rioux |
+| 7 | Keller Williams Coastal and Lakes & Mountains Realty | 73 | $52.0M | $712K | Troy Williams, Alicia Goodwin, Janice Grady |
 | 8 | Kennebunk Beach Realty | 33 | $29.1M | $882K | Denise Hodsdon, Helen Curry, Laura Ross |
 | 9 | OceanView Properties | 21 | $27.2M | $1.3M | Joey Radford, Peter Mcpheeters, Anne Mcpheeters |
-| 10 | EXP Realty | 46 | $22.7M | $494K | Roz Anton, Kathleen Mccallum, John Krouse |
+| 10 | EXP Realty | 47 | $23.0M | $490K | Roz Anton, Kathleen Mccallum, Janna Syrene |
 | 11 | Redfin Corporation | 31 | $22.3M | $720K | Jane Cyr, Megan Mcshane, Doreen Soares |
-| 12 | Berkshire Hathaway HomeServices Verani Realty | 29 | $21.6M | $746K | Hylah Riley, Betty Smith, Kim Jarmas |
-| 13 | Better Homes & Gardens Real Estate/The Masiello Group | 33 | $20.5M | $621K | Jonathan Safford, Steven Brunette, Paula Standley |
-| 14 | RE/MAX Shoreline | 35 | $20.2M | $577K | Pamela Gray, Glenn Thibodeau, Crystal Tropeano |
-| 15 | Signature Homes Real Estate Group, LLC | 26 | $14.6M | $561K | Carrie Scoville Amy Foley, Ashley Lutko Donna Galluzzo, Matthew Lamontagne Gena Lamontagne |
+| 12 | RE/MAX Shoreline | 38 | $21.8M | $574K | Pamela Gray, Glenn Thibodeau, Crystal Tropeano |
+| 13 | Berkshire Hathaway HomeServices Verani Realty | 29 | $21.6M | $746K | Hylah Riley, Betty Smith, Kim Jarmas |
+| 14 | Better Homes & Gardens Real Estate/The Masiello Group | 34 | $21.2M | $624K | Steven Brunette, Jonathan Safford, Paula Standley |
+| 15 | Signature Homes Real Estate Group, LLC | 27 | $15.3M | $568K | Carrie Scoville Amy Foley, Ashley Lutko Donna Galluzzo, Matthew Lamontagne Gena Lamontagne |
 
 ## Top 5 Listing Agents by Town
 
@@ -73,31 +73,31 @@ _Total sales analyzed: 2,311 | Unique listing agents: 518_
 
 | Rank | Agent | Office | Listing Sides | Total Volume |
 |------|-------|--------|--------------|-------------|
-| 1 | Tracy Jackson Mccarty | The Aland Realty Group, LLC | 22 | $21.8M |
-| 2 | Mary Rockett | The Aland Realty Group, LLC | 7 | $7.6M |
-| 3 | Jeffrey Jellison | CENTURY 21 Atlantic Realty | 5 | $6.7M |
-| 4 | Troy Williams | Keller Williams Coastal and Lakes & Mountains Realty | 9 | $6.6M |
-| 5 | Nola Cady | Keller Williams Coastal and Lakes & Mountains Realty | 1 | $2.9M |
+| 1 | Tracy Jackson Mccarty | The Aland Realty Group, LLC | 32 | $31.9M |
+| 2 | Mary Rockett | The Aland Realty Group, LLC | 12 | $13.0M |
+| 3 | Troy Williams | Keller Williams Coastal and Lakes & Mountains Realty | 14 | $10.9M |
+| 4 | Jeffrey Jellison | CENTURY 21 Atlantic Realty | 5 | $6.7M |
+| 5 | Nola Cady | Keller Williams Coastal and Lakes & Mountains Realty | 2 | $5.2M |
 
 ### Ogunquit
 
 | Rank | Agent | Office | Listing Sides | Total Volume |
 |------|-------|--------|--------------|-------------|
-| 1 | Gail Bergeron | The Aland Realty Group, LLC | 2 | $1.5M |
-| 2 | Donald Wunder | RE/MAX Realty One | 2 | $1.5M |
+| 1 | Donald Wunder | RE/MAX Realty One | 3 | $2.2M |
+| 2 | Gail Bergeron | The Aland Realty Group, LLC | 2 | $1.5M |
 | 3 | Anne Erwin Real Estate | Anne Erwin Sotheby's International Realty | 2 | $1.1M |
 | 4 | Abigail Douris | RE/MAX Realty One | 1 | $620K |
-| 5 | Troy Williams | Keller Williams Coastal and Lakes & Mountains Realty | 1 | $288K |
+| 5 | Shayna Wright | Coldwell Banker Realty | 1 | $400K |
 
 ### Wells
 
 | Rank | Agent | Office | Listing Sides | Total Volume |
 |------|-------|--------|--------------|-------------|
-| 1 | Steven Weigel | Y-Gull & Associates | 1 | $4.5M |
-| 2 | Troy Williams | Keller Williams Coastal and Lakes & Mountains Realty | 3 | $4.0M |
-| 3 | Greg Gosselin | Gosselin Realty Group | 4 | $3.2M |
+| 1 | Steven Weigel | Y-Gull & Associates | 2 | $6.2M |
+| 2 | Troy Williams | Keller Williams Coastal and Lakes & Mountains Realty | 4 | $4.1M |
+| 3 | Greg Gosselin | Gosselin Realty Group | 5 | $4.0M |
 | 4 | Jane Cyr | Redfin Corporation | 6 | $2.7M |
-| 5 | Lorilyn Barrett | Coldwell Banker Yorke Realty | 4 | $2.2M |
+| 5 | Steven Brunette | Better Homes & Gardens Real Estate/The Masiello Group | 4 | $2.6M |
 
 ### Kennebunk
 
@@ -133,21 +133,21 @@ _Total sales analyzed: 2,311 | Unique listing agents: 518_
 
 | Rank | Agent | Office | Listing Sides | Total Volume |
 |------|-------|--------|--------------|-------------|
-| 1 | Alissa Saulnier | Forge Real Estate | 2 | $3.2M |
-| 2 | Adam Parent | Maine Real Estate Co | 5 | $2.5M |
-| 3 | Mary Dolloff | Chamberlain Realty | 1 | $1.4M |
-| 4 | Megan Mcshane | Redfin Corporation | 2 | $1.0M |
-| 5 | Matthew Dibiase | Landing Real Estate | 1 | $850K |
+| 1 | Sandra Murray | Keller Williams Realty | 2 | $4.2M |
+| 2 | Adam Parent | Maine Real Estate Co | 7 | $3.2M |
+| 3 | Alissa Saulnier | Forge Real Estate | 2 | $3.2M |
+| 4 | Bailey Pate | Maine Real Estate Co | 2 | $1.6M |
+| 5 | Mary Dolloff | Chamberlain Realty | 1 | $1.4M |
 
 ### Old Orchard Beach
 
 | Rank | Agent | Office | Listing Sides | Total Volume |
 |------|-------|--------|--------------|-------------|
 | 1 | Megan Mcshane | Redfin Corporation | 2 | $1.1M |
-| 2 | Nancy Moreshead | The Real Estate Store | 2 | $900K |
-| 3 | Cady Toussaint | Portside Real Estate Group | 1 | $890K |
-| 4 | Chelsea Locke | Waypoint Brokers Collective | 1 | $829K |
-| 5 | Christopher Davis | Real Broker | 1 | $805K |
+| 2 | Matthew Lamontagne Gena Lamontagne | Signature Homes Real Estate Group, LLC | 2 | $1.0M |
+| 3 | Nancy Moreshead | The Real Estate Store | 2 | $900K |
+| 4 | Cady Toussaint | Portside Real Estate Group | 1 | $890K |
+| 5 | Chelsea Locke | Waypoint Brokers Collective | 1 | $829K |
 
 ### Scarborough
 
@@ -156,7 +156,7 @@ _No data available for this town._
 ## Data Summary
 
 - **Total transactions:** 2,311
-- **With listing agent:** 1,293
+- **With listing agent:** 1,373
 - **Date range:** 2023-03-24 to 2026-03-20
 - **Sources:**
   - Redfin: 2,311 properties
@@ -171,4 +171,4 @@ _No data available for this town._
   - Scarborough: 341 sales
   - Wells: 73 sales
   - York: 99 sales
-- **Report generated:** 2026-03-26 19:27 UTC
+- **Report generated:** 2026-03-27 01:58 UTC
