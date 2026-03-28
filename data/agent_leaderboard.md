@@ -1,5 +1,5 @@
 # Real Estate Agent Leaderboard -- Southern Coastal Maine
-_Generated: 2026-03-27 18:54 UTC | Data: 2023-03-24 to 2026-03-20 | Sources: redfin_
+_Generated: 2026-03-28 01:24 UTC | Data: 2023-03-24 to 2026-03-20 | Sources: redfin_
 _Total sales analyzed: 2,311 | Unique listing agents: 601_
 
 ## Top 30 Listing Agents by Total Volume
@@ -171,4 +171,4 @@ _No data available for this town._
   - Scarborough: 341 sales
   - Wells: 73 sales
   - York: 99 sales
-- **Report generated:** 2026-03-27 18:54 UTC
+- **Report generated:** 2026-03-28 01:24 UTC
