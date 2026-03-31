@@ -13,13 +13,14 @@ Identify the top real estate listing agents across 10 southern Maine towns using
 - [x] Phase 7: Push to GitHub, configure residential proxy, automated enrichment running
 - [x] Phase 8: HTML dashboard with trend badges, deployed to GitHub Pages
 - [x] Phase 9: Property type filter (SFH + Condo only), purge non-residential records
-- [ ] Phase 10: Enrichment completion (~24 batches remaining at 80 URLs/batch)
-- [ ] Phase 11: Agent name normalization tuning with real data
-- [ ] Phase 12: Leaderboard review and incremental mode
+- [x] Phase 10: Office name normalization and brokerage-as-agent exclusion list
+- [ ] Phase 11: Enrichment completion (~7 batches remaining at 80 URLs/batch)
+- [ ] Phase 12: Agent name normalization tuning with real data
+- [ ] Phase 13: Leaderboard review and incremental mode
 
-## Current Priority: Phase 10 — Enrichment Completion
+## Current Priority: Phase 11 — Enrichment Completion
 
-Enrichment running in production via GitHub Actions with IPRoyal residential proxy. 660 URLs enriched, ~1,647 remaining. Dashboard live at https://pmtinkerer.github.io/gw-re-agent-scraper/
+Enrichment running in production via GitHub Actions with IPRoyal residential proxy. 1,762 URLs enriched (76%), ~526 remaining. Dashboard live at https://pmtinkerer.github.io/gw-re-agent-scraper/
 
 **What was built:**
 - `enrich_agents_from_redfin(conn, batch_size, headless)` in `src/scraper.py`
@@ -31,7 +32,7 @@ Enrichment running in production via GitHub Actions with IPRoyal residential pro
 - CLI: `python -m src.main --enrich --batch-size 80`
 - GitHub Actions step runs enrichment automatically 4x/day
 
-**Estimated runtime:** ~21 runs × 80 URLs × ~20s/URL ≈ 27 min/run, fits 45-min Actions timeout
+**Estimated runtime:** ~7 runs × 80 URLs × ~20s/URL ≈ 27 min/run, fits 45-min Actions timeout
 
 ## Decision Log
 | Date | Decision | Rationale |
@@ -53,6 +54,10 @@ Enrichment running in production via GitHub Actions with IPRoyal residential pro
 | 2026-03-22 | HTML dashboard on GitHub Pages | Auto-deployed after every CI run for zero-effort access to latest rankings |
 | 2026-03-23 | Workflow concurrency control | Prevents parallel CI runs from creating merge conflicts on binary DB file |
 | 2026-03-23 | Keep Redfin over Realtor.com | Realtor.com GraphQL API has agent data but only 1,066 results (vs 2,311) and months stale — not viable as primary source |
+| 2026-03-30 | Keep Redfin over PrimeMLS | PrimeMLS is authoritative MLS but Cloudflare-protected, explicit anti-scraping ToS, sold data likely behind login, IDX feed requires membership + $500+/mo |
+| 2026-03-31 | Office name normalization map | 15 variant office spellings merged to canonical names via OFFICE_NORMALIZATION dict — applied at upsert time |
+| 2026-03-31 | BROKERAGE_AS_AGENT exclusion set | Known brokerage-named agents (Anchor RE, Anne Erwin RE) excluded from agent rankings via explicit set, not just name=office match |
+| 2026-03-31 | 365-day rolling brokerage leaderboard | Added rolling brokerage rankings with trend badges and operating towns — mirrors existing agent pattern |
 
 ## Changelog
 - 2026-03-21: Initial build complete. All Python modules, GitHub Actions workflow, unit tests, and documentation created.
@@ -60,3 +65,5 @@ Enrichment running in production via GitHub Actions with IPRoyal residential pro
 - 2026-03-21: Built and validated Playwright agent enrichment pipeline. Handles two Redfin DOM structures, fresh browser context per page, CDN error detection and retry. 10/10 test URLs enriched correctly. 97 tests passing. GitHub Actions workflow updated with enrichment step.
 - 2026-03-22: Pushed to GitHub. Configured residential proxy (IPRoyal). Added resource blocking. Built HTML dashboard with trend badges. Added property type filter (SFH + Condo only). Added brokerage-as-agent exclusion. Purged 1,636 non-residential records. Set up GitHub Pages.
 - 2026-03-23: Fixed merge conflict from concurrent CI runs (added workflow concurrency control). Fixed Pages auto-deploy. Investigated Realtor.com GraphQL API — functional but far less comprehensive than Redfin; not viable as replacement. 115 tests passing.
+- 2026-03-30: Diagnosed IPRoyal proxy outage (ERR_TUNNEL_CONNECTION_FAILED since Mar 28). Evaluated PrimeMLS — not viable. Fixed table column alignment. Enrichment at 67%.
+- 2026-03-31: Added 365-day rolling brokerage leaderboard with trend badges and operating towns (6 sections total). Added office name normalization (15 variants, 139 rows). Added Anne Erwin Real Estate to brokerage-as-agent exclusion. 125 tests passing. Enrichment at 76%.

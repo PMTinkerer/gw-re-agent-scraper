@@ -16,10 +16,11 @@ Identifies the top real estate listing agents in southern coastal Maine using pu
 ## Current status
 
 - 2,311 SFH/Condo transactions across 10 towns (March 2023–March 2026)
-- 660 transactions enriched with agent data, ~1,647 pending (~21 automated runs to complete)
+- 1,762 transactions enriched with agent data (76%), ~526 pending (~7 automated runs to complete)
 - Property type filter active — only Single Family Residential + Condo/Co-op
-- HTML dashboard with all-time rankings, 365-day rolling rankings with trend badges, brokerage rankings, per-town breakdowns
-- 115 unit tests passing
+- Office name normalization — 15 variant spellings merged to canonical names
+- HTML dashboard with 6 sections: all-time + rolling agents, all-time + rolling brokerages (with trends + towns), per-town breakdowns
+- 125 unit tests passing
 - Public repo on GitHub with automated 4x/day enrichment via residential proxy
 
 ## Setup
@@ -72,10 +73,11 @@ Manual trigger available via Actions tab → "Scrape RE Agent Data" → "Run wor
 The HTML dashboard (`data/dashboard.html`, hosted on GitHub Pages) and markdown report (`data/agent_leaderboard.md`) contain:
 1. **Top 30 Listing Agents — All-Time** — ranked by total listing volume
 2. **Top 30 Listing Agents — Last 365 Days** — rolling rankings with trend badges showing who's heating up vs cooling off
-3. **Top 15 Brokerages** — ranked by total volume across all agents
-4. **Top 5 Agents per Town** — local leaders in each of the 10 towns
+3. **Top 20 Brokerages — All-Time** — ranked by total volume with operating towns and top agents
+4. **Top 20 Brokerages — Last 365 Days** — rolling rankings with trend badges and operating towns
+5. **Top 5 Agents per Town** — local leaders in each of the 10 towns
 
-Agents where the name matches the brokerage (e.g., "Anchor Real Estate") are excluded from agent rankings but included in brokerage rankings.
+Known brokerage-named agents (e.g., "Anchor Real Estate", "Anne Erwin Real Estate") are excluded from agent rankings but included in brokerage rankings. Office name variants are normalized to canonical spellings (e.g., "KW Coastal..." → "Keller Williams Coastal...").
 
 ## Data sources
 

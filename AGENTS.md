@@ -5,7 +5,7 @@
 
 2,311 SFH/Condo transactions across all 10 towns (March 2023–March 2026). Non-residential records (land, multi-family, mobile) have been purged. All records tagged with `property_type`.
 
-**Playwright enrichment pipeline running in production** via GitHub Actions with residential proxy (IPRoyal). 660 URLs enriched successfully. ~1,647 URLs pending. Estimated ~21 runs at 80 URLs/batch to complete.
+**Playwright enrichment pipeline running in production** via GitHub Actions with residential proxy (IPRoyal). 1,762 URLs enriched successfully (76%). ~526 URLs pending. Estimated ~7 runs at 80 URLs/batch to complete.
 
 **HTML dashboard live** at https://pmtinkerer.github.io/gw-re-agent-scraper/ — auto-deploys to GitHub Pages after every CI run.
 
@@ -38,10 +38,11 @@
 10. **Some Redfin URLs return intermittent CloudFront 403s** ("The request could not be satisfied") — these are transient CDN errors, not captchas. Marked as `error` and retried up to 3 times.
 
 ## Open Issues
-- **~1,647 URLs still pending enrichment** — pipeline running, ~21 runs at 80/batch to complete
+- **~526 URLs still pending enrichment** — pipeline running, ~7 runs at 80/batch to complete
 - York (99), Wells (73), Ogunquit (18) have lower counts due to county query limitations
 - Some pages may have `no_agent` (listing removed, very old, etc.) — accept this as data gap
 - Realtor.com GraphQL API investigated as alternative enrichment source — has agent data but far less comprehensive than Redfin (1,066 vs 2,311 records, data months stale). Not viable as replacement.
+- PrimeMLS evaluated as data source — authoritative MLS but Cloudflare-protected, explicit anti-scraping ToS, sold data likely behind member login. Not viable without MLS membership.
 
 ## Next Steps (Priority Order)
 1. **Let enrichment complete** — running automatically 4x/day via GitHub Actions
@@ -55,3 +56,5 @@
 - 2026-03-22 (session 4): Pushed to GitHub. Configured residential proxy (IPRoyal) via PROXY_URL secret. Fixed proxy auth (split URL into server/username/password for Playwright). Added resource blocking to save ~70-80% proxy bandwidth.
 - 2026-03-22 (session 5): Built HTML dashboard with 4 sections (all-time agents, 365-day rolling with trend badges, brokerages, per-town). Added property type filter (SFH + Condo only, `uipt=1,2`). Added brokerage-as-agent exclusion. Re-scraped to tag `property_type`, auto-purged 1,636 non-residential records. Set up GitHub Pages for auto-deployed dashboard.
 - 2026-03-23 (session 6): Fixed merge conflict in dashboard from concurrent CI runs — added workflow concurrency control. Investigated Realtor.com GraphQL API as alternative enrichment source — functional but far less comprehensive than Redfin (1,066 vs 2,311 records, months stale). Decided to keep Redfin Playwright as primary enrichment. Fixed Pages auto-deploy by moving deployment into scraper workflow (GitHub bot pushes don't trigger separate workflows).
+- 2026-03-30 (session 7): Diagnosed IPRoyal proxy outage (ERR_TUNNEL_CONNECTION_FAILED since Mar 28). User renewed subscription, enrichment resumed. Evaluated PrimeMLS as data source — authoritative MLS but Cloudflare-protected, explicit anti-scraping ToS, not viable. Fixed table column alignment with table-layout:fixed + colgroups.
+- 2026-03-31 (session 8): Added 365-day rolling brokerage leaderboard with trend badges and operating towns. Split brokerage section into all-time + rolling (6 sections total). Added office name normalization — 15 variant spellings merged to canonical names (139 rows). Added Anne Erwin Real Estate to BROKERAGE_AS_AGENT exclusion list. 125 tests passing. Enrichment at 76% (1,762/2,311).
