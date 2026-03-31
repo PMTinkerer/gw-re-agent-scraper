@@ -28,6 +28,35 @@ _DESIGNATIONS = re.compile(
 # Trailing junk after designation removal
 _TRAILING_JUNK = re.compile(r'[,.\s]+$')
 
+# Office name normalization: map variant spellings to canonical name.
+# Applied at upsert time so the DB stays clean.
+OFFICE_NORMALIZATION = {
+    "anne erwin sothebys international rlty": "Anne Erwin Sotheby's International Realty",
+    "the aland realty group": "The Aland Realty Group, LLC",
+    "kw coastal and lakes & mountains realty": "Keller Williams Coastal and Lakes & Mountains Realty",
+    "kw coastal and lakes & mountains realty/portsmouth": "Keller Williams Coastal and Lakes & Mountains Realty",
+    "century 21 atlantic realty": "CENTURY 21 Atlantic Realty",
+    "century 21 barbara patterson": "CENTURY 21 Barbara Patterson",
+    "better homes and gardens real estate - the masiello group": "Better Homes & Gardens Real Estate/The Masiello Group",
+    "signature homes real estate group": "Signature Homes Real Estate Group, LLC",
+    "great island realty llc": "Great Island Realty, LLC",
+    "great island realty, llc": "Great Island Realty, LLC",
+    "landvest, inc.": "LandVest, Inc.",
+    "abigail douris real estatellc": "Abigail Douris Real Estate LLC",
+    "red post realty": "Red Post Realty, LLC",
+    "cameron prestige llc": "Cameron Prestige, LLC",
+    "samonas realty": "Samonas Realty, LLC",
+    "carey giampa, llc/rye": "Carey & Giampa, LLC",
+}
+
+# Agents that are actually brokerages — excluded from agent rankings.
+# These are cases where listing_agent is a company name, not a person.
+# Checked case-insensitively against the normalized listing_agent field.
+BROKERAGE_AS_AGENT = {
+    "anne erwin real estate",
+    "anchor real estate",
+}
+
 
 def get_connection(db_path: str | None = None) -> sqlite3.Connection:
     """Return a connection with Row factory enabled."""
@@ -131,6 +160,15 @@ def normalize_agent_name(name: str | None) -> str | None:
     return result
 
 
+def normalize_office_name(name: str | None) -> str | None:
+    """Normalize an office name using the canonical map."""
+    if not name or not name.strip():
+        return None
+    stripped = name.strip()
+    canonical = OFFICE_NORMALIZATION.get(stripped.lower())
+    return canonical if canonical else stripped
+
+
 def upsert_transaction(conn: sqlite3.Connection, record: dict) -> bool:
     """Insert or update a transaction, deduplicating on mls_number.
 
@@ -145,6 +183,10 @@ def upsert_transaction(conn: sqlite3.Connection, record: dict) -> bool:
     raw_buyer = record.get('buyer_agent')
     normalized_listing = normalize_agent_name(raw_listing)
     normalized_buyer = normalize_agent_name(raw_buyer)
+
+    # Normalize office names to canonical forms
+    listing_office = normalize_office_name(record.get('listing_office'))
+    buyer_office = normalize_office_name(record.get('buyer_office'))
 
     try:
         conn.execute('''
@@ -191,8 +233,8 @@ def upsert_transaction(conn: sqlite3.Connection, record: dict) -> bool:
             'sale_date': record.get('sale_date'),
             'listing_agent': normalized_listing,
             'buyer_agent': normalized_buyer,
-            'listing_office': record.get('listing_office'),
-            'buyer_office': record.get('buyer_office'),
+            'listing_office': listing_office,
+            'buyer_office': buyer_office,
             'source_url': record.get('source_url'),
             'data_source': record.get('data_source'),
             'scraped_at': record.get('scraped_at', datetime.utcnow().isoformat()),

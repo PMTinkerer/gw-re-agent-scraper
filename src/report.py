@@ -9,6 +9,8 @@ import logging
 import os
 from datetime import datetime
 
+from .database import BROKERAGE_AS_AGENT
+
 logger = logging.getLogger(__name__)
 
 _DEFAULT_OUTPUT = os.path.join(os.path.dirname(__file__), '..', 'data', 'agent_leaderboard.md')
@@ -180,7 +182,13 @@ def _get_report_stats(conn) -> dict:
 
 def _query_top_agents(conn, limit: int = 30, since_date: str | None = None) -> list[dict]:
     date_filter = 'AND sale_date >= ?' if since_date else ''
-    params = (since_date, limit) if since_date else (limit,)
+    # Build exclusion for known brokerage-as-agent names
+    brokerage_placeholders = ', '.join('?' for _ in BROKERAGE_AS_AGENT)
+    brokerage_exclusion = f'AND LOWER(listing_agent) NOT IN ({brokerage_placeholders})' if BROKERAGE_AS_AGENT else ''
+    params = list(BROKERAGE_AS_AGENT)
+    if since_date:
+        params.append(since_date)
+    params.append(limit)
     rows = conn.execute(f'''
         SELECT
             listing_agent,
@@ -205,6 +213,7 @@ def _query_top_agents(conn, limit: int = 30, since_date: str | None = None) -> l
         FROM transactions t
         WHERE listing_agent IS NOT NULL
           AND (listing_office IS NULL OR LOWER(listing_agent) != LOWER(listing_office))
+          {brokerage_exclusion}
           {date_filter}
         GROUP BY listing_agent
         ORDER BY volume DESC
@@ -272,7 +281,10 @@ def _query_top_brokerages(conn, limit: int = 20, since_date: str | None = None) 
 
 
 def _query_top_agents_by_town(conn, town: str, limit: int = 5) -> list[dict]:
-    rows = conn.execute('''
+    brokerage_placeholders = ', '.join('?' for _ in BROKERAGE_AS_AGENT)
+    brokerage_exclusion = f'AND LOWER(listing_agent) NOT IN ({brokerage_placeholders})' if BROKERAGE_AS_AGENT else ''
+    params = list(BROKERAGE_AS_AGENT) + [town, limit]
+    rows = conn.execute(f'''
         SELECT
             listing_agent,
             (
@@ -286,11 +298,12 @@ def _query_top_agents_by_town(conn, town: str, limit: int = 5) -> list[dict]:
         FROM transactions t
         WHERE listing_agent IS NOT NULL
           AND (listing_office IS NULL OR LOWER(listing_agent) != LOWER(listing_office))
+          {brokerage_exclusion}
           AND LOWER(city) = LOWER(?)
         GROUP BY listing_agent
         ORDER BY volume DESC
         LIMIT ?
-    ''', (town, limit)).fetchall()
+    ''', params).fetchall()
 
     return [
         {
