@@ -7,7 +7,7 @@ import tempfile
 import pytest
 
 from src.database import init_db, upsert_transaction, rebuild_rankings
-from src.dashboard import generate_dashboard, _compute_trend_indicators, _render_trend_badge
+from src.dashboard import generate_dashboard, _compute_trend_indicators, _compute_brokerage_trends, _render_trend_badge
 
 
 @pytest.fixture
@@ -151,3 +151,62 @@ class TestRenderTrendBadge:
         badge = _render_trend_badge({'rank_change': 0, 'rolling_volume': 300000, 'is_new': True})
         assert 'NEW' in badge
         assert 'badge-new' in badge
+
+
+class TestComputeBrokerageTrends:
+    def test_rank_improvement(self):
+        all_time = [
+            {'office': 'Alpha Realty', 'volume': 100},
+            {'office': 'Beta Realty', 'volume': 80},
+        ]
+        rolling = [
+            {'office': 'Beta Realty', 'volume': 90},
+            {'office': 'Alpha Realty', 'volume': 50},
+        ]
+        trends = _compute_brokerage_trends(all_time, rolling)
+        assert trends['Beta Realty']['rank_change'] == 1
+        assert trends['Alpha Realty']['rank_change'] == -1
+
+    def test_new_brokerage(self):
+        all_time = [{'office': 'Alpha Realty', 'volume': 100}]
+        rolling = [
+            {'office': 'Alpha Realty', 'volume': 80},
+            {'office': 'New Brokerage', 'volume': 60},
+        ]
+        trends = _compute_brokerage_trends(all_time, rolling)
+        assert trends['New Brokerage']['is_new'] is True
+        assert trends['Alpha Realty']['is_new'] is False
+
+    def test_no_change(self):
+        brokerages = [{'office': 'Alpha Realty', 'volume': 100}]
+        trends = _compute_brokerage_trends(brokerages, brokerages)
+        assert trends['Alpha Realty']['rank_change'] == 0
+
+    def test_empty_lists(self):
+        trends = _compute_brokerage_trends([], [])
+        assert trends == {}
+
+
+class TestDashboardBrokerageSections:
+    def test_has_two_brokerage_sections(self, populated_db):
+        """Dashboard contains both all-time and rolling brokerage sections."""
+        with tempfile.NamedTemporaryFile(suffix='.html', delete=False) as f:
+            path = f.name
+        generate_dashboard(populated_db, path)
+        with open(path) as f:
+            content = f.read()
+        assert 'Top Brokerages' in content
+        assert 'All-Time' in content
+        assert '365 Days' in content
+        # Verify both brokerage section headings
+        assert content.count('Top Brokerages') >= 2
+
+    def test_brokerage_towns_in_html(self, populated_db):
+        """Brokerage tables include town data."""
+        with tempfile.NamedTemporaryFile(suffix='.html', delete=False) as f:
+            path = f.name
+        generate_dashboard(populated_db, path)
+        with open(path) as f:
+            content = f.read()
+        # Towns from test data should appear somewhere in the brokerage sections
+        assert 'York' in content

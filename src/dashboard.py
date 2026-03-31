@@ -37,7 +37,9 @@ def generate_dashboard(conn, output_path: str | None = None) -> str:
     all_time_agents = query_top_agents(conn, limit=30)
     rolling_agents = query_top_agents(conn, limit=30, since_date=since_date)
     trends = _compute_trend_indicators(all_time_agents, rolling_agents)
-    brokerages = query_top_brokerages(conn, limit=15)
+    all_time_brokerages = query_top_brokerages(conn, limit=20)
+    rolling_brokerages = query_top_brokerages(conn, limit=20, since_date=since_date)
+    brokerage_trends = _compute_brokerage_trends(all_time_brokerages, rolling_brokerages)
 
     town_agents = {}
     for town in TOWNS:
@@ -48,7 +50,9 @@ def generate_dashboard(conn, output_path: str | None = None) -> str:
         all_time_agents=all_time_agents,
         rolling_agents=rolling_agents,
         trends=trends,
-        brokerages=brokerages,
+        all_time_brokerages=all_time_brokerages,
+        rolling_brokerages=rolling_brokerages,
+        brokerage_trends=brokerage_trends,
         town_agents=town_agents,
         generated_at=generated_at,
     )
@@ -85,6 +89,33 @@ def _compute_trend_indicators(
             trends[name] = {
                 'rank_change': 0,
                 'rolling_volume': agent['volume'],
+                'is_new': True,
+            }
+    return trends
+
+
+def _compute_brokerage_trends(
+    all_time: list[dict],
+    rolling: list[dict],
+) -> dict[str, dict]:
+    """Compute rank change for brokerages. Same logic as agent trends, keyed on office."""
+    all_time_rank = {b['office']: i + 1 for i, b in enumerate(all_time)}
+
+    trends = {}
+    for i, brok in enumerate(rolling):
+        name = brok['office']
+        rolling_rank = i + 1
+        if name in all_time_rank:
+            rank_change = all_time_rank[name] - rolling_rank
+            trends[name] = {
+                'rank_change': rank_change,
+                'rolling_volume': brok['volume'],
+                'is_new': False,
+            }
+        else:
+            trends[name] = {
+                'rank_change': 0,
+                'rolling_volume': brok['volume'],
                 'is_new': True,
             }
     return trends
@@ -127,7 +158,9 @@ def _build_html(
     all_time_agents: list[dict],
     rolling_agents: list[dict],
     trends: dict,
-    brokerages: list[dict],
+    all_time_brokerages: list[dict],
+    rolling_brokerages: list[dict],
+    brokerage_trends: dict,
     town_agents: dict[str, list[dict]],
     generated_at: str,
 ) -> str:
@@ -141,8 +174,8 @@ def _build_html(
             row_cls = ' class="rank-1"' if i == 1 else ''
             rows_html += f'''<tr{row_cls}>
                 <td class="num">{i}</td>
-                <td class="agent-name">{_e(a['agent_name'])}</td>
-                <td>{_e(a['office'])}</td>
+                <td class="agent-name" title="{_e(a['agent_name'])}">{_e(a['agent_name'])}</td>
+                <td class="office" title="{_e(a['office'])}">{_e(a['office'])}</td>
                 <td class="num">{a['sides']}</td>
                 <td class="num vol">{format_currency(a['volume'])}</td>
                 <td class="num">{format_currency(a['avg_price'])}</td>
@@ -155,6 +188,10 @@ def _build_html(
         <h2>Top Agents &mdash; All-Time</h2>
         <div class="table-wrap">
         <table>
+            <colgroup>
+                <col style="width:5%"><col style="width:20%"><col style="width:23%">
+                <col style="width:8%"><col style="width:12%"><col style="width:12%"><col style="width:20%">
+            </colgroup>
             <thead><tr>
                 <th class="num">#</th>
                 <th>Agent</th>
@@ -179,8 +216,8 @@ def _build_html(
             row_cls = ' class="rank-1"' if i == 1 else ''
             rows_html += f'''<tr{row_cls}>
                 <td class="num">{i}</td>
-                <td class="agent-name">{_e(name)}</td>
-                <td>{_e(a['office'])}</td>
+                <td class="agent-name" title="{_e(name)}">{_e(name)}</td>
+                <td class="office" title="{_e(a['office'])}">{_e(a['office'])}</td>
                 <td class="num">{a['sides']}</td>
                 <td class="num vol">{format_currency(a['volume'])}</td>
                 <td style="text-align:center">{badge}</td>
@@ -192,6 +229,10 @@ def _build_html(
         <h2>Top Agents &mdash; Last 365 Days</h2>
         <div class="table-wrap">
         <table>
+            <colgroup>
+                <col style="width:5%"><col style="width:22%"><col style="width:25%">
+                <col style="width:8%"><col style="width:14%"><col style="width:26%">
+            </colgroup>
             <thead><tr>
                 <th class="num">#</th>
                 <th>Agent</th>
@@ -205,33 +246,79 @@ def _build_html(
         </div>
     </section>''')
 
-    # --- Section 3: Top Brokerages ---
+    # --- Section 3: Top Brokerages All-Time ---
     rows_html = ''
-    if brokerages:
-        for i, b in enumerate(brokerages, 1):
+    if all_time_brokerages:
+        for i, b in enumerate(all_time_brokerages, 1):
             row_cls = ' class="rank-1"' if i == 1 else ''
             rows_html += f'''<tr{row_cls}>
                 <td class="num">{i}</td>
-                <td class="agent-name">{_e(b['office'])}</td>
+                <td class="agent-name" title="{_e(b['office'])}">{_e(b['office'])}</td>
                 <td class="num">{b['sides']}</td>
                 <td class="num vol">{format_currency(b['volume'])}</td>
                 <td class="num">{format_currency(b['avg_price'])}</td>
-                <td>{_e(b['top_agents'])}</td>
+                <td class="towns">{_e(b['towns'])}</td>
+                <td class="top-agents" title="{_e(b['top_agents'])}">{_e(b['top_agents'])}</td>
             </tr>'''
     else:
-        rows_html = '<tr><td colspan="6" class="no-data">No data available yet.</td></tr>'
+        rows_html = '<tr><td colspan="7" class="no-data">No data available yet.</td></tr>'
 
     sections.append(f'''<section class="section">
-        <h2>Top Brokerages</h2>
+        <h2>Top Brokerages &mdash; All-Time</h2>
         <div class="table-wrap">
         <table>
+            <colgroup>
+                <col style="width:4%"><col style="width:22%"><col style="width:7%">
+                <col style="width:12%"><col style="width:10%"><col style="width:18%"><col style="width:27%">
+            </colgroup>
             <thead><tr>
                 <th class="num">#</th>
                 <th>Brokerage</th>
                 <th class="num">Sides</th>
                 <th class="num">Volume</th>
                 <th class="num">Avg Price</th>
+                <th>Towns</th>
                 <th>Top Agents</th>
+            </tr></thead>
+            <tbody>{rows_html}</tbody>
+        </table>
+        </div>
+    </section>''')
+
+    # --- Section 4: Top Brokerages 365-Day Rolling ---
+    rows_html = ''
+    if rolling_brokerages:
+        for i, b in enumerate(rolling_brokerages, 1):
+            name = b['office']
+            trend = brokerage_trends.get(name, {'rank_change': 0, 'rolling_volume': 0, 'is_new': False})
+            badge = _render_trend_badge(trend)
+            row_cls = ' class="rank-1"' if i == 1 else ''
+            rows_html += f'''<tr{row_cls}>
+                <td class="num">{i}</td>
+                <td class="agent-name" title="{_e(name)}">{_e(name)}</td>
+                <td class="num">{b['sides']}</td>
+                <td class="num vol">{format_currency(b['volume'])}</td>
+                <td class="towns">{_e(b['towns'])}</td>
+                <td style="text-align:center">{badge}</td>
+            </tr>'''
+    else:
+        rows_html = '<tr><td colspan="6" class="no-data">No data available yet.</td></tr>'
+
+    sections.append(f'''<section class="section">
+        <h2>Top Brokerages &mdash; Last 365 Days</h2>
+        <div class="table-wrap">
+        <table>
+            <colgroup>
+                <col style="width:4%"><col style="width:24%"><col style="width:8%">
+                <col style="width:14%"><col style="width:20%"><col style="width:30%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Brokerage</th>
+                <th class="num">Sides</th>
+                <th class="num">Volume</th>
+                <th>Towns</th>
+                <th style="text-align:center">Trend</th>
             </tr></thead>
             <tbody>{rows_html}</tbody>
         </table>
@@ -247,8 +334,8 @@ def _build_html(
             for i, a in enumerate(agents, 1):
                 rows_html += f'''<tr>
                     <td class="num">{i}</td>
-                    <td class="agent-name">{_e(a['agent_name'])}</td>
-                    <td>{_e(a['office'])}</td>
+                    <td class="agent-name" title="{_e(a['agent_name'])}">{_e(a['agent_name'])}</td>
+                    <td class="office" title="{_e(a['office'])}">{_e(a['office'])}</td>
                     <td class="num">{a['sides']}</td>
                     <td class="num vol">{format_currency(a['volume'])}</td>
                 </tr>'''
@@ -259,6 +346,10 @@ def _build_html(
             <h3>{_e(town)}</h3>
             <div class="table-wrap">
             <table>
+                <colgroup>
+                    <col style="width:6%"><col style="width:28%"><col style="width:34%">
+                    <col style="width:10%"><col style="width:22%">
+                </colgroup>
                 <thead><tr>
                     <th class="num">#</th>
                     <th>Agent</th>
@@ -459,6 +550,8 @@ def _css() -> str:
     .section:nth-of-type(2) { animation-delay: 280ms; }
     .section:nth-of-type(3) { animation-delay: 360ms; }
     .section:nth-of-type(4) { animation-delay: 440ms; }
+    .section:nth-of-type(5) { animation-delay: 520ms; }
+    .section:nth-of-type(6) { animation-delay: 600ms; }
 
     .section h2 {
         font-size: 1.25rem;
@@ -486,6 +579,7 @@ def _css() -> str:
         width: 100%;
         border-collapse: collapse;
         font-size: 0.82rem;
+        table-layout: fixed;
     }
     thead th {
         font-family: var(--mono);
@@ -524,9 +618,17 @@ def _css() -> str:
         color: var(--accent-dim);
         font-weight: 500;
     }
+    td.agent-name, td.office, td.top-agents {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
     td.agent-name {
         color: var(--text-1);
         font-weight: 500;
+    }
+    td.office {
+        color: var(--text-2);
     }
     tr.rank-1 td.agent-name {
         color: var(--accent);
@@ -539,7 +641,13 @@ def _css() -> str:
     td.towns {
         font-size: 0.75rem;
         color: var(--text-3);
-        max-width: 180px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    td.top-agents {
+        font-size: 0.78rem;
+        color: var(--text-2);
     }
 
     .no-data {

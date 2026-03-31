@@ -153,3 +153,27 @@ class TestBrokerageAsAgentExclusion:
         brokerages = query_top_brokerages(populated_db)
         office_names = [b['office'] for b in brokerages]
         assert 'Fake Brokerage LLC' in office_names
+
+
+class TestBrokerageQueryEnhancements:
+    def test_since_date_filter(self, populated_db):
+        """Filtering by date returns fewer or equal brokerage results."""
+        all_brokerages = query_top_brokerages(populated_db)
+        filtered = query_top_brokerages(populated_db, since_date='2024-04-01')
+        assert len(filtered) <= len(all_brokerages)
+
+    def test_no_date_filter_unchanged(self, populated_db):
+        """Without since_date, returns all brokerages (backward compat)."""
+        brokerages = query_top_brokerages(populated_db)
+        assert len(brokerages) == 2  # ABC Realty, XYZ Realty
+
+    def test_results_include_towns(self, populated_db):
+        """Brokerage results include a towns field."""
+        brokerages = query_top_brokerages(populated_db)
+        for b in brokerages:
+            assert 'towns' in b
+
+    def test_future_date_returns_empty(self, populated_db):
+        """A future since_date returns no brokerage results."""
+        brokerages = query_top_brokerages(populated_db, since_date='2030-01-01')
+        assert len(brokerages) == 0

@@ -226,8 +226,10 @@ def _query_top_agents(conn, limit: int = 30, since_date: str | None = None) -> l
     ]
 
 
-def _query_top_brokerages(conn, limit: int = 15) -> list[dict]:
-    rows = conn.execute('''
+def _query_top_brokerages(conn, limit: int = 20, since_date: str | None = None) -> list[dict]:
+    date_filter = 'AND sale_date >= ?' if since_date else ''
+    params = (since_date, limit) if since_date else (limit,)
+    rows = conn.execute(f'''
         SELECT
             listing_office,
             COUNT(*) as sides,
@@ -241,13 +243,20 @@ def _query_top_brokerages(conn, limit: int = 15) -> list[dict]:
                         AND t2.listing_agent IS NOT NULL
                     GROUP BY listing_agent ORDER BY cnt DESC LIMIT 3
                 )
-            ) as top_agents
+            ) as top_agents,
+            (
+                SELECT GROUP_CONCAT(city, ', ') FROM (
+                    SELECT city, COUNT(*) as cnt FROM transactions t3
+                    WHERE t3.listing_office = t.listing_office AND t3.city IS NOT NULL
+                    GROUP BY city ORDER BY cnt DESC LIMIT 3
+                )
+            ) as primary_towns
         FROM transactions t
-        WHERE listing_office IS NOT NULL
+        WHERE listing_office IS NOT NULL {date_filter}
         GROUP BY listing_office
         ORDER BY volume DESC
         LIMIT ?
-    ''', (limit,)).fetchall()
+    ''', params).fetchall()
 
     return [
         {
@@ -256,6 +265,7 @@ def _query_top_brokerages(conn, limit: int = 15) -> list[dict]:
             'volume': r['volume'],
             'avg_price': int(r['avg_price']) if r['avg_price'] else 0,
             'top_agents': r['top_agents'] or 'N/A',
+            'towns': r['primary_towns'] or 'N/A',
         }
         for r in rows
     ]
@@ -298,8 +308,8 @@ def _query_top_agents_by_town(conn, town: str, limit: int = 5) -> list[dict]:
 def query_top_agents(conn, limit: int = 30, since_date: str | None = None) -> list[dict]:
     return _query_top_agents(conn, limit, since_date=since_date)
 
-def query_top_brokerages(conn, limit: int = 15) -> list[dict]:
-    return _query_top_brokerages(conn, limit)
+def query_top_brokerages(conn, limit: int = 20, since_date: str | None = None) -> list[dict]:
+    return _query_top_brokerages(conn, limit, since_date=since_date)
 
 def query_top_agents_by_town(conn, town: str, limit: int = 5) -> list[dict]:
     return _query_top_agents_by_town(conn, town, limit)

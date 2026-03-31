@@ -143,6 +143,8 @@
     .section:nth-of-type(2) { animation-delay: 280ms; }
     .section:nth-of-type(3) { animation-delay: 360ms; }
     .section:nth-of-type(4) { animation-delay: 440ms; }
+    .section:nth-of-type(5) { animation-delay: 520ms; }
+    .section:nth-of-type(6) { animation-delay: 600ms; }
 
     .section h2 {
         font-size: 1.25rem;
@@ -170,6 +172,7 @@
         width: 100%;
         border-collapse: collapse;
         font-size: 0.82rem;
+        table-layout: fixed;
     }
     thead th {
         font-family: var(--mono);
@@ -208,9 +211,17 @@
         color: var(--accent-dim);
         font-weight: 500;
     }
+    td.agent-name, td.office, td.top-agents {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
     td.agent-name {
         color: var(--text-1);
         font-weight: 500;
+    }
+    td.office {
+        color: var(--text-2);
     }
     tr.rank-1 td.agent-name {
         color: var(--accent);
@@ -223,7 +234,13 @@
     td.towns {
         font-size: 0.75rem;
         color: var(--text-3);
-        max-width: 180px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    td.top-agents {
+        font-size: 0.78rem;
+        color: var(--text-2);
     }
 
     .no-data {
@@ -291,7 +308,7 @@
     <div class="wrap">
         <header class="header">
             <h1>Real Estate Agent Leaderboard</h1>
-            <p class="sub">Southern Coastal Maine &middot; 10 Towns &middot; 2026-03-31 13:13 UTC</p>
+            <p class="sub">Southern Coastal Maine &middot; 10 Towns &middot; 2026-03-31 13:46 UTC</p>
         </header>
         <div class="stats">
             <div class="stat">
@@ -312,6 +329,10 @@
         <h2>Top Agents &mdash; All-Time</h2>
         <div class="table-wrap">
         <table>
+            <colgroup>
+                <col style="width:5%"><col style="width:20%"><col style="width:23%">
+                <col style="width:8%"><col style="width:12%"><col style="width:12%"><col style="width:20%">
+            </colgroup>
             <thead><tr>
                 <th class="num">#</th>
                 <th>Agent</th>
@@ -323,240 +344,240 @@
             </tr></thead>
             <tbody><tr class="rank-1">
                 <td class="num">1</td>
-                <td class="agent-name">William Gaynor</td>
-                <td>Legacy Properties Sotheby&#x27;s International Realty</td>
+                <td class="agent-name" title="William Gaynor">William Gaynor</td>
+                <td class="office" title="Legacy Properties Sotheby&#x27;s International Realty">Legacy Properties Sotheby&#x27;s International Realty</td>
                 <td class="num">7</td>
                 <td class="num vol">$37.1M</td>
                 <td class="num">$5.3M</td>
                 <td class="towns">Kennebunkport, Kennebunk</td>
             </tr><tr>
                 <td class="num">2</td>
-                <td class="agent-name">Tracy Jackson Mccarty</td>
-                <td>The Aland Realty Group, LLC</td>
+                <td class="agent-name" title="Tracy Jackson Mccarty">Tracy Jackson Mccarty</td>
+                <td class="office" title="The Aland Realty Group, LLC">The Aland Realty Group, LLC</td>
                 <td class="num">34</td>
                 <td class="num vol">$33.9M</td>
                 <td class="num">$997K</td>
                 <td class="towns">York</td>
             </tr><tr>
                 <td class="num">3</td>
-                <td class="agent-name">Troy Williams</td>
-                <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+                <td class="agent-name" title="Troy Williams">Troy Williams</td>
+                <td class="office" title="Keller Williams Coastal and Lakes &amp; Mountains Realty">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
                 <td class="num">40</td>
                 <td class="num vol">$28.3M</td>
                 <td class="num">$707K</td>
                 <td class="towns">York, Kittery, Wells</td>
             </tr><tr>
                 <td class="num">4</td>
-                <td class="agent-name">Anne Erwin Real Estate</td>
-                <td>Anne Erwin Sotheby&#x27;s International Realty</td>
+                <td class="agent-name" title="Anne Erwin Real Estate">Anne Erwin Real Estate</td>
+                <td class="office" title="Anne Erwin Sotheby&#x27;s International Realty">Anne Erwin Sotheby&#x27;s International Realty</td>
                 <td class="num">21</td>
                 <td class="num vol">$25.4M</td>
                 <td class="num">$1.2M</td>
                 <td class="towns">York, Kittery, Ogunquit</td>
             </tr><tr>
                 <td class="num">5</td>
-                <td class="agent-name">Heidi Maynard</td>
-                <td>Pack Maynard and Associates</td>
+                <td class="agent-name" title="Heidi Maynard">Heidi Maynard</td>
+                <td class="office" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
                 <td class="num">17</td>
                 <td class="num vol">$23.9M</td>
                 <td class="num">$1.4M</td>
                 <td class="towns">Kennebunkport, Kennebunk, Old Orchard Beach</td>
             </tr><tr>
                 <td class="num">6</td>
-                <td class="agent-name">Jessica Girard</td>
-                <td>Pack Maynard and Associates</td>
+                <td class="agent-name" title="Jessica Girard">Jessica Girard</td>
+                <td class="office" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
                 <td class="num">18</td>
                 <td class="num vol">$22.8M</td>
                 <td class="num">$1.3M</td>
                 <td class="towns">Kennebunkport, Kennebunk</td>
             </tr><tr>
                 <td class="num">7</td>
-                <td class="agent-name">Victoria Benenti</td>
-                <td>Pack Maynard and Associates</td>
+                <td class="agent-name" title="Victoria Benenti">Victoria Benenti</td>
+                <td class="office" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
                 <td class="num">14</td>
                 <td class="num vol">$17.8M</td>
                 <td class="num">$1.3M</td>
                 <td class="towns">Kennebunkport, Kennebunk</td>
             </tr><tr>
                 <td class="num">8</td>
-                <td class="agent-name">Adam Parent</td>
-                <td>Maine Real Estate Co</td>
+                <td class="agent-name" title="Adam Parent">Adam Parent</td>
+                <td class="office" title="Maine Real Estate Co">Maine Real Estate Co</td>
                 <td class="num">36</td>
                 <td class="num vol">$17.8M</td>
                 <td class="num">$494K</td>
                 <td class="towns">Biddeford, Saco, Old Orchard Beach</td>
             </tr><tr>
                 <td class="num">9</td>
-                <td class="agent-name">Nancy Moreshead</td>
-                <td>The Real Estate Store</td>
+                <td class="agent-name" title="Nancy Moreshead">Nancy Moreshead</td>
+                <td class="office" title="The Real Estate Store">The Real Estate Store</td>
                 <td class="num">28</td>
                 <td class="num vol">$16.3M</td>
                 <td class="num">$581K</td>
                 <td class="towns">Old Orchard Beach</td>
             </tr><tr>
                 <td class="num">10</td>
-                <td class="agent-name">Heidi Maynard Corey Tracy</td>
-                <td>Pack Maynard and Associates</td>
+                <td class="agent-name" title="Heidi Maynard Corey Tracy">Heidi Maynard Corey Tracy</td>
+                <td class="office" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
                 <td class="num">10</td>
                 <td class="num vol">$15.9M</td>
                 <td class="num">$1.6M</td>
                 <td class="towns">Kennebunkport, Kennebunk, Wells</td>
             </tr><tr>
                 <td class="num">11</td>
-                <td class="agent-name">Rebecca Bassett</td>
-                <td>Portside Real Estate Group</td>
+                <td class="agent-name" title="Rebecca Bassett">Rebecca Bassett</td>
+                <td class="office" title="Portside Real Estate Group">Portside Real Estate Group</td>
                 <td class="num">17</td>
                 <td class="num vol">$15.9M</td>
                 <td class="num">$935K</td>
                 <td class="towns">Kennebunk, Kennebunkport</td>
             </tr><tr>
                 <td class="num">12</td>
-                <td class="agent-name">Peter Mcpheeters</td>
-                <td>OceanView Properties</td>
+                <td class="agent-name" title="Peter Mcpheeters">Peter Mcpheeters</td>
+                <td class="office" title="OceanView Properties">OceanView Properties</td>
                 <td class="num">8</td>
                 <td class="num vol">$15.8M</td>
                 <td class="num">$2.0M</td>
                 <td class="towns">Biddeford</td>
             </tr><tr>
                 <td class="num">13</td>
-                <td class="agent-name">Lise Dewar</td>
-                <td>Pack Maynard and Associates</td>
+                <td class="agent-name" title="Lise Dewar">Lise Dewar</td>
+                <td class="office" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
                 <td class="num">10</td>
                 <td class="num vol">$15.3M</td>
                 <td class="num">$1.5M</td>
                 <td class="towns">Kennebunk, Kennebunkport</td>
             </tr><tr>
                 <td class="num">14</td>
-                <td class="agent-name">Maureen Deleo</td>
-                <td>Keller Williams Realty</td>
+                <td class="agent-name" title="Maureen Deleo">Maureen Deleo</td>
+                <td class="office" title="Keller Williams Realty">Keller Williams Realty</td>
                 <td class="num">8</td>
                 <td class="num vol">$14.8M</td>
                 <td class="num">$1.8M</td>
                 <td class="towns">Kennebunk, Kennebunkport</td>
             </tr><tr>
                 <td class="num">15</td>
-                <td class="agent-name">Dennis Page</td>
-                <td>Dennis M. Page Real Estate</td>
+                <td class="agent-name" title="Dennis Page">Dennis Page</td>
+                <td class="office" title="Dennis M. Page Real Estate">Dennis M. Page Real Estate</td>
                 <td class="num">24</td>
                 <td class="num vol">$13.6M</td>
                 <td class="num">$568K</td>
                 <td class="towns">Kittery</td>
             </tr><tr>
                 <td class="num">16</td>
-                <td class="agent-name">Elise Wyman</td>
-                <td>Pack Maynard and Associates</td>
+                <td class="agent-name" title="Elise Wyman">Elise Wyman</td>
+                <td class="office" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
                 <td class="num">9</td>
                 <td class="num vol">$13.2M</td>
                 <td class="num">$1.5M</td>
                 <td class="towns">Kennebunk, Kennebunkport</td>
             </tr><tr>
                 <td class="num">17</td>
-                <td class="agent-name">Mary Rockett</td>
-                <td>The Aland Realty Group, LLC</td>
+                <td class="agent-name" title="Mary Rockett">Mary Rockett</td>
+                <td class="office" title="The Aland Realty Group, LLC">The Aland Realty Group, LLC</td>
                 <td class="num">12</td>
                 <td class="num vol">$13.0M</td>
                 <td class="num">$1.1M</td>
                 <td class="towns">York</td>
             </tr><tr>
                 <td class="num">18</td>
-                <td class="agent-name">Jane Cyr</td>
-                <td>Redfin Corporation</td>
+                <td class="agent-name" title="Jane Cyr">Jane Cyr</td>
+                <td class="office" title="Redfin Corporation">Redfin Corporation</td>
                 <td class="num">15</td>
                 <td class="num vol">$12.0M</td>
                 <td class="num">$800K</td>
                 <td class="towns">Wells, Biddeford, Kennebunkport</td>
             </tr><tr>
                 <td class="num">19</td>
-                <td class="agent-name">Elizabeth Coughlan</td>
-                <td>Legacy Properties Sotheby&#x27;s International Realty</td>
+                <td class="agent-name" title="Elizabeth Coughlan">Elizabeth Coughlan</td>
+                <td class="office" title="Legacy Properties Sotheby&#x27;s International Realty">Legacy Properties Sotheby&#x27;s International Realty</td>
                 <td class="num">3</td>
                 <td class="num vol">$11.5M</td>
                 <td class="num">$3.8M</td>
                 <td class="towns">Kennebunk, Kennebunkport</td>
             </tr><tr>
                 <td class="num">20</td>
-                <td class="agent-name">Carrie Scoville Amy Foley</td>
-                <td>Signature Homes Real Estate Group, LLC</td>
+                <td class="agent-name" title="Carrie Scoville Amy Foley">Carrie Scoville Amy Foley</td>
+                <td class="office" title="Signature Homes Real Estate Group, LLC">Signature Homes Real Estate Group, LLC</td>
                 <td class="num">21</td>
                 <td class="num vol">$11.4M</td>
                 <td class="num">$543K</td>
                 <td class="towns">Kennebunk, Kittery, Old Orchard Beach</td>
             </tr><tr>
                 <td class="num">21</td>
-                <td class="agent-name">Bette Schofield</td>
-                <td>Pack Maynard and Associates</td>
+                <td class="agent-name" title="Bette Schofield">Bette Schofield</td>
+                <td class="office" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
                 <td class="num">8</td>
                 <td class="num vol">$11.3M</td>
                 <td class="num">$1.4M</td>
                 <td class="towns">Kennebunkport, Kennebunk, Old Orchard Beach</td>
             </tr><tr>
                 <td class="num">22</td>
-                <td class="agent-name">Christopher Erikson</td>
-                <td>The Aland Realty Group, LLC</td>
+                <td class="agent-name" title="Christopher Erikson">Christopher Erikson</td>
+                <td class="office" title="The Aland Realty Group, LLC">The Aland Realty Group, LLC</td>
                 <td class="num">8</td>
                 <td class="num vol">$10.6M</td>
                 <td class="num">$1.3M</td>
                 <td class="towns">Kittery</td>
             </tr><tr>
                 <td class="num">23</td>
-                <td class="agent-name">Adrienne Robinson</td>
-                <td>Legacy Properties Sotheby&#x27;s International Realty</td>
+                <td class="agent-name" title="Adrienne Robinson">Adrienne Robinson</td>
+                <td class="office" title="Legacy Properties Sotheby&#x27;s International Realty">Legacy Properties Sotheby&#x27;s International Realty</td>
                 <td class="num">6</td>
                 <td class="num vol">$9.4M</td>
                 <td class="num">$1.6M</td>
                 <td class="towns">Kennebunkport, Kennebunk</td>
             </tr><tr>
                 <td class="num">24</td>
-                <td class="agent-name">David Marsden</td>
-                <td>Marsden Real Estate</td>
+                <td class="agent-name" title="David Marsden">David Marsden</td>
+                <td class="office" title="Marsden Real Estate">Marsden Real Estate</td>
                 <td class="num">15</td>
                 <td class="num vol">$8.9M</td>
                 <td class="num">$593K</td>
                 <td class="towns">Biddeford, Kennebunkport</td>
             </tr><tr>
                 <td class="num">25</td>
-                <td class="agent-name">Heather Shields</td>
-                <td>Legacy Properties Sotheby&#x27;s International Realty</td>
+                <td class="agent-name" title="Heather Shields">Heather Shields</td>
+                <td class="office" title="Legacy Properties Sotheby&#x27;s International Realty">Legacy Properties Sotheby&#x27;s International Realty</td>
                 <td class="num">1</td>
                 <td class="num vol">$8.4M</td>
                 <td class="num">$8.4M</td>
                 <td class="towns">Kennebunkport</td>
             </tr><tr>
                 <td class="num">26</td>
-                <td class="agent-name">Sandra Murray</td>
-                <td>Keller Williams Realty</td>
+                <td class="agent-name" title="Sandra Murray">Sandra Murray</td>
+                <td class="office" title="Keller Williams Realty">Keller Williams Realty</td>
                 <td class="num">6</td>
                 <td class="num vol">$8.3M</td>
                 <td class="num">$1.4M</td>
                 <td class="towns">Saco, Old Orchard Beach</td>
             </tr><tr>
                 <td class="num">27</td>
-                <td class="agent-name">Julie Barros</td>
-                <td>Coldwell Banker Realty</td>
+                <td class="agent-name" title="Julie Barros">Julie Barros</td>
+                <td class="office" title="Coldwell Banker Realty">Coldwell Banker Realty</td>
                 <td class="num">12</td>
                 <td class="num vol">$8.2M</td>
                 <td class="num">$684K</td>
                 <td class="towns">Kennebunk, Kennebunkport</td>
             </tr><tr>
                 <td class="num">28</td>
-                <td class="agent-name">Heather Motes</td>
-                <td>Sand Dollar Real Estate</td>
+                <td class="agent-name" title="Heather Motes">Heather Motes</td>
+                <td class="office" title="Sand Dollar Real Estate">Sand Dollar Real Estate</td>
                 <td class="num">8</td>
                 <td class="num vol">$8.1M</td>
                 <td class="num">$1.0M</td>
                 <td class="towns">Kennebunkport</td>
             </tr><tr>
                 <td class="num">29</td>
-                <td class="agent-name">Hylah Riley</td>
-                <td>Berkshire Hathaway HomeServices Verani Realty</td>
+                <td class="agent-name" title="Hylah Riley">Hylah Riley</td>
+                <td class="office" title="Berkshire Hathaway HomeServices Verani Realty">Berkshire Hathaway HomeServices Verani Realty</td>
                 <td class="num">11</td>
                 <td class="num vol">$8.0M</td>
                 <td class="num">$724K</td>
                 <td class="towns">Kennebunk, Kennebunkport, Old Orchard Beach</td>
             </tr><tr>
                 <td class="num">30</td>
-                <td class="agent-name">Jeffrey Jellison</td>
-                <td>CENTURY 21 Atlantic Realty</td>
+                <td class="agent-name" title="Jeffrey Jellison">Jeffrey Jellison</td>
+                <td class="office" title="CENTURY 21 Atlantic Realty">CENTURY 21 Atlantic Realty</td>
                 <td class="num">6</td>
                 <td class="num vol">$7.8M</td>
                 <td class="num">$1.3M</td>
@@ -569,6 +590,10 @@
         <h2>Top Agents &mdash; Last 365 Days</h2>
         <div class="table-wrap">
         <table>
+            <colgroup>
+                <col style="width:5%"><col style="width:22%"><col style="width:25%">
+                <col style="width:8%"><col style="width:14%"><col style="width:26%">
+            </colgroup>
             <thead><tr>
                 <th class="num">#</th>
                 <th>Agent</th>
@@ -579,211 +604,211 @@
             </tr></thead>
             <tbody><tr class="rank-1">
                 <td class="num">1</td>
-                <td class="agent-name">Heidi Maynard Corey Tracy</td>
-                <td>Pack Maynard and Associates</td>
+                <td class="agent-name" title="Heidi Maynard Corey Tracy">Heidi Maynard Corey Tracy</td>
+                <td class="office" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
                 <td class="num">8</td>
                 <td class="num vol">$14.8M</td>
                 <td style="text-align:center"><span class="badge badge-up">&#9650;9 ($14.8M)</span></td>
             </tr><tr>
                 <td class="num">2</td>
-                <td class="agent-name">Tracy Jackson Mccarty</td>
-                <td>The Aland Realty Group, LLC</td>
+                <td class="agent-name" title="Tracy Jackson Mccarty">Tracy Jackson Mccarty</td>
+                <td class="office" title="The Aland Realty Group, LLC">The Aland Realty Group, LLC</td>
                 <td class="num">14</td>
                 <td class="num vol">$13.5M</td>
                 <td style="text-align:center"><span class="badge badge-flat">&mdash; ($13.5M)</span></td>
             </tr><tr>
                 <td class="num">3</td>
-                <td class="agent-name">Troy Williams</td>
-                <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+                <td class="agent-name" title="Troy Williams">Troy Williams</td>
+                <td class="office" title="Keller Williams Coastal and Lakes &amp; Mountains Realty">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
                 <td class="num">15</td>
                 <td class="num vol">$11.4M</td>
                 <td style="text-align:center"><span class="badge badge-flat">&mdash; ($11.4M)</span></td>
             </tr><tr>
                 <td class="num">4</td>
-                <td class="agent-name">Jessica Girard</td>
-                <td>Pack Maynard and Associates</td>
+                <td class="agent-name" title="Jessica Girard">Jessica Girard</td>
+                <td class="office" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
                 <td class="num">7</td>
                 <td class="num vol">$10.1M</td>
                 <td style="text-align:center"><span class="badge badge-up">&#9650;2 ($10.1M)</span></td>
             </tr><tr>
                 <td class="num">5</td>
-                <td class="agent-name">Peter Mcpheeters</td>
-                <td>OceanView Properties</td>
+                <td class="agent-name" title="Peter Mcpheeters">Peter Mcpheeters</td>
+                <td class="office" title="OceanView Properties">OceanView Properties</td>
                 <td class="num">4</td>
                 <td class="num vol">$9.0M</td>
                 <td style="text-align:center"><span class="badge badge-up">&#9650;7 ($9.0M)</span></td>
             </tr><tr>
                 <td class="num">6</td>
-                <td class="agent-name">Adam Parent</td>
-                <td>Maine Real Estate Co</td>
+                <td class="agent-name" title="Adam Parent">Adam Parent</td>
+                <td class="office" title="Maine Real Estate Co">Maine Real Estate Co</td>
                 <td class="num">13</td>
                 <td class="num vol">$8.2M</td>
                 <td style="text-align:center"><span class="badge badge-up">&#9650;2 ($8.2M)</span></td>
             </tr><tr>
                 <td class="num">7</td>
-                <td class="agent-name">Mary Rockett</td>
-                <td>The Aland Realty Group, LLC</td>
+                <td class="agent-name" title="Mary Rockett">Mary Rockett</td>
+                <td class="office" title="The Aland Realty Group, LLC">The Aland Realty Group, LLC</td>
                 <td class="num">7</td>
                 <td class="num vol">$7.8M</td>
                 <td style="text-align:center"><span class="badge badge-up">&#9650;10 ($7.8M)</span></td>
             </tr><tr>
                 <td class="num">8</td>
-                <td class="agent-name">Anne Erwin Real Estate</td>
-                <td>Anne Erwin Sotheby&#x27;s International Realty</td>
+                <td class="agent-name" title="Anne Erwin Real Estate">Anne Erwin Real Estate</td>
+                <td class="office" title="Anne Erwin Sotheby&#x27;s International Realty">Anne Erwin Sotheby&#x27;s International Realty</td>
                 <td class="num">8</td>
                 <td class="num vol">$7.5M</td>
                 <td style="text-align:center"><span class="badge badge-down">&#9660;4 ($7.5M)</span></td>
             </tr><tr>
                 <td class="num">9</td>
-                <td class="agent-name">David Marsden</td>
-                <td>Marsden Real Estate</td>
+                <td class="agent-name" title="David Marsden">David Marsden</td>
+                <td class="office" title="Marsden Real Estate">Marsden Real Estate</td>
                 <td class="num">11</td>
                 <td class="num vol">$5.8M</td>
                 <td style="text-align:center"><span class="badge badge-up">&#9650;15 ($5.8M)</span></td>
             </tr><tr>
                 <td class="num">10</td>
-                <td class="agent-name">Elise Wyman</td>
-                <td>Pack Maynard and Associates</td>
+                <td class="agent-name" title="Elise Wyman">Elise Wyman</td>
+                <td class="office" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
                 <td class="num">4</td>
                 <td class="num vol">$5.4M</td>
                 <td style="text-align:center"><span class="badge badge-up">&#9650;6 ($5.4M)</span></td>
             </tr><tr>
                 <td class="num">11</td>
-                <td class="agent-name">Nancy Moreshead</td>
-                <td>The Real Estate Store</td>
+                <td class="agent-name" title="Nancy Moreshead">Nancy Moreshead</td>
+                <td class="office" title="The Real Estate Store">The Real Estate Store</td>
                 <td class="num">7</td>
                 <td class="num vol">$5.4M</td>
                 <td style="text-align:center"><span class="badge badge-down">&#9660;2 ($5.4M)</span></td>
             </tr><tr>
                 <td class="num">12</td>
-                <td class="agent-name">Marie Holt</td>
-                <td>The Gove Group Real Estate, LLC</td>
+                <td class="agent-name" title="Marie Holt">Marie Holt</td>
+                <td class="office" title="The Gove Group Real Estate, LLC">The Gove Group Real Estate, LLC</td>
                 <td class="num">5</td>
                 <td class="num vol">$4.9M</td>
                 <td style="text-align:center"><span class="badge badge-new">NEW</span></td>
             </tr><tr>
                 <td class="num">13</td>
-                <td class="agent-name">Erin Oldham</td>
-                <td>Portside Real Estate Group</td>
+                <td class="agent-name" title="Erin Oldham">Erin Oldham</td>
+                <td class="office" title="Portside Real Estate Group">Portside Real Estate Group</td>
                 <td class="num">11</td>
                 <td class="num vol">$4.7M</td>
                 <td style="text-align:center"><span class="badge badge-new">NEW</span></td>
             </tr><tr>
                 <td class="num">14</td>
-                <td class="agent-name">Marika Clark</td>
-                <td>Legacy Properties Sotheby&#x27;s International Realty</td>
+                <td class="agent-name" title="Marika Clark">Marika Clark</td>
+                <td class="office" title="Legacy Properties Sotheby&#x27;s International Realty">Legacy Properties Sotheby&#x27;s International Realty</td>
                 <td class="num">2</td>
                 <td class="num vol">$4.0M</td>
                 <td style="text-align:center"><span class="badge badge-new">NEW</span></td>
             </tr><tr>
                 <td class="num">15</td>
-                <td class="agent-name">Bailey Pate</td>
-                <td>Maine Real Estate Co</td>
+                <td class="agent-name" title="Bailey Pate">Bailey Pate</td>
+                <td class="office" title="Maine Real Estate Co">Maine Real Estate Co</td>
                 <td class="num">5</td>
                 <td class="num vol">$3.6M</td>
                 <td style="text-align:center"><span class="badge badge-new">NEW</span></td>
             </tr><tr>
                 <td class="num">16</td>
-                <td class="agent-name">William Gaynor</td>
-                <td>Legacy Properties Sotheby&#x27;s International Realty</td>
+                <td class="agent-name" title="William Gaynor">William Gaynor</td>
+                <td class="office" title="Legacy Properties Sotheby&#x27;s International Realty">Legacy Properties Sotheby&#x27;s International Realty</td>
                 <td class="num">2</td>
                 <td class="num vol">$3.5M</td>
                 <td style="text-align:center"><span class="badge badge-down">&#9660;15 ($3.5M)</span></td>
             </tr><tr>
                 <td class="num">17</td>
-                <td class="agent-name">Jane Cyr</td>
-                <td>Redfin Corporation</td>
+                <td class="agent-name" title="Jane Cyr">Jane Cyr</td>
+                <td class="office" title="Redfin Corporation">Redfin Corporation</td>
                 <td class="num">5</td>
                 <td class="num vol">$3.4M</td>
                 <td style="text-align:center"><span class="badge badge-up">&#9650;1 ($3.4M)</span></td>
             </tr><tr>
                 <td class="num">18</td>
-                <td class="agent-name">Dennis Page</td>
-                <td>Dennis M. Page Real Estate</td>
+                <td class="agent-name" title="Dennis Page">Dennis Page</td>
+                <td class="office" title="Dennis M. Page Real Estate">Dennis M. Page Real Estate</td>
                 <td class="num">6</td>
                 <td class="num vol">$3.3M</td>
                 <td style="text-align:center"><span class="badge badge-down">&#9660;3 ($3.3M)</span></td>
             </tr><tr>
                 <td class="num">19</td>
-                <td class="agent-name">Victoria Benenti</td>
-                <td>Pack Maynard and Associates</td>
+                <td class="agent-name" title="Victoria Benenti">Victoria Benenti</td>
+                <td class="office" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
                 <td class="num">3</td>
                 <td class="num vol">$3.3M</td>
                 <td style="text-align:center"><span class="badge badge-down">&#9660;12 ($3.3M)</span></td>
             </tr><tr>
                 <td class="num">20</td>
-                <td class="agent-name">Bette Schofield</td>
-                <td>Pack Maynard and Associates</td>
+                <td class="agent-name" title="Bette Schofield">Bette Schofield</td>
+                <td class="office" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
                 <td class="num">3</td>
                 <td class="num vol">$3.2M</td>
                 <td style="text-align:center"><span class="badge badge-up">&#9650;1 ($3.2M)</span></td>
             </tr><tr>
                 <td class="num">21</td>
-                <td class="agent-name">Alissa Saulnier</td>
-                <td>Forge Real Estate</td>
+                <td class="agent-name" title="Alissa Saulnier">Alissa Saulnier</td>
+                <td class="office" title="Forge Real Estate">Forge Real Estate</td>
                 <td class="num">2</td>
                 <td class="num vol">$3.2M</td>
                 <td style="text-align:center"><span class="badge badge-new">NEW</span></td>
             </tr><tr>
                 <td class="num">22</td>
-                <td class="agent-name">Jeffrey Jellison</td>
-                <td>CENTURY 21 Atlantic Realty</td>
+                <td class="agent-name" title="Jeffrey Jellison">Jeffrey Jellison</td>
+                <td class="office" title="CENTURY 21 Atlantic Realty">CENTURY 21 Atlantic Realty</td>
                 <td class="num">2</td>
                 <td class="num vol">$3.2M</td>
                 <td style="text-align:center"><span class="badge badge-up">&#9650;8 ($3.2M)</span></td>
             </tr><tr>
                 <td class="num">23</td>
-                <td class="agent-name">Anne Mcpheeters</td>
-                <td>OceanView Properties</td>
+                <td class="agent-name" title="Anne Mcpheeters">Anne Mcpheeters</td>
+                <td class="office" title="OceanView Properties">OceanView Properties</td>
                 <td class="num">2</td>
                 <td class="num vol">$3.1M</td>
                 <td style="text-align:center"><span class="badge badge-new">NEW</span></td>
             </tr><tr>
                 <td class="num">24</td>
-                <td class="agent-name">Margaret Mailman</td>
-                <td>Coldwell Banker Realty</td>
+                <td class="agent-name" title="Margaret Mailman">Margaret Mailman</td>
+                <td class="office" title="Coldwell Banker Realty">Coldwell Banker Realty</td>
                 <td class="num">7</td>
                 <td class="num vol">$3.1M</td>
                 <td style="text-align:center"><span class="badge badge-new">NEW</span></td>
             </tr><tr>
                 <td class="num">25</td>
-                <td class="agent-name">Roz Anton</td>
-                <td>EXP Realty</td>
+                <td class="agent-name" title="Roz Anton">Roz Anton</td>
+                <td class="office" title="EXP Realty">EXP Realty</td>
                 <td class="num">5</td>
                 <td class="num vol">$3.1M</td>
                 <td style="text-align:center"><span class="badge badge-new">NEW</span></td>
             </tr><tr>
                 <td class="num">26</td>
-                <td class="agent-name">Priscilla Ford</td>
-                <td>The Aland Realty Group, LLC</td>
+                <td class="agent-name" title="Priscilla Ford">Priscilla Ford</td>
+                <td class="office" title="The Aland Realty Group, LLC">The Aland Realty Group, LLC</td>
                 <td class="num">3</td>
                 <td class="num vol">$3.0M</td>
                 <td style="text-align:center"><span class="badge badge-new">NEW</span></td>
             </tr><tr>
                 <td class="num">27</td>
-                <td class="agent-name">Christopher Erikson</td>
-                <td>The Aland Realty Group, LLC</td>
+                <td class="agent-name" title="Christopher Erikson">Christopher Erikson</td>
+                <td class="office" title="The Aland Realty Group, LLC">The Aland Realty Group, LLC</td>
                 <td class="num">3</td>
                 <td class="num vol">$3.0M</td>
                 <td style="text-align:center"><span class="badge badge-down">&#9660;5 ($3.0M)</span></td>
             </tr><tr>
                 <td class="num">28</td>
-                <td class="agent-name">Pamela Gray</td>
-                <td>RE/MAX Shoreline</td>
+                <td class="agent-name" title="Pamela Gray">Pamela Gray</td>
+                <td class="office" title="RE/MAX Shoreline">RE/MAX Shoreline</td>
                 <td class="num">7</td>
                 <td class="num vol">$3.0M</td>
                 <td style="text-align:center"><span class="badge badge-new">NEW</span></td>
             </tr><tr>
                 <td class="num">29</td>
-                <td class="agent-name">Jim Nadeau</td>
-                <td>LandVest / Christie&#x27;s International Real Estate</td>
+                <td class="agent-name" title="Jim Nadeau">Jim Nadeau</td>
+                <td class="office" title="LandVest / Christie&#x27;s International Real Estate">LandVest / Christie&#x27;s International Real Estate</td>
                 <td class="num">1</td>
                 <td class="num vol">$3.0M</td>
                 <td style="text-align:center"><span class="badge badge-new">NEW</span></td>
             </tr><tr>
                 <td class="num">30</td>
-                <td class="agent-name">Jane Chase</td>
-                <td>Landvest, Inc.</td>
+                <td class="agent-name" title="Jane Chase">Jane Chase</td>
+                <td class="office" title="Landvest, Inc.">Landvest, Inc.</td>
                 <td class="num">2</td>
                 <td class="num vol">$3.0M</td>
                 <td style="text-align:center"><span class="badge badge-new">NEW</span></td>
@@ -792,122 +817,342 @@
         </div>
     </section>
 <section class="section">
-        <h2>Top Brokerages</h2>
+        <h2>Top Brokerages &mdash; All-Time</h2>
         <div class="table-wrap">
         <table>
+            <colgroup>
+                <col style="width:4%"><col style="width:22%"><col style="width:7%">
+                <col style="width:12%"><col style="width:10%"><col style="width:18%"><col style="width:27%">
+            </colgroup>
             <thead><tr>
                 <th class="num">#</th>
                 <th>Brokerage</th>
                 <th class="num">Sides</th>
                 <th class="num">Volume</th>
                 <th class="num">Avg Price</th>
+                <th>Towns</th>
                 <th>Top Agents</th>
             </tr></thead>
             <tbody><tr class="rank-1">
                 <td class="num">1</td>
-                <td class="agent-name">Pack Maynard and Associates</td>
+                <td class="agent-name" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
                 <td class="num">109</td>
                 <td class="num vol">$138.3M</td>
                 <td class="num">$1.3M</td>
-                <td>Jessica Girard, Heidi Maynard, Victoria Benenti</td>
+                <td class="towns">Kennebunkport, Kennebunk, Old Orchard Beach</td>
+                <td class="top-agents" title="Jessica Girard, Heidi Maynard, Victoria Benenti">Jessica Girard, Heidi Maynard, Victoria Benenti</td>
             </tr><tr>
                 <td class="num">2</td>
-                <td class="agent-name">Keller Williams Realty</td>
+                <td class="agent-name" title="Keller Williams Realty">Keller Williams Realty</td>
                 <td class="num">140</td>
                 <td class="num vol">$98.1M</td>
                 <td class="num">$701K</td>
-                <td>Adrian Ramsdell, Cynthia Dubois-Cote, Maureen Deleo</td>
+                <td class="towns">Old Orchard Beach, Biddeford, Kennebunk</td>
+                <td class="top-agents" title="Adrian Ramsdell, Cynthia Dubois-Cote, Maureen Deleo">Adrian Ramsdell, Cynthia Dubois-Cote, Maureen Deleo</td>
             </tr><tr>
                 <td class="num">3</td>
-                <td class="agent-name">Legacy Properties Sotheby&#x27;s International Realty</td>
+                <td class="agent-name" title="Legacy Properties Sotheby&#x27;s International Realty">Legacy Properties Sotheby&#x27;s International Realty</td>
                 <td class="num">37</td>
                 <td class="num vol">$96.4M</td>
                 <td class="num">$2.6M</td>
-                <td>William Gaynor, Adrienne Robinson, Randal Simon</td>
+                <td class="towns">Kennebunkport, Kennebunk, Biddeford</td>
+                <td class="top-agents" title="William Gaynor, Adrienne Robinson, Randal Simon">William Gaynor, Adrienne Robinson, Randal Simon</td>
             </tr><tr>
                 <td class="num">4</td>
-                <td class="agent-name">Coldwell Banker Realty</td>
+                <td class="agent-name" title="Coldwell Banker Realty">Coldwell Banker Realty</td>
                 <td class="num">165</td>
                 <td class="num vol">$79.6M</td>
                 <td class="num">$483K</td>
-                <td>Margaret Mailman, Bob Letellier, Daniel Letellier</td>
+                <td class="towns">Biddeford, Old Orchard Beach, Kennebunk</td>
+                <td class="top-agents" title="Margaret Mailman, Bob Letellier, Daniel Letellier">Margaret Mailman, Bob Letellier, Daniel Letellier</td>
             </tr><tr>
                 <td class="num">5</td>
-                <td class="agent-name">The Aland Realty Group, LLC</td>
+                <td class="agent-name" title="The Aland Realty Group, LLC">The Aland Realty Group, LLC</td>
                 <td class="num">82</td>
                 <td class="num vol">$75.2M</td>
                 <td class="num">$917K</td>
-                <td>Tracy Jackson Mccarty, Mary Rockett, Christopher Erikson</td>
+                <td class="towns">York, Kittery, Kennebunk</td>
+                <td class="top-agents" title="Tracy Jackson Mccarty, Mary Rockett, Christopher Erikson">Tracy Jackson Mccarty, Mary Rockett, Christopher Erikson</td>
             </tr><tr>
                 <td class="num">6</td>
-                <td class="agent-name">Portside Real Estate Group</td>
+                <td class="agent-name" title="Portside Real Estate Group">Portside Real Estate Group</td>
                 <td class="num">105</td>
                 <td class="num vol">$64.5M</td>
                 <td class="num">$614K</td>
-                <td>Rebecca Bassett, Erin Oldham, Cady Toussaint</td>
+                <td class="towns">Kennebunk, Biddeford, Old Orchard Beach</td>
+                <td class="top-agents" title="Rebecca Bassett, Erin Oldham, Cady Toussaint">Rebecca Bassett, Erin Oldham, Cady Toussaint</td>
             </tr><tr>
                 <td class="num">7</td>
-                <td class="agent-name">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+                <td class="agent-name" title="Keller Williams Coastal and Lakes &amp; Mountains Realty">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
                 <td class="num">82</td>
                 <td class="num vol">$56.8M</td>
                 <td class="num">$693K</td>
-                <td>Troy Williams, Alicia Goodwin, Heather Crosby</td>
+                <td class="towns">Kittery, York, Kennebunk</td>
+                <td class="top-agents" title="Troy Williams, Alicia Goodwin, Heather Crosby">Troy Williams, Alicia Goodwin, Heather Crosby</td>
             </tr><tr>
                 <td class="num">8</td>
-                <td class="agent-name">EXP Realty</td>
+                <td class="agent-name" title="EXP Realty">EXP Realty</td>
                 <td class="num">66</td>
                 <td class="num vol">$32.3M</td>
                 <td class="num">$489K</td>
-                <td>Roz Anton, Robert Magazu, Kathleen Mccallum</td>
+                <td class="towns">Biddeford, Old Orchard Beach, Kennebunk</td>
+                <td class="top-agents" title="Roz Anton, Robert Magazu, Kathleen Mccallum">Roz Anton, Robert Magazu, Kathleen Mccallum</td>
             </tr><tr>
                 <td class="num">9</td>
-                <td class="agent-name">Maine Real Estate Co</td>
+                <td class="agent-name" title="Maine Real Estate Co">Maine Real Estate Co</td>
                 <td class="num">56</td>
                 <td class="num vol">$29.8M</td>
                 <td class="num">$532K</td>
-                <td>Adam Parent, Bailey Pate, Yulia Glasgow</td>
+                <td class="towns">Old Orchard Beach, Biddeford, Saco</td>
+                <td class="top-agents" title="Adam Parent, Bailey Pate, Yulia Glasgow">Adam Parent, Bailey Pate, Yulia Glasgow</td>
             </tr><tr>
                 <td class="num">10</td>
-                <td class="agent-name">Kennebunk Beach Realty</td>
+                <td class="agent-name" title="Kennebunk Beach Realty">Kennebunk Beach Realty</td>
                 <td class="num">33</td>
                 <td class="num vol">$29.1M</td>
                 <td class="num">$882K</td>
-                <td>Denise Hodsdon, Helen Curry, Laura Ross</td>
+                <td class="towns">Kennebunk, Kennebunkport, Biddeford</td>
+                <td class="top-agents" title="Denise Hodsdon, Helen Curry, Laura Ross">Denise Hodsdon, Helen Curry, Laura Ross</td>
             </tr><tr>
                 <td class="num">11</td>
-                <td class="agent-name">OceanView Properties</td>
+                <td class="agent-name" title="OceanView Properties">OceanView Properties</td>
                 <td class="num">22</td>
                 <td class="num vol">$27.5M</td>
                 <td class="num">$1.3M</td>
-                <td>Joey Radford, Peter Mcpheeters, Anne Mcpheeters</td>
+                <td class="towns">Biddeford, Kennebunk, Kennebunkport</td>
+                <td class="top-agents" title="Joey Radford, Peter Mcpheeters, Anne Mcpheeters">Joey Radford, Peter Mcpheeters, Anne Mcpheeters</td>
             </tr><tr>
                 <td class="num">12</td>
-                <td class="agent-name">Berkshire Hathaway HomeServices Verani Realty</td>
+                <td class="agent-name" title="Berkshire Hathaway HomeServices Verani Realty">Berkshire Hathaway HomeServices Verani Realty</td>
                 <td class="num">37</td>
                 <td class="num vol">$26.5M</td>
                 <td class="num">$715K</td>
-                <td>Hylah Riley, Gregory Cloutier Christina Connell, Betty Smith</td>
+                <td class="towns">Kennebunk, Old Orchard Beach, Kennebunkport</td>
+                <td class="top-agents" title="Hylah Riley, Gregory Cloutier Christina Connell, Betty Smith">Hylah Riley, Gregory Cloutier Christina Connell, Betty Smith</td>
             </tr><tr>
                 <td class="num">13</td>
-                <td class="agent-name">Better Homes &amp; Gardens Real Estate/The Masiello Group</td>
+                <td class="agent-name" title="Better Homes &amp; Gardens Real Estate/The Masiello Group">Better Homes &amp; Gardens Real Estate/The Masiello Group</td>
                 <td class="num">41</td>
                 <td class="num vol">$24.1M</td>
                 <td class="num">$588K</td>
-                <td>Jonathan Safford, Steven Brunette, Paula Standley</td>
+                <td class="towns">Kennebunk, Kittery, Biddeford</td>
+                <td class="top-agents" title="Jonathan Safford, Steven Brunette, Paula Standley">Jonathan Safford, Steven Brunette, Paula Standley</td>
             </tr><tr>
                 <td class="num">14</td>
-                <td class="agent-name">RE/MAX Shoreline</td>
+                <td class="agent-name" title="RE/MAX Shoreline">RE/MAX Shoreline</td>
                 <td class="num">42</td>
                 <td class="num vol">$23.7M</td>
                 <td class="num">$565K</td>
-                <td>Pamela Gray, Glenn Thibodeau, Crystal Tropeano</td>
+                <td class="towns">Kittery, Kennebunk, Wells</td>
+                <td class="top-agents" title="Pamela Gray, Glenn Thibodeau, Crystal Tropeano">Pamela Gray, Glenn Thibodeau, Crystal Tropeano</td>
             </tr><tr>
                 <td class="num">15</td>
-                <td class="agent-name">Redfin Corporation</td>
+                <td class="agent-name" title="Redfin Corporation">Redfin Corporation</td>
                 <td class="num">31</td>
                 <td class="num vol">$22.3M</td>
                 <td class="num">$720K</td>
-                <td>Jane Cyr, Megan Mcshane, Doreen Soares</td>
+                <td class="towns">Wells, York, Biddeford</td>
+                <td class="top-agents" title="Jane Cyr, Megan Mcshane, Doreen Soares">Jane Cyr, Megan Mcshane, Doreen Soares</td>
+            </tr><tr>
+                <td class="num">16</td>
+                <td class="agent-name" title="The Real Estate Store">The Real Estate Store</td>
+                <td class="num">31</td>
+                <td class="num vol">$20.0M</td>
+                <td class="num">$644K</td>
+                <td class="towns">Old Orchard Beach, Kittery</td>
+                <td class="top-agents" title="Nancy Moreshead, John Murphy, Kevin D&#x27;Amboise">Nancy Moreshead, John Murphy, Kevin D&#x27;Amboise</td>
+            </tr><tr>
+                <td class="num">17</td>
+                <td class="agent-name" title="Signature Homes Real Estate Group, LLC">Signature Homes Real Estate Group, LLC</td>
+                <td class="num">36</td>
+                <td class="num vol">$19.4M</td>
+                <td class="num">$540K</td>
+                <td class="towns">Kennebunk, Old Orchard Beach, Biddeford</td>
+                <td class="top-agents" title="Carrie Scoville Amy Foley, Ashley Lutko Donna Galluzzo, Matthew Lamontagne Gena Lamontagne">Carrie Scoville Amy Foley, Ashley Lutko Donna Galluzzo, Matthew Lamontagne Gena Lamontagne</td>
+            </tr><tr>
+                <td class="num">18</td>
+                <td class="agent-name" title="Anne Erwin Sotheby&#x27;s International Realty">Anne Erwin Sotheby&#x27;s International Realty</td>
+                <td class="num">14</td>
+                <td class="num vol">$15.5M</td>
+                <td class="num">$1.1M</td>
+                <td class="towns">York, Kittery, Ogunquit</td>
+                <td class="top-agents" title="Anne Erwin Real Estate">Anne Erwin Real Estate</td>
+            </tr><tr>
+                <td class="num">19</td>
+                <td class="agent-name" title="RE/MAX Realty One">RE/MAX Realty One</td>
+                <td class="num">29</td>
+                <td class="num vol">$14.5M</td>
+                <td class="num">$500K</td>
+                <td class="towns">Kittery, Kennebunk, Biddeford</td>
+                <td class="top-agents" title="Carmen Lessard, Donald Wunder, Joshua Lagasse">Carmen Lessard, Donald Wunder, Joshua Lagasse</td>
+            </tr><tr>
+                <td class="num">20</td>
+                <td class="agent-name" title="Dennis M. Page Real Estate">Dennis M. Page Real Estate</td>
+                <td class="num">24</td>
+                <td class="num vol">$13.6M</td>
+                <td class="num">$568K</td>
+                <td class="towns">Kittery</td>
+                <td class="top-agents" title="Dennis Page">Dennis Page</td>
+            </tr></tbody>
+        </table>
+        </div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages &mdash; Last 365 Days</h2>
+        <div class="table-wrap">
+        <table>
+            <colgroup>
+                <col style="width:4%"><col style="width:24%"><col style="width:8%">
+                <col style="width:14%"><col style="width:20%"><col style="width:30%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Brokerage</th>
+                <th class="num">Sides</th>
+                <th class="num">Volume</th>
+                <th>Towns</th>
+                <th style="text-align:center">Trend</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+                <td class="num">1</td>
+                <td class="agent-name" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
+                <td class="num">32</td>
+                <td class="num vol">$42.3M</td>
+                <td class="towns">Kennebunkport, Kennebunk, Old Orchard Beach</td>
+                <td style="text-align:center"><span class="badge badge-flat">&mdash; ($42.3M)</span></td>
+            </tr><tr>
+                <td class="num">2</td>
+                <td class="agent-name" title="The Aland Realty Group, LLC">The Aland Realty Group, LLC</td>
+                <td class="num">33</td>
+                <td class="num vol">$32.4M</td>
+                <td class="towns">York, Kittery, Kennebunk</td>
+                <td style="text-align:center"><span class="badge badge-up">&#9650;3 ($32.4M)</span></td>
+            </tr><tr>
+                <td class="num">3</td>
+                <td class="agent-name" title="Keller Williams Realty">Keller Williams Realty</td>
+                <td class="num">41</td>
+                <td class="num vol">$28.9M</td>
+                <td class="towns">Old Orchard Beach, Biddeford, Kennebunk</td>
+                <td style="text-align:center"><span class="badge badge-down">&#9660;1 ($28.9M)</span></td>
+            </tr><tr>
+                <td class="num">4</td>
+                <td class="agent-name" title="Keller Williams Coastal and Lakes &amp; Mountains Realty">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+                <td class="num">30</td>
+                <td class="num vol">$19.9M</td>
+                <td class="towns">Kittery, York, Kennebunk</td>
+                <td style="text-align:center"><span class="badge badge-up">&#9650;3 ($19.9M)</span></td>
+            </tr><tr>
+                <td class="num">5</td>
+                <td class="agent-name" title="Coldwell Banker Realty">Coldwell Banker Realty</td>
+                <td class="num">49</td>
+                <td class="num vol">$19.6M</td>
+                <td class="towns">Biddeford, Old Orchard Beach, Kennebunk</td>
+                <td style="text-align:center"><span class="badge badge-down">&#9660;1 ($19.6M)</span></td>
+            </tr><tr>
+                <td class="num">6</td>
+                <td class="agent-name" title="Maine Real Estate Co">Maine Real Estate Co</td>
+                <td class="num">30</td>
+                <td class="num vol">$17.8M</td>
+                <td class="towns">Old Orchard Beach, Biddeford, Saco</td>
+                <td style="text-align:center"><span class="badge badge-up">&#9650;3 ($17.8M)</span></td>
+            </tr><tr>
+                <td class="num">7</td>
+                <td class="agent-name" title="Portside Real Estate Group">Portside Real Estate Group</td>
+                <td class="num">28</td>
+                <td class="num vol">$16.9M</td>
+                <td class="towns">Kennebunk, Biddeford, Old Orchard Beach</td>
+                <td style="text-align:center"><span class="badge badge-down">&#9660;1 ($16.9M)</span></td>
+            </tr><tr>
+                <td class="num">8</td>
+                <td class="agent-name" title="OceanView Properties">OceanView Properties</td>
+                <td class="num">8</td>
+                <td class="num vol">$14.3M</td>
+                <td class="towns">Biddeford, Kennebunk, Kennebunkport</td>
+                <td style="text-align:center"><span class="badge badge-up">&#9650;3 ($14.3M)</span></td>
+            </tr><tr>
+                <td class="num">9</td>
+                <td class="agent-name" title="Legacy Properties Sotheby&#x27;s International Realty">Legacy Properties Sotheby&#x27;s International Realty</td>
+                <td class="num">9</td>
+                <td class="num vol">$13.1M</td>
+                <td class="towns">Kennebunkport, Kennebunk, Biddeford</td>
+                <td style="text-align:center"><span class="badge badge-down">&#9660;6 ($13.1M)</span></td>
+            </tr><tr>
+                <td class="num">10</td>
+                <td class="agent-name" title="EXP Realty">EXP Realty</td>
+                <td class="num">23</td>
+                <td class="num vol">$12.3M</td>
+                <td class="towns">Biddeford, Old Orchard Beach, Kennebunk</td>
+                <td style="text-align:center"><span class="badge badge-down">&#9660;2 ($12.3M)</span></td>
+            </tr><tr>
+                <td class="num">11</td>
+                <td class="agent-name" title="Berkshire Hathaway HomeServices Verani Realty">Berkshire Hathaway HomeServices Verani Realty</td>
+                <td class="num">12</td>
+                <td class="num vol">$9.5M</td>
+                <td class="towns">Kennebunk, Old Orchard Beach, Kennebunkport</td>
+                <td style="text-align:center"><span class="badge badge-up">&#9650;1 ($9.5M)</span></td>
+            </tr><tr>
+                <td class="num">12</td>
+                <td class="agent-name" title="RE/MAX Shoreline">RE/MAX Shoreline</td>
+                <td class="num">18</td>
+                <td class="num vol">$8.4M</td>
+                <td class="towns">Kittery, Kennebunk, Wells</td>
+                <td style="text-align:center"><span class="badge badge-up">&#9650;2 ($8.4M)</span></td>
+            </tr><tr>
+                <td class="num">13</td>
+                <td class="agent-name" title="The Gove Group Real Estate, LLC">The Gove Group Real Estate, LLC</td>
+                <td class="num">9</td>
+                <td class="num vol">$8.0M</td>
+                <td class="towns">Kennebunk, Kittery</td>
+                <td style="text-align:center"><span class="badge badge-new">NEW</span></td>
+            </tr><tr>
+                <td class="num">14</td>
+                <td class="agent-name" title="Marsden Real Estate">Marsden Real Estate</td>
+                <td class="num">11</td>
+                <td class="num vol">$5.8M</td>
+                <td class="towns">Biddeford, Kennebunkport</td>
+                <td style="text-align:center"><span class="badge badge-new">NEW</span></td>
+            </tr><tr>
+                <td class="num">15</td>
+                <td class="agent-name" title="Redfin Corporation">Redfin Corporation</td>
+                <td class="num">9</td>
+                <td class="num vol">$5.4M</td>
+                <td class="towns">Wells, York, Biddeford</td>
+                <td style="text-align:center"><span class="badge badge-flat">&mdash; ($5.4M)</span></td>
+            </tr><tr>
+                <td class="num">16</td>
+                <td class="agent-name" title="The Real Estate Store">The Real Estate Store</td>
+                <td class="num">7</td>
+                <td class="num vol">$5.4M</td>
+                <td class="towns">Old Orchard Beach, Kittery</td>
+                <td style="text-align:center"><span class="badge badge-flat">&mdash; ($5.4M)</span></td>
+            </tr><tr>
+                <td class="num">17</td>
+                <td class="agent-name" title="Anchor Real Estate">Anchor Real Estate</td>
+                <td class="num">6</td>
+                <td class="num vol">$5.3M</td>
+                <td class="towns">Ogunquit, Kennebunk, Kittery</td>
+                <td style="text-align:center"><span class="badge badge-new">NEW</span></td>
+            </tr><tr>
+                <td class="num">18</td>
+                <td class="agent-name" title="RE/MAX Realty One">RE/MAX Realty One</td>
+                <td class="num">9</td>
+                <td class="num vol">$5.1M</td>
+                <td class="towns">Kittery, Kennebunk, Biddeford</td>
+                <td style="text-align:center"><span class="badge badge-up">&#9650;1 ($5.1M)</span></td>
+            </tr><tr>
+                <td class="num">19</td>
+                <td class="agent-name" title="Better Homes &amp; Gardens Real Estate/The Masiello Group">Better Homes &amp; Gardens Real Estate/The Masiello Group</td>
+                <td class="num">8</td>
+                <td class="num vol">$4.9M</td>
+                <td class="towns">Kennebunk, Kittery, Biddeford</td>
+                <td style="text-align:center"><span class="badge badge-down">&#9660;6 ($4.9M)</span></td>
+            </tr><tr>
+                <td class="num">20</td>
+                <td class="agent-name" title="Signature Homes Real Estate Group, LLC">Signature Homes Real Estate Group, LLC</td>
+                <td class="num">9</td>
+                <td class="num vol">$4.5M</td>
+                <td class="towns">Kennebunk, Old Orchard Beach, Biddeford</td>
+                <td style="text-align:center"><span class="badge badge-down">&#9660;3 ($4.5M)</span></td>
             </tr></tbody>
         </table>
         </div>
@@ -918,6 +1163,10 @@
             <h3>Kittery</h3>
             <div class="table-wrap">
             <table>
+                <colgroup>
+                    <col style="width:6%"><col style="width:28%"><col style="width:34%">
+                    <col style="width:10%"><col style="width:22%">
+                </colgroup>
                 <thead><tr>
                     <th class="num">#</th>
                     <th>Agent</th>
@@ -927,32 +1176,32 @@
                 </tr></thead>
                 <tbody><tr>
                     <td class="num">1</td>
-                    <td class="agent-name">Dennis Page</td>
-                    <td>Dennis M. Page Real Estate</td>
+                    <td class="agent-name" title="Dennis Page">Dennis Page</td>
+                    <td class="office" title="Dennis M. Page Real Estate">Dennis M. Page Real Estate</td>
                     <td class="num">24</td>
                     <td class="num vol">$13.6M</td>
                 </tr><tr>
                     <td class="num">2</td>
-                    <td class="agent-name">Anne Erwin Real Estate</td>
-                    <td>Anne Erwin Sotheby&#x27;s International Realty</td>
+                    <td class="agent-name" title="Anne Erwin Real Estate">Anne Erwin Real Estate</td>
+                    <td class="office" title="Anne Erwin Sotheby&#x27;s International Realty">Anne Erwin Sotheby&#x27;s International Realty</td>
                     <td class="num">8</td>
                     <td class="num vol">$10.6M</td>
                 </tr><tr>
                     <td class="num">3</td>
-                    <td class="agent-name">Christopher Erikson</td>
-                    <td>The Aland Realty Group, LLC</td>
+                    <td class="agent-name" title="Christopher Erikson">Christopher Erikson</td>
+                    <td class="office" title="The Aland Realty Group, LLC">The Aland Realty Group, LLC</td>
                     <td class="num">8</td>
                     <td class="num vol">$10.6M</td>
                 </tr><tr>
                     <td class="num">4</td>
-                    <td class="agent-name">Troy Williams</td>
-                    <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+                    <td class="agent-name" title="Troy Williams">Troy Williams</td>
+                    <td class="office" title="Keller Williams Coastal and Lakes &amp; Mountains Realty">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
                     <td class="num">12</td>
                     <td class="num vol">$6.1M</td>
                 </tr><tr>
                     <td class="num">5</td>
-                    <td class="agent-name">Pamela Gray</td>
-                    <td>RE/MAX Shoreline</td>
+                    <td class="agent-name" title="Pamela Gray">Pamela Gray</td>
+                    <td class="office" title="RE/MAX Shoreline">RE/MAX Shoreline</td>
                     <td class="num">11</td>
                     <td class="num vol">$5.6M</td>
                 </tr></tbody>
@@ -962,6 +1211,10 @@
             <h3>York</h3>
             <div class="table-wrap">
             <table>
+                <colgroup>
+                    <col style="width:6%"><col style="width:28%"><col style="width:34%">
+                    <col style="width:10%"><col style="width:22%">
+                </colgroup>
                 <thead><tr>
                     <th class="num">#</th>
                     <th>Agent</th>
@@ -971,32 +1224,32 @@
                 </tr></thead>
                 <tbody><tr>
                     <td class="num">1</td>
-                    <td class="agent-name">Tracy Jackson Mccarty</td>
-                    <td>The Aland Realty Group, LLC</td>
+                    <td class="agent-name" title="Tracy Jackson Mccarty">Tracy Jackson Mccarty</td>
+                    <td class="office" title="The Aland Realty Group, LLC">The Aland Realty Group, LLC</td>
                     <td class="num">34</td>
                     <td class="num vol">$33.9M</td>
                 </tr><tr>
                     <td class="num">2</td>
-                    <td class="agent-name">Mary Rockett</td>
-                    <td>The Aland Realty Group, LLC</td>
+                    <td class="agent-name" title="Mary Rockett">Mary Rockett</td>
+                    <td class="office" title="The Aland Realty Group, LLC">The Aland Realty Group, LLC</td>
                     <td class="num">12</td>
                     <td class="num vol">$13.0M</td>
                 </tr><tr>
                     <td class="num">3</td>
-                    <td class="agent-name">Troy Williams</td>
-                    <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+                    <td class="agent-name" title="Troy Williams">Troy Williams</td>
+                    <td class="office" title="Keller Williams Coastal and Lakes &amp; Mountains Realty">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
                     <td class="num">15</td>
                     <td class="num vol">$11.8M</td>
                 </tr><tr>
                     <td class="num">4</td>
-                    <td class="agent-name">Anne Erwin Real Estate</td>
-                    <td>Anne Erwin Sotheby&#x27;s International Realty</td>
+                    <td class="agent-name" title="Anne Erwin Real Estate">Anne Erwin Real Estate</td>
+                    <td class="office" title="Anne Erwin Sotheby&#x27;s International Realty">Anne Erwin Sotheby&#x27;s International Realty</td>
                     <td class="num">9</td>
                     <td class="num vol">$11.2M</td>
                 </tr><tr>
                     <td class="num">5</td>
-                    <td class="agent-name">Jeffrey Jellison</td>
-                    <td>CENTURY 21 Atlantic Realty</td>
+                    <td class="agent-name" title="Jeffrey Jellison">Jeffrey Jellison</td>
+                    <td class="office" title="CENTURY 21 Atlantic Realty">CENTURY 21 Atlantic Realty</td>
                     <td class="num">5</td>
                     <td class="num vol">$6.7M</td>
                 </tr></tbody>
@@ -1006,6 +1259,10 @@
             <h3>Ogunquit</h3>
             <div class="table-wrap">
             <table>
+                <colgroup>
+                    <col style="width:6%"><col style="width:28%"><col style="width:34%">
+                    <col style="width:10%"><col style="width:22%">
+                </colgroup>
                 <thead><tr>
                     <th class="num">#</th>
                     <th>Agent</th>
@@ -1015,32 +1272,32 @@
                 </tr></thead>
                 <tbody><tr>
                     <td class="num">1</td>
-                    <td class="agent-name">Donald Wunder</td>
-                    <td>RE/MAX Realty One</td>
+                    <td class="agent-name" title="Donald Wunder">Donald Wunder</td>
+                    <td class="office" title="RE/MAX Realty One">RE/MAX Realty One</td>
                     <td class="num">3</td>
                     <td class="num vol">$2.2M</td>
                 </tr><tr>
                     <td class="num">2</td>
-                    <td class="agent-name">Bailey Pate</td>
-                    <td>Maine Real Estate Co</td>
+                    <td class="agent-name" title="Bailey Pate">Bailey Pate</td>
+                    <td class="office" title="Maine Real Estate Co">Maine Real Estate Co</td>
                     <td class="num">1</td>
                     <td class="num vol">$1.8M</td>
                 </tr><tr>
                     <td class="num">3</td>
-                    <td class="agent-name">Scott Rome</td>
-                    <td>Compass New England, LLC</td>
+                    <td class="agent-name" title="Scott Rome">Scott Rome</td>
+                    <td class="office" title="Compass New England, LLC">Compass New England, LLC</td>
                     <td class="num">1</td>
                     <td class="num vol">$1.6M</td>
                 </tr><tr>
                     <td class="num">4</td>
-                    <td class="agent-name">Gail Bergeron</td>
-                    <td>The Aland Realty Group, LLC</td>
+                    <td class="agent-name" title="Gail Bergeron">Gail Bergeron</td>
+                    <td class="office" title="The Aland Realty Group, LLC">The Aland Realty Group, LLC</td>
                     <td class="num">2</td>
                     <td class="num vol">$1.5M</td>
                 </tr><tr>
                     <td class="num">5</td>
-                    <td class="agent-name">Anne Erwin Real Estate</td>
-                    <td>Anne Erwin Sotheby&#x27;s International Realty</td>
+                    <td class="agent-name" title="Anne Erwin Real Estate">Anne Erwin Real Estate</td>
+                    <td class="office" title="Anne Erwin Sotheby&#x27;s International Realty">Anne Erwin Sotheby&#x27;s International Realty</td>
                     <td class="num">2</td>
                     <td class="num vol">$1.1M</td>
                 </tr></tbody>
@@ -1050,6 +1307,10 @@
             <h3>Wells</h3>
             <div class="table-wrap">
             <table>
+                <colgroup>
+                    <col style="width:6%"><col style="width:28%"><col style="width:34%">
+                    <col style="width:10%"><col style="width:22%">
+                </colgroup>
                 <thead><tr>
                     <th class="num">#</th>
                     <th>Agent</th>
@@ -1059,32 +1320,32 @@
                 </tr></thead>
                 <tbody><tr>
                     <td class="num">1</td>
-                    <td class="agent-name">Steven Weigel</td>
-                    <td>Y-Gull &amp; Associates</td>
+                    <td class="agent-name" title="Steven Weigel">Steven Weigel</td>
+                    <td class="office" title="Y-Gull &amp; Associates">Y-Gull &amp; Associates</td>
                     <td class="num">2</td>
                     <td class="num vol">$6.2M</td>
                 </tr><tr>
                     <td class="num">2</td>
-                    <td class="agent-name">Troy Williams</td>
-                    <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+                    <td class="agent-name" title="Troy Williams">Troy Williams</td>
+                    <td class="office" title="Keller Williams Coastal and Lakes &amp; Mountains Realty">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
                     <td class="num">5</td>
                     <td class="num vol">$4.8M</td>
                 </tr><tr>
                     <td class="num">3</td>
-                    <td class="agent-name">Greg Gosselin</td>
-                    <td>Gosselin Realty Group</td>
+                    <td class="agent-name" title="Greg Gosselin">Greg Gosselin</td>
+                    <td class="office" title="Gosselin Realty Group">Gosselin Realty Group</td>
                     <td class="num">5</td>
                     <td class="num vol">$4.0M</td>
                 </tr><tr>
                     <td class="num">4</td>
-                    <td class="agent-name">Jane Cyr</td>
-                    <td>Redfin Corporation</td>
+                    <td class="agent-name" title="Jane Cyr">Jane Cyr</td>
+                    <td class="office" title="Redfin Corporation">Redfin Corporation</td>
                     <td class="num">6</td>
                     <td class="num vol">$2.7M</td>
                 </tr><tr>
                     <td class="num">5</td>
-                    <td class="agent-name">Steven Brunette</td>
-                    <td>Better Homes &amp; Gardens Real Estate/The Masiello Group</td>
+                    <td class="agent-name" title="Steven Brunette">Steven Brunette</td>
+                    <td class="office" title="Better Homes &amp; Gardens Real Estate/The Masiello Group">Better Homes &amp; Gardens Real Estate/The Masiello Group</td>
                     <td class="num">4</td>
                     <td class="num vol">$2.6M</td>
                 </tr></tbody>
@@ -1094,6 +1355,10 @@
             <h3>Kennebunk</h3>
             <div class="table-wrap">
             <table>
+                <colgroup>
+                    <col style="width:6%"><col style="width:28%"><col style="width:34%">
+                    <col style="width:10%"><col style="width:22%">
+                </colgroup>
                 <thead><tr>
                     <th class="num">#</th>
                     <th>Agent</th>
@@ -1103,32 +1368,32 @@
                 </tr></thead>
                 <tbody><tr>
                     <td class="num">1</td>
-                    <td class="agent-name">Heidi Maynard</td>
-                    <td>Pack Maynard and Associates</td>
+                    <td class="agent-name" title="Heidi Maynard">Heidi Maynard</td>
+                    <td class="office" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
                     <td class="num">8</td>
                     <td class="num vol">$11.3M</td>
                 </tr><tr>
                     <td class="num">2</td>
-                    <td class="agent-name">Elizabeth Coughlan</td>
-                    <td>Legacy Properties Sotheby&#x27;s International Realty</td>
+                    <td class="agent-name" title="Elizabeth Coughlan">Elizabeth Coughlan</td>
+                    <td class="office" title="Legacy Properties Sotheby&#x27;s International Realty">Legacy Properties Sotheby&#x27;s International Realty</td>
                     <td class="num">2</td>
                     <td class="num vol">$10.8M</td>
                 </tr><tr>
                     <td class="num">3</td>
-                    <td class="agent-name">Rebecca Bassett</td>
-                    <td>Portside Real Estate Group</td>
+                    <td class="agent-name" title="Rebecca Bassett">Rebecca Bassett</td>
+                    <td class="office" title="Portside Real Estate Group">Portside Real Estate Group</td>
                     <td class="num">12</td>
                     <td class="num vol">$10.5M</td>
                 </tr><tr>
                     <td class="num">4</td>
-                    <td class="agent-name">Jessica Girard</td>
-                    <td>Pack Maynard and Associates</td>
+                    <td class="agent-name" title="Jessica Girard">Jessica Girard</td>
+                    <td class="office" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
                     <td class="num">8</td>
                     <td class="num vol">$10.3M</td>
                 </tr><tr>
                     <td class="num">5</td>
-                    <td class="agent-name">Maureen Deleo</td>
-                    <td>Keller Williams Realty</td>
+                    <td class="agent-name" title="Maureen Deleo">Maureen Deleo</td>
+                    <td class="office" title="Keller Williams Realty">Keller Williams Realty</td>
                     <td class="num">6</td>
                     <td class="num vol">$9.5M</td>
                 </tr></tbody>
@@ -1138,6 +1403,10 @@
             <h3>Kennebunkport</h3>
             <div class="table-wrap">
             <table>
+                <colgroup>
+                    <col style="width:6%"><col style="width:28%"><col style="width:34%">
+                    <col style="width:10%"><col style="width:22%">
+                </colgroup>
                 <thead><tr>
                     <th class="num">#</th>
                     <th>Agent</th>
@@ -1147,32 +1416,32 @@
                 </tr></thead>
                 <tbody><tr>
                     <td class="num">1</td>
-                    <td class="agent-name">William Gaynor</td>
-                    <td>Legacy Properties Sotheby&#x27;s International Realty</td>
+                    <td class="agent-name" title="William Gaynor">William Gaynor</td>
+                    <td class="office" title="Legacy Properties Sotheby&#x27;s International Realty">Legacy Properties Sotheby&#x27;s International Realty</td>
                     <td class="num">6</td>
                     <td class="num vol">$33.1M</td>
                 </tr><tr>
                     <td class="num">2</td>
-                    <td class="agent-name">Victoria Benenti</td>
-                    <td>Pack Maynard and Associates</td>
+                    <td class="agent-name" title="Victoria Benenti">Victoria Benenti</td>
+                    <td class="office" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
                     <td class="num">10</td>
                     <td class="num vol">$12.6M</td>
                 </tr><tr>
                     <td class="num">3</td>
-                    <td class="agent-name">Jessica Girard</td>
-                    <td>Pack Maynard and Associates</td>
+                    <td class="agent-name" title="Jessica Girard">Jessica Girard</td>
+                    <td class="office" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
                     <td class="num">10</td>
                     <td class="num vol">$12.5M</td>
                 </tr><tr>
                     <td class="num">4</td>
-                    <td class="agent-name">Heidi Maynard</td>
-                    <td>Pack Maynard and Associates</td>
+                    <td class="agent-name" title="Heidi Maynard">Heidi Maynard</td>
+                    <td class="office" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
                     <td class="num">8</td>
                     <td class="num vol">$12.0M</td>
                 </tr><tr>
                     <td class="num">5</td>
-                    <td class="agent-name">Heidi Maynard Corey Tracy</td>
-                    <td>Pack Maynard and Associates</td>
+                    <td class="agent-name" title="Heidi Maynard Corey Tracy">Heidi Maynard Corey Tracy</td>
+                    <td class="office" title="Pack Maynard and Associates">Pack Maynard and Associates</td>
                     <td class="num">5</td>
                     <td class="num vol">$11.2M</td>
                 </tr></tbody>
@@ -1182,6 +1451,10 @@
             <h3>Biddeford</h3>
             <div class="table-wrap">
             <table>
+                <colgroup>
+                    <col style="width:6%"><col style="width:28%"><col style="width:34%">
+                    <col style="width:10%"><col style="width:22%">
+                </colgroup>
                 <thead><tr>
                     <th class="num">#</th>
                     <th>Agent</th>
@@ -1191,32 +1464,32 @@
                 </tr></thead>
                 <tbody><tr>
                     <td class="num">1</td>
-                    <td class="agent-name">Peter Mcpheeters</td>
-                    <td>OceanView Properties</td>
+                    <td class="agent-name" title="Peter Mcpheeters">Peter Mcpheeters</td>
+                    <td class="office" title="OceanView Properties">OceanView Properties</td>
                     <td class="num">8</td>
                     <td class="num vol">$15.8M</td>
                 </tr><tr>
                     <td class="num">2</td>
-                    <td class="agent-name">David Marsden</td>
-                    <td>Marsden Real Estate</td>
+                    <td class="agent-name" title="David Marsden">David Marsden</td>
+                    <td class="office" title="Marsden Real Estate">Marsden Real Estate</td>
                     <td class="num">14</td>
                     <td class="num vol">$8.5M</td>
                 </tr><tr>
                     <td class="num">3</td>
-                    <td class="agent-name">Bob Letellier</td>
-                    <td>Coldwell Banker Realty</td>
+                    <td class="agent-name" title="Bob Letellier">Bob Letellier</td>
+                    <td class="office" title="Coldwell Banker Realty">Coldwell Banker Realty</td>
                     <td class="num">14</td>
                     <td class="num vol">$6.7M</td>
                 </tr><tr>
                     <td class="num">4</td>
-                    <td class="agent-name">Adam Parent</td>
-                    <td>Maine Real Estate Co</td>
+                    <td class="agent-name" title="Adam Parent">Adam Parent</td>
+                    <td class="office" title="Maine Real Estate Co">Maine Real Estate Co</td>
                     <td class="num">13</td>
                     <td class="num vol">$5.6M</td>
                 </tr><tr>
                     <td class="num">5</td>
-                    <td class="agent-name">Erin Oldham</td>
-                    <td>Portside Real Estate Group</td>
+                    <td class="agent-name" title="Erin Oldham">Erin Oldham</td>
+                    <td class="office" title="Portside Real Estate Group">Portside Real Estate Group</td>
                     <td class="num">12</td>
                     <td class="num vol">$5.1M</td>
                 </tr></tbody>
@@ -1226,6 +1499,10 @@
             <h3>Saco</h3>
             <div class="table-wrap">
             <table>
+                <colgroup>
+                    <col style="width:6%"><col style="width:28%"><col style="width:34%">
+                    <col style="width:10%"><col style="width:22%">
+                </colgroup>
                 <thead><tr>
                     <th class="num">#</th>
                     <th>Agent</th>
@@ -1235,32 +1512,32 @@
                 </tr></thead>
                 <tbody><tr>
                     <td class="num">1</td>
-                    <td class="agent-name">Sandra Murray</td>
-                    <td>Keller Williams Realty</td>
+                    <td class="agent-name" title="Sandra Murray">Sandra Murray</td>
+                    <td class="office" title="Keller Williams Realty">Keller Williams Realty</td>
                     <td class="num">4</td>
                     <td class="num vol">$6.1M</td>
                 </tr><tr>
                     <td class="num">2</td>
-                    <td class="agent-name">Adam Parent</td>
-                    <td>Maine Real Estate Co</td>
+                    <td class="agent-name" title="Adam Parent">Adam Parent</td>
+                    <td class="office" title="Maine Real Estate Co">Maine Real Estate Co</td>
                     <td class="num">11</td>
                     <td class="num vol">$5.3M</td>
                 </tr><tr>
                     <td class="num">3</td>
-                    <td class="agent-name">Alissa Saulnier</td>
-                    <td>Forge Real Estate</td>
+                    <td class="agent-name" title="Alissa Saulnier">Alissa Saulnier</td>
+                    <td class="office" title="Forge Real Estate">Forge Real Estate</td>
                     <td class="num">2</td>
                     <td class="num vol">$3.2M</td>
                 </tr><tr>
                     <td class="num">4</td>
-                    <td class="agent-name">Elise Kiely</td>
-                    <td>Legacy Properties Sotheby&#x27;s International Realty</td>
+                    <td class="agent-name" title="Elise Kiely">Elise Kiely</td>
+                    <td class="office" title="Legacy Properties Sotheby&#x27;s International Realty">Legacy Properties Sotheby&#x27;s International Realty</td>
                     <td class="num">1</td>
                     <td class="num vol">$2.7M</td>
                 </tr><tr>
                     <td class="num">5</td>
-                    <td class="agent-name">Margaret Mailman</td>
-                    <td>Coldwell Banker Realty</td>
+                    <td class="agent-name" title="Margaret Mailman">Margaret Mailman</td>
+                    <td class="office" title="Coldwell Banker Realty">Coldwell Banker Realty</td>
                     <td class="num">3</td>
                     <td class="num vol">$2.3M</td>
                 </tr></tbody>
@@ -1270,6 +1547,10 @@
             <h3>Old Orchard Beach</h3>
             <div class="table-wrap">
             <table>
+                <colgroup>
+                    <col style="width:6%"><col style="width:28%"><col style="width:34%">
+                    <col style="width:10%"><col style="width:22%">
+                </colgroup>
                 <thead><tr>
                     <th class="num">#</th>
                     <th>Agent</th>
@@ -1279,32 +1560,32 @@
                 </tr></thead>
                 <tbody><tr>
                     <td class="num">1</td>
-                    <td class="agent-name">Nancy Moreshead</td>
-                    <td>The Real Estate Store</td>
+                    <td class="agent-name" title="Nancy Moreshead">Nancy Moreshead</td>
+                    <td class="office" title="The Real Estate Store">The Real Estate Store</td>
                     <td class="num">28</td>
                     <td class="num vol">$16.3M</td>
                 </tr><tr>
                     <td class="num">2</td>
-                    <td class="agent-name">Adam Parent</td>
-                    <td>Maine Real Estate Co</td>
+                    <td class="agent-name" title="Adam Parent">Adam Parent</td>
+                    <td class="office" title="Maine Real Estate Co">Maine Real Estate Co</td>
                     <td class="num">9</td>
                     <td class="num vol">$5.8M</td>
                 </tr><tr>
                     <td class="num">3</td>
-                    <td class="agent-name">Adrian Ramsdell</td>
-                    <td>Keller Williams Realty</td>
+                    <td class="agent-name" title="Adrian Ramsdell">Adrian Ramsdell</td>
+                    <td class="office" title="Keller Williams Realty">Keller Williams Realty</td>
                     <td class="num">8</td>
                     <td class="num vol">$4.4M</td>
                 </tr><tr>
                     <td class="num">4</td>
-                    <td class="agent-name">Gregory Cloutier Christina Connell</td>
-                    <td>Berkshire Hathaway HomeServices Verani Realty</td>
+                    <td class="agent-name" title="Gregory Cloutier Christina Connell">Gregory Cloutier Christina Connell</td>
+                    <td class="office" title="Berkshire Hathaway HomeServices Verani Realty">Berkshire Hathaway HomeServices Verani Realty</td>
                     <td class="num">6</td>
                     <td class="num vol">$3.7M</td>
                 </tr><tr>
                     <td class="num">5</td>
-                    <td class="agent-name">Maria Morrissette</td>
-                    <td>Fontaine Family-The Real Estate Leader</td>
+                    <td class="agent-name" title="Maria Morrissette">Maria Morrissette</td>
+                    <td class="office" title="Fontaine Family-The Real Estate Leader">Fontaine Family-The Real Estate Leader</td>
                     <td class="num">5</td>
                     <td class="num vol">$2.6M</td>
                 </tr></tbody>
@@ -1314,6 +1595,10 @@
             <h3>Scarborough</h3>
             <div class="table-wrap">
             <table>
+                <colgroup>
+                    <col style="width:6%"><col style="width:28%"><col style="width:34%">
+                    <col style="width:10%"><col style="width:22%">
+                </colgroup>
                 <thead><tr>
                     <th class="num">#</th>
                     <th>Agent</th>
@@ -1328,7 +1613,7 @@
     </section>
         </main>
         <footer class="footer">
-            Generated 2026-03-31 13:13 UTC &middot; Data source: Redfin &middot; gw-re-agent-scraper
+            Generated 2026-03-31 13:46 UTC &middot; Data source: Redfin &middot; gw-re-agent-scraper
         </footer>
     </div>
 </body>

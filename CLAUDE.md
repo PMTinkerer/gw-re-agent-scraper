@@ -7,7 +7,7 @@ Scrapes publicly visible sold property data from Redfin for 10 southern coastal 
 - **2,311 SFH/Condo transactions in SQLite** — non-residential records purged, property type filter active
 - **660 transactions enriched with agent data** — Playwright enrichment running via GitHub Actions; ~1,647 URLs pending
 - **Property type filter active** — only Single Family Residential + Condo/Co-op (`uipt=1,2`); purge complete, all records tagged with `property_type`
-- **HTML dashboard** at `data/dashboard.html` — 4-section leaderboard with trend badges, auto-deployed to GitHub Pages
+- **HTML dashboard** at `data/dashboard.html` — 6-section leaderboard with trend badges, auto-deployed to GitHub Pages
 - **GitHub Pages live** at `https://pmtinkerer.github.io/gw-re-agent-scraper/` — auto-updates after every CI run
 - **Brokerage-as-agent exclusion** — agents where name = office (e.g., Anchor Real Estate) excluded from agent rankings but kept in brokerage rankings
 - **Workflow concurrency control** — only one scraper run at a time to prevent merge conflicts
