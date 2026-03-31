@@ -3,15 +3,16 @@
 ## What This Project Does
 Scrapes publicly visible sold property data from Redfin for 10 southern coastal Maine towns, then enriches each transaction with listing agent and brokerage data by visiting individual Redfin property pages via Playwright. The primary deliverables are `data/dashboard.html` (HTML leaderboard with trend badges, hosted on GitHub Pages) and `data/agent_leaderboard.md` (markdown version). Runs on GitHub Actions free tier with resumable chunk-based processing.
 
-## Current State (as of 2026-03-24)
+## Current State (as of 2026-03-31)
 - **2,311 SFH/Condo transactions in SQLite** — non-residential records purged, property type filter active
-- **660 transactions enriched with agent data** — Playwright enrichment running via GitHub Actions; ~1,647 URLs pending
+- **1,762 transactions enriched with agent data** (76%) — ~526 URLs pending enrichment
 - **Property type filter active** — only Single Family Residential + Condo/Co-op (`uipt=1,2`); purge complete, all records tagged with `property_type`
 - **HTML dashboard** at `data/dashboard.html` — 6-section leaderboard with trend badges, auto-deployed to GitHub Pages
 - **GitHub Pages live** at `https://pmtinkerer.github.io/gw-re-agent-scraper/` — auto-updates after every CI run
-- **Brokerage-as-agent exclusion** — agents where name = office (e.g., Anchor Real Estate) excluded from agent rankings but kept in brokerage rankings
+- **Brokerage-as-agent exclusion** — known brokerage-named agents (Anchor Real Estate, Anne Erwin Real Estate) excluded from agent rankings via `BROKERAGE_AS_AGENT` set; also auto-excludes where agent name = office name
+- **Office name normalization** — 15 variant office spellings merged to canonical names via `OFFICE_NORMALIZATION` map in `database.py`; applied at upsert time
 - **Workflow concurrency control** — only one scraper run at a time to prevent merge conflicts
-- **115 unit tests passing**
+- **125 unit tests passing**
 - **Public repo on GitHub** — automated enrichment running 4x/day via residential proxy (IPRoyal)
 
 ## Service Territory (10 Towns)
@@ -54,8 +55,9 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 - **10-20 second delay** between enrichment page visits — 5-10s caused CDN blocks
 - **SFH + Condo only** — `uipt=1,2` filter on Redfin CSV API excludes land, multi-family, mobile homes from scraping
 - **Property type column** — `property_type` stored in DB; `--purge-non-residential` CLI flag deletes non-SFH/Condo records
-- **Brokerage-as-agent exclusion** — agent queries filter `WHERE LOWER(listing_agent) != LOWER(listing_office)` to exclude brokerages masquerading as agents (e.g., Anchor Real Estate)
-- **HTML dashboard** — `src/dashboard.py` generates `data/dashboard.html` with all-time rankings, 365-day rolling rankings with trend badges, brokerage rankings, and per-town breakdowns
+- **Brokerage-as-agent exclusion** — two-layer filter: (1) `LOWER(listing_agent) != LOWER(listing_office)` auto-excludes exact matches, (2) `BROKERAGE_AS_AGENT` set in `database.py` explicitly excludes known brokerage-named agents (Anchor Real Estate, Anne Erwin Real Estate)
+- **Office name normalization** — `OFFICE_NORMALIZATION` dict in `database.py` maps 15 variant office spellings to canonical names at upsert time (e.g., "KW Coastal..." → "Keller Williams Coastal...")
+- **HTML dashboard** — `src/dashboard.py` generates `data/dashboard.html` with 6 sections: all-time agents, 365-day rolling agents, all-time brokerages, 365-day rolling brokerages (with trends + towns), and per-town breakdowns
 
 ## Verification Commands
 ```bash
@@ -130,3 +132,7 @@ gw-re-agent-scraper/
 ├── requirements.txt
 └── .gitignore
 ```
+
+## Supply Chain Security
+
+This project follows the global supply chain security standard defined in `~/CLAUDE.md`. All dependencies must be pinned to exact versions, GitHub Actions must be SHA-pinned, and pip-audit must run in CI.
