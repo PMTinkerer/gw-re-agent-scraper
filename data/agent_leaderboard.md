@@ -1,6 +1,6 @@
 # Real Estate Agent Leaderboard -- Southern Coastal Maine
-_Generated: 2026-04-01 07:16 UTC | Data: 2023-03-24 to 2026-03-20 | Sources: redfin_
-_Total sales analyzed: 2,311 | Unique listing agents: 701_
+_Generated: 2026-04-01 13:02 UTC | Data: 2023-03-24 to 2026-03-20 | Sources: redfin_
+_Total sales analyzed: 2,311 | Unique listing agents: 702_
 
 ## Top 30 Listing Agents by Total Volume
 
@@ -45,7 +45,7 @@ _Total sales analyzed: 2,311 | Unique listing agents: 701_
 | 2 | Keller Williams Realty | 157 | $109.8M | $699K | Adam Parent, Cynthia Dubois-Cote, Sandra Murray |
 | 3 | Legacy Properties Sotheby's International Realty | 37 | $96.4M | $2.6M | William Gaynor, Adrienne Robinson, Randal Simon |
 | 4 | The Aland Realty Group, LLC | 95 | $87.9M | $925K | Tracy Jackson Mccarty, Mary Rockett, Christopher Erikson |
-| 5 | Coldwell Banker Realty | 177 | $85.8M | $485K | Margaret Mailman, Bob Letellier, Daniel Letellier |
+| 5 | Coldwell Banker Realty | 178 | $86.1M | $484K | Margaret Mailman, Bob Letellier, Daniel Letellier |
 | 6 | Portside Real Estate Group | 115 | $70.3M | $612K | Rebecca Bassett, Erin Oldham, Cady Toussaint |
 | 7 | Keller Williams Coastal and Lakes & Mountains Realty | 89 | $61.2M | $687K | Troy Williams, Alicia Goodwin, Heather Crosby |
 | 8 | EXP Realty | 78 | $40.1M | $514K | Roz Anton, Robert Magazu, Katherine Scamman |
@@ -156,7 +156,7 @@ _No data available for this town._
 ## Data Summary
 
 - **Total transactions:** 2,311
-- **With listing agent:** 1,885
+- **With listing agent:** 1,886
 - **Date range:** 2023-03-24 to 2026-03-20
 - **Sources:**
   - Redfin: 2,311 properties
@@ -171,4 +171,4 @@ _No data available for this town._
   - Scarborough: 341 sales
   - Wells: 73 sales
   - York: 99 sales
-- **Report generated:** 2026-04-01 07:16 UTC
+- **Report generated:** 2026-04-01 13:02 UTC
