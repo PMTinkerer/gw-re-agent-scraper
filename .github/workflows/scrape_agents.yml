@@ -19,7 +19,7 @@ on:
         default: ''
       enrich_batch_size:
         description: 'Enrichment batch size (0 to skip enrichment)'
-        default: '80'
+        default: '40'
 
 permissions:
   contents: write
@@ -150,7 +150,7 @@ jobs:
           CI: 'true'
           PROXY_URL: ${{ secrets.PROXY_URL }}
         run: |
-          BATCH="${{ github.event.inputs.enrich_batch_size || '80' }}"
+          BATCH="${{ github.event.inputs.enrich_batch_size || '40' }}"
           if [ "$BATCH" = "0" ]; then
             echo "Enrichment skipped (batch_size=0)."
             echo "skipped=true" >> $GITHUB_OUTPUT

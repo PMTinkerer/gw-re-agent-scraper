@@ -845,7 +845,8 @@ def enrich_agents_from_redfin(
         logger.info('No PROXY_URL set — connecting directly (may be blocked on datacenter IPs)')
 
     # Resource types to block (saves ~70-80% bandwidth, we only need DOM text)
-    _BLOCKED_RESOURCE_TYPES = {'image', 'media', 'font', 'stylesheet'}
+    # Block heavy resources but keep stylesheets (blocking CSS is a bot signal)
+    _BLOCKED_RESOURCE_TYPES = {'image', 'media', 'font'}
 
     def _block_unnecessary_resources(route):
         if route.request.resource_type in _BLOCKED_RESOURCE_TYPES:
@@ -871,12 +872,18 @@ def enrich_agents_from_redfin(
 
         # Pre-warm: visit Redfin homepage to establish cookies and a normal session
         try:
+            # Use a rotated proxy session for pre-warm (not the base session)
+            warmup_proxy = None
+            if _proxy_base:
+                fresh_session = f'session-{random.randint(100000, 999999)}'
+                rotated_password = re.sub(r'session-[^_&]+', fresh_session, _proxy_base['password'])
+                warmup_proxy = {**_proxy_base, 'password': rotated_password}
             warmup_ctx = browser.new_context(
                 user_agent=random.choice(_USER_AGENTS),
                 viewport=random.choice(_VIEWPORTS),
                 locale='en-US',
                 timezone_id='America/New_York',
-                **(dict(proxy=_proxy_base) if _proxy_base else {}),
+                **(dict(proxy=warmup_proxy) if warmup_proxy else {}),
             )
             warmup_page = warmup_ctx.new_page()
             warmup_page.route('**/*', _block_unnecessary_resources)
@@ -958,7 +965,7 @@ def enrich_agents_from_redfin(
                             logger.warning('3 consecutive errors — stopping batch early.')
                             break
                         if i < len(queue) - 1:
-                            random_delay(10, 20)
+                            random_delay(15, 30)
                         continue
 
                     agent_data = _extract_agent_data(page)
@@ -991,7 +998,7 @@ def enrich_agents_from_redfin(
 
                 # Rate limit between pages (skip delay after last URL)
                 if i < len(queue) - 1:
-                    random_delay(10, 20)
+                    random_delay(15, 30)
 
         finally:
             browser.close()
