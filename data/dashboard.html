@@ -292,6 +292,12 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
+    /* --- SORTABLE HEADERS --- */
+    thead th { cursor: pointer; user-select: none; position: relative; }
+    thead th:hover { color: var(--text-2); }
+    thead th .sort-arrow { margin-left: 4px; font-size: 0.55rem; opacity: 0.5; }
+    thead th.sort-active .sort-arrow { opacity: 1; color: var(--accent); }
+
     /* --- RESPONSIVE --- */
     @media (max-width: 768px) {
         .wrap { padding: 0 16px; }
@@ -308,7 +314,7 @@
     <div class="wrap">
         <header class="header">
             <h1>Real Estate Agent Leaderboard</h1>
-            <p class="sub">Southern Coastal Maine &middot; 10 Towns &middot; 2026-04-02 18:48 UTC</p>
+            <p class="sub">Southern Coastal Maine &middot; 10 Towns &middot; 2026-04-02 19:06 UTC</p>
         </header>
         <div class="stats">
             <div class="stat">
@@ -1755,8 +1761,65 @@
     </section>
         </main>
         <footer class="footer">
-            Generated 2026-04-02 18:48 UTC &middot; Data source: Redfin &middot; gw-re-agent-scraper
+            Generated 2026-04-02 19:06 UTC &middot; Data source: Redfin &middot; gw-re-agent-scraper
         </footer>
     </div>
+<script>
+(function() {
+  function parseVal(text) {
+    var s = text.trim();
+    if (!s || s === 'N/A' || s === '—') return -Infinity;
+    // Currency: $1.3M -> 1300000, $807K -> 807000, $450,000 -> 450000
+    if (s.charAt(0) === '$') {
+      s = s.substring(1).replace(/,/g, '');
+      if (s.indexOf('M') !== -1) return parseFloat(s) * 1000000;
+      if (s.indexOf('K') !== -1) return parseFloat(s) * 1000;
+      return parseFloat(s) || 0;
+    }
+    // Plain number (sides, rank)
+    var n = parseFloat(s.replace(/,/g, ''));
+    if (!isNaN(n)) return n;
+    // Text — sort alphabetically
+    return s.toLowerCase();
+  }
+
+  document.querySelectorAll('thead th').forEach(function(th) {
+    // Add sort arrow span
+    var arrow = document.createElement('span');
+    arrow.className = 'sort-arrow';
+    arrow.textContent = '↕';
+    th.appendChild(arrow);
+
+    th.addEventListener('click', function() {
+      var table = th.closest('table');
+      var tbody = table.querySelector('tbody');
+      var rows = Array.from(tbody.querySelectorAll('tr'));
+      var idx = Array.from(th.parentNode.children).indexOf(th);
+      var asc = th.dataset.sortDir !== 'asc';
+      th.dataset.sortDir = asc ? 'asc' : 'desc';
+
+      // Clear other headers in this table
+      th.parentNode.querySelectorAll('th').forEach(function(h) {
+        h.classList.remove('sort-active');
+        var a = h.querySelector('.sort-arrow');
+        if (a) a.textContent = '↕';
+      });
+      th.classList.add('sort-active');
+      arrow.textContent = asc ? '▲' : '▼';
+
+      rows.sort(function(a, b) {
+        var va = parseVal(a.children[idx] ? a.children[idx].textContent : '');
+        var vb = parseVal(b.children[idx] ? b.children[idx].textContent : '');
+        if (typeof va === 'string' && typeof vb === 'string') {
+          return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+        }
+        return asc ? va - vb : vb - va;
+      });
+
+      rows.forEach(function(row) { tbody.appendChild(row); });
+    });
+  });
+})();
+</script>
 </body>
 </html>

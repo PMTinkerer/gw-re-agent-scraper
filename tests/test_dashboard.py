@@ -91,7 +91,7 @@ class TestGenerateDashboard:
         generate_dashboard(populated_db, path)
         with open(path) as f:
             content = f.read()
-        assert '<script>' not in content
+        assert '<script>alert(1)</script>' not in content
         assert '&amp;' in content
 
 

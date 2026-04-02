@@ -412,6 +412,7 @@ def _build_html(
             Generated {_e(generated_at)} &middot; Data source: Redfin &middot; gw-re-agent-scraper
         </footer>
     </div>
+<script>{_sort_js()}</script>
 </body>
 </html>'''
 
@@ -705,6 +706,12 @@ def _css() -> str:
         to { opacity: 1; transform: translateY(0); }
     }
 
+    /* --- SORTABLE HEADERS --- */
+    thead th { cursor: pointer; user-select: none; position: relative; }
+    thead th:hover { color: var(--text-2); }
+    thead th .sort-arrow { margin-left: 4px; font-size: 0.55rem; opacity: 0.5; }
+    thead th.sort-active .sort-arrow { opacity: 1; color: var(--accent); }
+
     /* --- RESPONSIVE --- */
     @media (max-width: 768px) {
         .wrap { padding: 0 16px; }
@@ -716,3 +723,64 @@ def _css() -> str:
         thead th { font-size: 0.55rem; }
     }
     """
+
+
+def _sort_js() -> str:
+    """Return inline JavaScript for sortable table columns."""
+    return """
+(function() {
+  function parseVal(text) {
+    var s = text.trim();
+    if (!s || s === 'N/A' || s === '\u2014') return -Infinity;
+    // Currency: $1.3M -> 1300000, $807K -> 807000, $450,000 -> 450000
+    if (s.charAt(0) === '$') {
+      s = s.substring(1).replace(/,/g, '');
+      if (s.indexOf('M') !== -1) return parseFloat(s) * 1000000;
+      if (s.indexOf('K') !== -1) return parseFloat(s) * 1000;
+      return parseFloat(s) || 0;
+    }
+    // Plain number (sides, rank)
+    var n = parseFloat(s.replace(/,/g, ''));
+    if (!isNaN(n)) return n;
+    // Text — sort alphabetically
+    return s.toLowerCase();
+  }
+
+  document.querySelectorAll('thead th').forEach(function(th) {
+    // Add sort arrow span
+    var arrow = document.createElement('span');
+    arrow.className = 'sort-arrow';
+    arrow.textContent = '\u2195';
+    th.appendChild(arrow);
+
+    th.addEventListener('click', function() {
+      var table = th.closest('table');
+      var tbody = table.querySelector('tbody');
+      var rows = Array.from(tbody.querySelectorAll('tr'));
+      var idx = Array.from(th.parentNode.children).indexOf(th);
+      var asc = th.dataset.sortDir !== 'asc';
+      th.dataset.sortDir = asc ? 'asc' : 'desc';
+
+      // Clear other headers in this table
+      th.parentNode.querySelectorAll('th').forEach(function(h) {
+        h.classList.remove('sort-active');
+        var a = h.querySelector('.sort-arrow');
+        if (a) a.textContent = '\u2195';
+      });
+      th.classList.add('sort-active');
+      arrow.textContent = asc ? '\u25B2' : '\u25BC';
+
+      rows.sort(function(a, b) {
+        var va = parseVal(a.children[idx] ? a.children[idx].textContent : '');
+        var vb = parseVal(b.children[idx] ? b.children[idx].textContent : '');
+        if (typeof va === 'string' && typeof vb === 'string') {
+          return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+        }
+        return asc ? va - vb : vb - va;
+      });
+
+      rows.forEach(function(row) { tbody.appendChild(row); });
+    });
+  });
+})();
+"""
