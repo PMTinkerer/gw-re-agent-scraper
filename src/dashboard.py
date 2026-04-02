@@ -220,18 +220,19 @@ def _build_html(
                 <td class="office" title="{_e(a['office'])}">{_e(a['office'])}</td>
                 <td class="num">{a['sides']}</td>
                 <td class="num vol">{format_currency(a['volume'])}</td>
+                <td class="num">{format_currency(a['avg_price'])}</td>
                 <td style="text-align:center">{badge}</td>
             </tr>'''
     else:
-        rows_html = '<tr><td colspan="6" class="no-data">No data available yet.</td></tr>'
+        rows_html = '<tr><td colspan="7" class="no-data">No data available yet.</td></tr>'
 
     sections.append(f'''<section class="section">
         <h2>Top Agents &mdash; Last 365 Days</h2>
         <div class="table-wrap">
         <table>
             <colgroup>
-                <col style="width:5%"><col style="width:22%"><col style="width:25%">
-                <col style="width:8%"><col style="width:14%"><col style="width:26%">
+                <col style="width:4%"><col style="width:19%"><col style="width:21%">
+                <col style="width:7%"><col style="width:11%"><col style="width:11%"><col style="width:27%">
             </colgroup>
             <thead><tr>
                 <th class="num">#</th>
@@ -239,6 +240,7 @@ def _build_html(
                 <th>Office</th>
                 <th class="num">Sides</th>
                 <th class="num">Volume</th>
+                <th class="num">Avg Price</th>
                 <th style="text-align:center">Trend</th>
             </tr></thead>
             <tbody>{rows_html}</tbody>
@@ -298,25 +300,27 @@ def _build_html(
                 <td class="agent-name" title="{_e(name)}">{_e(name)}</td>
                 <td class="num">{b['sides']}</td>
                 <td class="num vol">{format_currency(b['volume'])}</td>
+                <td class="num">{format_currency(b['avg_price'])}</td>
                 <td class="towns">{_e(b['towns'])}</td>
                 <td style="text-align:center">{badge}</td>
             </tr>'''
     else:
-        rows_html = '<tr><td colspan="6" class="no-data">No data available yet.</td></tr>'
+        rows_html = '<tr><td colspan="7" class="no-data">No data available yet.</td></tr>'
 
     sections.append(f'''<section class="section">
         <h2>Top Brokerages &mdash; Last 365 Days</h2>
         <div class="table-wrap">
         <table>
             <colgroup>
-                <col style="width:4%"><col style="width:24%"><col style="width:8%">
-                <col style="width:14%"><col style="width:20%"><col style="width:30%">
+                <col style="width:4%"><col style="width:21%"><col style="width:7%">
+                <col style="width:12%"><col style="width:10%"><col style="width:18%"><col style="width:28%">
             </colgroup>
             <thead><tr>
                 <th class="num">#</th>
                 <th>Brokerage</th>
                 <th class="num">Sides</th>
                 <th class="num">Volume</th>
+                <th class="num">Avg Price</th>
                 <th>Towns</th>
                 <th style="text-align:center">Trend</th>
             </tr></thead>
@@ -338,17 +342,18 @@ def _build_html(
                     <td class="office" title="{_e(a['office'])}">{_e(a['office'])}</td>
                     <td class="num">{a['sides']}</td>
                     <td class="num vol">{format_currency(a['volume'])}</td>
+                    <td class="num">{format_currency(a['avg_price'])}</td>
                 </tr>'''
         else:
-            rows_html = '<tr><td colspan="5" class="no-data">No data available.</td></tr>'
+            rows_html = '<tr><td colspan="6" class="no-data">No data available.</td></tr>'
 
         town_sections += f'''<div class="town-group">
             <h3>{_e(town)}</h3>
             <div class="table-wrap">
             <table>
                 <colgroup>
-                    <col style="width:6%"><col style="width:28%"><col style="width:34%">
-                    <col style="width:10%"><col style="width:22%">
+                    <col style="width:5%"><col style="width:25%"><col style="width:30%">
+                    <col style="width:8%"><col style="width:16%"><col style="width:16%">
                 </colgroup>
                 <thead><tr>
                     <th class="num">#</th>
@@ -356,6 +361,7 @@ def _build_html(
                     <th>Office</th>
                     <th class="num">Sides</th>
                     <th class="num">Volume</th>
+                    <th class="num">Avg Price</th>
                 </tr></thead>
                 <tbody>{rows_html}</tbody>
             </table>

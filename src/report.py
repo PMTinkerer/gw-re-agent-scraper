@@ -294,7 +294,8 @@ def _query_top_agents_by_town(conn, town: str, limit: int = 5) -> list[dict]:
                 GROUP BY listing_office ORDER BY COUNT(*) DESC LIMIT 1
             ) as primary_office,
             COUNT(*) as sides,
-            SUM(COALESCE(sale_price, list_price, 0)) as volume
+            SUM(COALESCE(sale_price, list_price, 0)) as volume,
+            AVG(COALESCE(sale_price, list_price, 0)) as avg_price
         FROM transactions t
         WHERE listing_agent IS NOT NULL
           AND (listing_office IS NULL OR LOWER(listing_agent) != LOWER(listing_office))
@@ -311,6 +312,7 @@ def _query_top_agents_by_town(conn, town: str, limit: int = 5) -> list[dict]:
             'office': r['primary_office'],
             'sides': r['sides'],
             'volume': r['volume'],
+            'avg_price': int(r['avg_price']) if r['avg_price'] else 0,
         }
         for r in rows
     ]
