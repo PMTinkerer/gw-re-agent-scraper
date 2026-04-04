@@ -1,11 +1,13 @@
-# gw-re-agent-scraper — Project Context
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## What This Project Does
 Scrapes publicly visible sold property data from Redfin for 10 southern coastal Maine towns, then enriches each transaction with listing agent and brokerage data by visiting individual Redfin property pages via Playwright. The primary deliverables are `data/dashboard.html` (HTML leaderboard with trend badges, hosted on GitHub Pages) and `data/agent_leaderboard.md` (markdown version). Runs on GitHub Actions free tier with resumable chunk-based processing.
 
-## Current State (as of 2026-03-31)
+## Current State (as of 2026-04-04)
 - **2,311 SFH/Condo transactions in SQLite** — non-residential records purged, property type filter active
-- **1,762 transactions enriched with agent data** (76%) — ~526 URLs pending enrichment
+- **1,967 transactions enriched with agent data** (85%) — ~322 URLs pending enrichment
 - **Property type filter active** — only Single Family Residential + Condo/Co-op (`uipt=1,2`); purge complete, all records tagged with `property_type`
 - **HTML dashboard** at `data/dashboard.html` — 6-section leaderboard with trend badges, auto-deployed to GitHub Pages
 - **GitHub Pages live** at `https://pmtinkerer.github.io/gw-re-agent-scraper/` — auto-updates after every CI run
@@ -34,12 +36,12 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 - Tracks enrichment status per URL: `enrichment_status` column (NULL/success/no_agent/error) with retry up to 3 attempts
 - Fresh browser context per page to avoid Redfin CDN session fingerprinting
 - **Residential proxy** via `PROXY_URL` env var (IPRoyal) — GitHub Actions datacenter IPs get captcha'd
-- **Resource blocking** — images, fonts, stylesheets, media blocked to save ~70-80% proxy bandwidth
+- **Resource blocking** — images, fonts, media blocked to save bandwidth (CSS loaded to avoid bot detection)
 - Fresh proxy session ID per page for IP rotation (replaces `session-{id}` in proxy URL)
-- Rate limit: 10-20 seconds between page visits (lower causes CloudFront 403 blocks)
-- Batch size: 80 URLs per run (~27 min, fits 45-min GitHub Actions timeout)
+- Rate limit: 15-30 seconds between page visits (lower causes CloudFront 403/captcha blocks)
+- Batch size: 40 URLs per run (~20 min, fits 45-min GitHub Actions timeout)
 - React hydration wait: `wait_for_selector('.agent-card-wrapper, .listing-agent-item, .buyer-agent-item', timeout=8000)`
-- CLI: `python -m src.main --enrich --batch-size 80`
+- CLI: `python -m src.main --enrich --batch-size 40`
 
 ## Key Decisions
 - **Redfin CSV** for property data (reliable, structured, no browser needed)
@@ -50,9 +52,9 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 - **rapidfuzz** for agent name fuzzy matching (>90% + same office)
 - **Fresh browser context per page** — Redfin CloudFront blocks repeated requests from the same session; rotating context + user-agent + viewport avoids 403s
 - **Residential proxy (IPRoyal)** — GitHub Actions datacenter IPs get immediately captcha'd by Redfin CloudFront; residential IPs work reliably. Set `PROXY_URL` secret in GitHub repo settings.
-- **Resource blocking** — Playwright blocks images/fonts/stylesheets/media to reduce proxy bandwidth ~70-80%
+- **Resource blocking** — Playwright blocks images/fonts/media (not CSS — blocking CSS is a bot signal) to reduce proxy bandwidth
 - **DB-level enrichment tracking** (`enrichment_status` column) instead of state.py chunks — simpler for per-URL tracking
-- **10-20 second delay** between enrichment page visits — 5-10s caused CDN blocks
+- **15-30 second delay** between enrichment page visits — shorter intervals cause CDN blocks/captchas
 - **SFH + Condo only** — `uipt=1,2` filter on Redfin CSV API excludes land, multi-family, mobile homes from scraping
 - **Property type column** — `property_type` stored in DB; `--purge-non-residential` CLI flag deletes non-SFH/Condo records
 - **Brokerage-as-agent exclusion** — two-layer filter: (1) `LOWER(listing_agent) != LOWER(listing_office)` auto-excludes exact matches, (2) `BROKERAGE_AS_AGENT` set in `database.py` explicitly excludes known brokerage-named agents (Anchor Real Estate, Anne Erwin Real Estate)
@@ -70,8 +72,8 @@ python -m src.main --mode initial --max-chunks 1 --towns "York, ME"
 # Discover/verify Redfin region IDs
 python -m src.main --discover-regions
 
-# Run Playwright agent enrichment (80 URLs per batch)
-python -m src.main --enrich --batch-size 80
+# Run Playwright agent enrichment (40 URLs per batch)
+python -m src.main --enrich --batch-size 40
 
 # Run fuzzy agent merge
 python -m src.main --merge-agents
@@ -84,6 +86,10 @@ python -m json.tool data/scrape_state.json
 
 # Run unit tests
 python -m pytest tests/
+
+# Run a single test file or class
+python -m pytest tests/test_dashboard.py -v
+python -m pytest tests/test_report.py::TestBrokerageAsAgentExclusion -v
 
 # Check database stats
 sqlite3 data/agent_data.db "SELECT city, COUNT(*) FROM transactions GROUP BY city ORDER BY COUNT(*) DESC;"
@@ -101,7 +107,7 @@ python -m src.main --purge-non-residential
 - Minorcivildivision towns (York, Ogunquit, Wells) have lower transaction counts via county query
 - Redfin blocks non-browser requests (403) — Playwright required for property pages
 - **Redfin CloudFront captchas datacenter IPs** — GitHub Actions IPs are flagged; residential proxy (`PROXY_URL`) required
-- **Redfin CloudFront blocks rapid sequential requests** — must use fresh browser context per page + 10-20s delay
+- **Redfin CloudFront blocks rapid sequential requests** — must use fresh browser context per page + 15-30s delay
 - **Two DOM structures for agent data** — Redfin-agent listings use `.agent-card-wrapper`, non-Redfin agents use `.listing-agent-item`
 - **React hydration timing** — agent cards take 3-8s to render after `domcontentloaded`; must use `wait_for_selector` not fixed timeout
 - GitHub Actions job max 45-min timeout, 2000 min/month free tier
@@ -123,7 +129,7 @@ gw-re-agent-scraper/
 │   └── state.py       # Chunk-based resumable state machine
 ├── tests/             # Unit tests (all passing)
 ├── data/
-│   ├── agent_data.db       # 2,371 transactions (192+ enriched with agent data)
+│   ├── agent_data.db       # 2,311 SFH/Condo transactions
 │   ├── agent_leaderboard.md # Generated markdown report
 │   ├── dashboard.html      # Generated HTML dashboard with trend indicators
 │   └── scrape_state.json   # Tracks scraping progress
