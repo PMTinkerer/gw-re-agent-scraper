@@ -1,5 +1,5 @@
 # Real Estate Agent Leaderboard -- Southern Coastal Maine
-_Generated: 2026-04-04 07:14 UTC | Data: 2023-03-24 to 2026-03-20 | Sources: redfin_
+_Generated: 2026-04-04 12:41 UTC | Data: 2023-03-24 to 2026-03-20 | Sources: redfin_
 _Total sales analyzed: 2,311 | Unique listing agents: 778_
 
 ## Top 30 Listing Agents by Total Volume
@@ -17,11 +17,11 @@ _Total sales analyzed: 2,311 | Unique listing agents: 778_
 | 9 | Victoria Benenti | Pack Maynard and Associates | 14 | $17.8M | $1.3M | 13 | Kennebunkport, Kennebunk | 2026-03-06 |
 | 10 | Nancy Moreshead | The Real Estate Store | 30 | $17.8M | $592K | 19 | Old Orchard Beach, Scarborough, Saco | 2026-03-20 |
 | 11 | Rebecca Bassett | Portside Real Estate Group | 18 | $16.3M | $907K | 14 | Kennebunk, Kennebunkport, Scarborough | 2025-10-02 |
-| 12 | Heidi Maynard Corey Tracy | Pack Maynard and Associates | 10 | $15.9M | $1.6M | 10 | Kennebunkport, Kennebunk, Wells | 2025-12-30 |
-| 13 | Peter Mcpheeters | OceanView Properties | 8 | $15.8M | $2.0M | 7 | Biddeford | 2025-11-17 |
-| 14 | Lise Dewar | Pack Maynard and Associates | 10 | $15.3M | $1.5M | 9 | Kennebunk, Kennebunkport | 2025-10-10 |
-| 15 | Maureen Deleo | Keller Williams Realty | 8 | $14.8M | $1.8M | 8 | Kennebunk, Kennebunkport | 2025-04-23 |
-| 16 | Scott Townsend | Keller Williams Realty | 20 | $14.5M | $723K | 17 | Scarborough, Old Orchard Beach | 2025-11-20 |
+| 12 | Scott Townsend | Keller Williams Realty | 22 | $15.9M | $723K | 19 | Scarborough, Old Orchard Beach | 2025-11-20 |
+| 13 | Heidi Maynard Corey Tracy | Pack Maynard and Associates | 10 | $15.9M | $1.6M | 10 | Kennebunkport, Kennebunk, Wells | 2025-12-30 |
+| 14 | Peter Mcpheeters | OceanView Properties | 8 | $15.8M | $2.0M | 7 | Biddeford | 2025-11-17 |
+| 15 | Lise Dewar | Pack Maynard and Associates | 10 | $15.3M | $1.5M | 9 | Kennebunk, Kennebunkport | 2025-10-10 |
+| 16 | Maureen Deleo | Keller Williams Realty | 8 | $14.8M | $1.8M | 8 | Kennebunk, Kennebunkport | 2025-04-23 |
 | 17 | Dennis Page | Dennis M. Page Real Estate | 24 | $13.6M | $568K | 20 | Kittery | 2025-10-17 |
 | 18 | Elise Wyman | Pack Maynard and Associates | 9 | $13.2M | $1.5M | 9 | Kennebunk, Kennebunkport | 2025-10-21 |
 | 19 | Mary Rockett | The Aland Realty Group, LLC | 12 | $13.0M | $1.1M | 12 | York | 2026-03-20 |
@@ -41,7 +41,7 @@ _Total sales analyzed: 2,311 | Unique listing agents: 778_
 
 | Rank | Brokerage | Listing Sides | Total Volume | Avg Price | Top Agents |
 |------|-----------|--------------|-------------|-----------|------------|
-| 1 | Keller Williams Realty | 218 | $160.0M | $734K | Scott Townsend, Sandra Murray, Cynthia Dubois-Cote |
+| 1 | Keller Williams Realty | 221 | $162.0M | $733K | Scott Townsend, Sandra Murray, Cynthia Dubois-Cote |
 | 2 | Pack Maynard and Associates | 109 | $138.3M | $1.3M | Jessica Girard, Heidi Maynard, Victoria Benenti |
 | 3 | Legacy Properties Sotheby's International Realty | 42 | $101.3M | $2.4M | William Gaynor, Adrienne Robinson, Randal Simon |
 | 4 | Coldwell Banker Realty | 197 | $97.8M | $496K | Margaret Mailman, Bob Letellier, Daniel Letellier |
@@ -154,7 +154,7 @@ _Total sales analyzed: 2,311 | Unique listing agents: 778_
 | Rank | Agent | Office | Listing Sides | Total Volume |
 |------|-------|--------|--------------|-------------|
 | 1 | Carrie Scoville Amy Foley | Signature Homes Real Estate Group, LLC | 33 | $24.7M |
-| 2 | Scott Townsend | Keller Williams Realty | 17 | $13.4M |
+| 2 | Scott Townsend | Keller Williams Realty | 19 | $14.9M |
 | 3 | Sandra Murray | Keller Williams Realty | 3 | $10.2M |
 | 4 | Lesley Craig | Doris Homer Real Estate, Inc. | 2 | $9.8M |
 | 5 | Peter Coyne | Coyne Webber Real Estate Associates, LLC | 3 | $3.0M |
@@ -162,7 +162,7 @@ _Total sales analyzed: 2,311 | Unique listing agents: 778_
 ## Data Summary
 
 - **Total transactions:** 2,311
-- **With listing agent:** 2,189
+- **With listing agent:** 2,194
 - **Date range:** 2023-03-24 to 2026-03-20
 - **Sources:**
   - Redfin: 2,311 properties
@@ -177,4 +177,4 @@ _Total sales analyzed: 2,311 | Unique listing agents: 778_
   - Scarborough: 341 sales
   - Wells: 73 sales
   - York: 99 sales
-- **Report generated:** 2026-04-04 07:14 UTC
+- **Report generated:** 2026-04-04 12:41 UTC
