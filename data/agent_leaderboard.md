@@ -1,15 +1,15 @@
 # Real Estate Agent Leaderboard -- Southern Coastal Maine
-_Generated: 2026-04-05 02:07 UTC | Data: 2023-03-24 to 2026-03-20 | Sources: redfin_
-_Total sales analyzed: 2,311 | Unique listing agents: 802_
+_Generated: 2026-04-05 03:24 UTC | Data: 2023-03-24 to 2026-03-20 | Sources: redfin_
+_Total sales analyzed: 2,311 | Unique listing agents: 806_
 
 ## Top 30 Listing Agents by Total Volume
 
 | Rank | Agent | Office | Listing Sides | Total Volume | Avg Price | High-Value (>=500K) | Primary Towns | Most Recent |
 |------|-------|--------|--------------|-------------|-----------|-------------------|--------------|-------------|
-| 1 | Carrie Scoville Amy Foley | Signature Homes Real Estate Group, LLC | 61 | $41.2M | $675K | 44 | Scarborough, Kennebunk, Kittery | 2026-03-20 |
+| 1 | Carrie Scoville Amy Foley | Signature Homes Real Estate Group, LLC | 62 | $41.9M | $676K | 45 | Scarborough, Kennebunk, Kittery | 2026-03-20 |
 | 2 | William Gaynor | Legacy Properties Sotheby's International Realty | 7 | $37.1M | $5.3M | 7 | Kennebunkport, Kennebunk | 2025-08-07 |
-| 3 | Tracy Jackson Mccarty | The Aland Realty Group, LLC | 34 | $33.9M | $997K | 32 | York | 2026-02-04 |
-| 4 | Scott Townsend | Keller Williams Realty | 38 | $30.2M | $796K | 32 | Scarborough, Old Orchard Beach | 2026-02-18 |
+| 3 | Scott Townsend | Keller Williams Realty | 43 | $34.9M | $811K | 36 | Scarborough, Old Orchard Beach | 2026-02-18 |
+| 4 | Tracy Jackson Mccarty | The Aland Realty Group, LLC | 34 | $33.9M | $997K | 32 | York | 2026-02-04 |
 | 5 | Troy Williams | Keller Williams Coastal and Lakes & Mountains Realty | 41 | $28.7M | $701K | 20 | York, Kittery, Wells | 2026-03-20 |
 | 6 | Adam Parent | Maine Real Estate Co | 50 | $26.7M | $533K | 21 | Saco, Biddeford, Old Orchard Beach | 2026-02-20 |
 | 7 | Sandra Murray | Keller Williams Realty | 13 | $25.2M | $1.9M | 13 | Saco, Scarborough, Old Orchard Beach | 2025-10-30 |
@@ -41,16 +41,16 @@ _Total sales analyzed: 2,311 | Unique listing agents: 802_
 
 | Rank | Brokerage | Listing Sides | Total Volume | Avg Price | Top Agents |
 |------|-----------|--------------|-------------|-----------|------------|
-| 1 | Keller Williams Realty | 253 | $187.2M | $740K | Scott Townsend, Jeffrey Mateja, Sandra Murray |
+| 1 | Keller Williams Realty | 260 | $193.0M | $742K | Scott Townsend, Jeffrey Mateja, Sandra Murray |
 | 2 | Pack Maynard and Associates | 109 | $138.3M | $1.3M | Jessica Girard, Heidi Maynard, Victoria Benenti |
 | 3 | Legacy Properties Sotheby's International Realty | 43 | $102.2M | $2.4M | William Gaynor, Adrienne Robinson, Randal Simon |
 | 4 | Coldwell Banker Realty | 200 | $100.2M | $501K | Margaret Mailman, Bob Letellier, Daniel Letellier |
 | 5 | The Aland Realty Group, LLC | 96 | $88.5M | $922K | Tracy Jackson Mccarty, Mary Rockett, Christopher Erikson |
-| 6 | Portside Real Estate Group | 134 | $85.5M | $638K | Rebecca Bassett, Cady Toussaint, Erin Oldham |
+| 6 | Portside Real Estate Group | 136 | $87.3M | $642K | Rebecca Bassett, Cady Toussaint, Erin Oldham |
 | 7 | Keller Williams Coastal and Lakes & Mountains Realty | 92 | $62.1M | $675K | Troy Williams, Marcia Giniusz, Alicia Goodwin |
-| 8 | Signature Homes Real Estate Group, LLC | 94 | $59.5M | $633K | Carrie Scoville Amy Foley, Ashley Lutko Donna Galluzzo, Tiffany Libb Pamela Starnes |
+| 8 | Signature Homes Real Estate Group, LLC | 96 | $60.4M | $629K | Carrie Scoville Amy Foley, Ashley Lutko Donna Galluzzo, Tiffany Libb Pamela Starnes |
 | 9 | Maine Real Estate Co | 81 | $47.6M | $587K | Adam Parent, Yulia Glasgow, Bailey Pate |
-| 10 | EXP Realty | 85 | $44.2M | $520K | Roz Anton, Robert Magazu, John Harmon Ii John Carroll |
+| 10 | EXP Realty | 86 | $44.7M | $519K | Roz Anton, Robert Magazu, John Harmon Ii John Carroll |
 | 11 | RE/MAX Shoreline | 55 | $33.4M | $608K | Pamela Gray, Glenn Thibodeau, Thomas Ranello |
 | 12 | Berkshire Hathaway HomeServices Verani Realty | 43 | $30.2M | $703K | Gregory Cloutier Christina Connell, Hylah Riley, Betty Smith |
 | 13 | Kennebunk Beach Realty | 33 | $29.1M | $882K | Denise Hodsdon, Helen Curry, Laura Ross |
@@ -153,8 +153,8 @@ _Total sales analyzed: 2,311 | Unique listing agents: 802_
 
 | Rank | Agent | Office | Listing Sides | Total Volume |
 |------|-------|--------|--------------|-------------|
-| 1 | Scott Townsend | Keller Williams Realty | 35 | $29.2M |
-| 2 | Carrie Scoville Amy Foley | Signature Homes Real Estate Group, LLC | 38 | $28.3M |
+| 1 | Scott Townsend | Keller Williams Realty | 40 | $33.9M |
+| 2 | Carrie Scoville Amy Foley | Signature Homes Real Estate Group, LLC | 39 | $29.0M |
 | 3 | Sandra Murray | Keller Williams Realty | 3 | $10.2M |
 | 4 | Lesley Craig | Doris Homer Real Estate, Inc. | 2 | $9.8M |
 | 5 | Stacy Salvo | Portside Real Estate Group | 3 | $4.6M |
@@ -162,7 +162,7 @@ _Total sales analyzed: 2,311 | Unique listing agents: 802_
 ## Data Summary
 
 - **Total transactions:** 2,311
-- **With listing agent:** 2,274
+- **With listing agent:** 2,290
 - **Date range:** 2023-03-24 to 2026-03-20
 - **Sources:**
   - Redfin: 2,311 properties
@@ -177,4 +177,4 @@ _Total sales analyzed: 2,311 | Unique listing agents: 802_
   - Scarborough: 341 sales
   - Wells: 73 sales
   - York: 99 sales
-- **Report generated:** 2026-04-05 02:07 UTC
+- **Report generated:** 2026-04-05 03:24 UTC
