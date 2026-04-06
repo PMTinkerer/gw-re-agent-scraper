@@ -1,6 +1,9 @@
 name: Zillow Leaderboard
 
 on:
+  push:
+    branches:
+      - zillow-actions-smoke-20260406
   workflow_dispatch:
     inputs:
       towns:
