@@ -26,6 +26,21 @@ _DEFAULT_OUTPUT = os.path.join(os.path.dirname(__file__), '..', 'data', 'dashboa
 
 def generate_dashboard(conn, output_path: str | None = None) -> str:
     """Generate the HTML dashboard. Returns the output file path."""
+    return generate_scoped_dashboard(conn, output_path=output_path)
+
+
+def generate_scoped_dashboard(
+    conn,
+    output_path: str | None = None,
+    *,
+    source: str | None = None,
+    role: str = 'seller',
+    heading: str = 'Real Estate Agent Leaderboard',
+    subtitle: str = 'Southern Coastal Maine',
+    source_label: str = 'Redfin',
+    description: str = 'Ranked leaderboard of real estate listing agents and brokerages across 10 southern coastal Maine towns.',
+) -> str:
+    """Generate a source- and role-scoped HTML dashboard."""
     output_path = output_path or _DEFAULT_OUTPUT
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
 
@@ -33,17 +48,19 @@ def generate_dashboard(conn, output_path: str | None = None) -> str:
     since_date = (now - timedelta(days=365)).strftime('%Y-%m-%d')
     generated_at = now.strftime('%Y-%m-%d %H:%M UTC')
 
-    stats = get_report_stats(conn)
-    all_time_agents = query_top_agents(conn, limit=30)
-    rolling_agents = query_top_agents(conn, limit=30, since_date=since_date)
+    stats = get_report_stats(conn, source=source, role=role)
+    all_time_agents = query_top_agents(conn, limit=30, source=source, role=role)
+    rolling_agents = query_top_agents(conn, limit=30, since_date=since_date, source=source, role=role)
     trends = _compute_trend_indicators(all_time_agents, rolling_agents)
-    all_time_brokerages = query_top_brokerages(conn, limit=20)
-    rolling_brokerages = query_top_brokerages(conn, limit=20, since_date=since_date)
+    all_time_brokerages = query_top_brokerages(conn, limit=20, source=source, role=role)
+    rolling_brokerages = query_top_brokerages(
+        conn, limit=20, since_date=since_date, source=source, role=role,
+    )
     brokerage_trends = _compute_brokerage_trends(all_time_brokerages, rolling_brokerages)
 
     town_agents = {}
     for town in TOWNS:
-        town_agents[town] = query_top_agents_by_town(conn, town, limit=5)
+        town_agents[town] = query_top_agents_by_town(conn, town, limit=5, source=source, role=role)
 
     html = _build_html(
         stats=stats,
@@ -55,6 +72,11 @@ def generate_dashboard(conn, output_path: str | None = None) -> str:
         brokerage_trends=brokerage_trends,
         town_agents=town_agents,
         generated_at=generated_at,
+        heading=heading,
+        subtitle=subtitle,
+        source_label=source_label,
+        description=description,
+        role=role,
     )
 
     with open(output_path, 'w', encoding='utf-8') as f:
@@ -163,8 +185,14 @@ def _build_html(
     brokerage_trends: dict,
     town_agents: dict[str, list[dict]],
     generated_at: str,
+    heading: str,
+    subtitle: str,
+    source_label: str,
+    description: str,
+    role: str,
 ) -> str:
     """Assemble the complete HTML document."""
+    role_prefix = '' if role == 'seller' else 'Buyer '
     sections = []
 
     # --- Section 1: Top Agents All-Time ---
@@ -185,7 +213,7 @@ def _build_html(
         rows_html = '<tr><td colspan="7" class="no-data">No data available yet.</td></tr>'
 
     sections.append(f'''<section class="section">
-        <h2>Top Agents &mdash; All-Time</h2>
+        <h2>Top {role_prefix}Agents &mdash; All-Time</h2>
         <div class="table-wrap">
         <table>
             <colgroup>
@@ -227,7 +255,7 @@ def _build_html(
         rows_html = '<tr><td colspan="7" class="no-data">No data available yet.</td></tr>'
 
     sections.append(f'''<section class="section">
-        <h2>Top Agents &mdash; Last 365 Days</h2>
+        <h2>Top {role_prefix}Agents &mdash; Last 365 Days</h2>
         <div class="table-wrap">
         <table>
             <colgroup>
@@ -266,7 +294,7 @@ def _build_html(
         rows_html = '<tr><td colspan="7" class="no-data">No data available yet.</td></tr>'
 
     sections.append(f'''<section class="section">
-        <h2>Top Brokerages &mdash; All-Time</h2>
+        <h2>Top {role_prefix}Brokerages &mdash; All-Time</h2>
         <div class="table-wrap">
         <table>
             <colgroup>
@@ -308,7 +336,7 @@ def _build_html(
         rows_html = '<tr><td colspan="7" class="no-data">No data available yet.</td></tr>'
 
     sections.append(f'''<section class="section">
-        <h2>Top Brokerages &mdash; Last 365 Days</h2>
+        <h2>Top {role_prefix}Brokerages &mdash; Last 365 Days</h2>
         <div class="table-wrap">
         <table>
             <colgroup>
@@ -369,7 +397,7 @@ def _build_html(
         </div>'''
 
     sections.append(f'''<section class="section">
-        <h2>Top Agents by Town</h2>
+        <h2>Top {role_prefix}Agents by Town</h2>
         {town_sections}
     </section>''')
 
@@ -381,15 +409,15 @@ def _build_html(
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Ranked leaderboard of real estate listing agents and brokerages across 10 southern coastal Maine towns.">
-    <title>Agent Leaderboard &mdash; Southern Coastal Maine</title>
+    <meta name="description" content="{_e(description)}">
+    <title>{_e(heading)} &mdash; Southern Coastal Maine</title>
     <style>{_css()}</style>
 </head>
 <body>
     <div class="wrap">
         <header class="header">
-            <h1>Real Estate Agent Leaderboard</h1>
-            <p class="sub">Southern Coastal Maine &middot; 10 Towns &middot; {_e(generated_at)}</p>
+            <h1>{_e(heading)}</h1>
+            <p class="sub">{_e(subtitle)} &middot; 10 Towns &middot; {_e(generated_at)}</p>
         </header>
         <div class="stats">
             <div class="stat">
@@ -409,7 +437,7 @@ def _build_html(
             {body}
         </main>
         <footer class="footer">
-            Generated {_e(generated_at)} &middot; Data source: Redfin &middot; gw-re-agent-scraper
+            Generated {_e(generated_at)} &middot; Data source: {_e(source_label)} &middot; gw-re-agent-scraper
         </footer>
     </div>
 <script>{_sort_js()}</script>

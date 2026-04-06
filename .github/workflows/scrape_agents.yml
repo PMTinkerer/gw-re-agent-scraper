@@ -284,6 +284,10 @@ jobs:
         run: |
           mkdir -p _site
           cp data/dashboard.html _site/index.html
+          if [ -f data/zillow_dashboard.html ]; then
+            mkdir -p _site/zillow
+            cp data/zillow_dashboard.html _site/zillow/index.html
+          fi
       - name: Upload Pages artifact
         if: always()
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3

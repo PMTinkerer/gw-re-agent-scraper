@@ -1,0 +1,146 @@
+name: Zillow Leaderboard
+
+on:
+  workflow_dispatch:
+    inputs:
+      towns:
+        description: 'Optional comma-separated towns (blank = all 10 towns)'
+        default: ''
+      batch_size:
+        description: 'Number of profiles to scrape this run'
+        default: '10'
+      discover:
+        description: 'Run directory discovery before scraping (true/false)'
+        default: 'true'
+      scrape_profiles:
+        description: 'Scrape pending Zillow profiles (true/false)'
+        default: 'true'
+      report_only:
+        description: 'Skip discovery/scraping and regenerate Zillow outputs only (true/false)'
+        default: 'false'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: zillow-leaderboard
+  cancel-in-progress: false
+
+jobs:
+  zillow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('requirements.txt') }}
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          python -m playwright install chromium --with-deps
+
+      - name: Run Zillow pipeline
+        env:
+          CI: 'true'
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          ZILLOW_STARTUP_DELAY_MIN: '25'
+          ZILLOW_STARTUP_DELAY_MAX: '45'
+          ZILLOW_WARMUP_DELAY_MIN: '3'
+          ZILLOW_WARMUP_DELAY_MAX: '6'
+          ZILLOW_DIRECTORY_DELAY_MIN: '8'
+          ZILLOW_DIRECTORY_DELAY_MAX: '14'
+          ZILLOW_PROFILE_DELAY_MIN: '5'
+          ZILLOW_PROFILE_DELAY_MAX: '9'
+          ZILLOW_PAGINATION_DELAY_MIN: '1'
+          ZILLOW_PAGINATION_DELAY_MAX: '2'
+          ZILLOW_BLOCK_BACKOFF_MIN: '25'
+          ZILLOW_BLOCK_BACKOFF_MAX: '45'
+          ZILLOW_RETRY_BACKOFF_MIN: '10'
+          ZILLOW_RETRY_BACKOFF_MAX: '18'
+          ZILLOW_DIRECTORY_ATTEMPTS: '3'
+          ZILLOW_PROFILE_ATTEMPTS: '3'
+        run: |
+          if [ -z "$PROXY_URL" ]; then
+            echo "PROXY_URL secret is required for Zillow runs"
+            exit 1
+          fi
+
+          TOWNS="${{ github.event.inputs.towns || '' }}"
+          BATCH="${{ github.event.inputs.batch_size || '10' }}"
+          DISCOVER="${{ github.event.inputs.discover || 'true' }}"
+          SCRAPE="${{ github.event.inputs.scrape_profiles || 'true' }}"
+          REPORT_ONLY="${{ github.event.inputs.report_only || 'false' }}"
+
+          CMD="python -m src.zillow_main"
+          if [ "$REPORT_ONLY" = "true" ]; then
+            CMD="$CMD --report-only"
+          else
+            DID_WORK="false"
+            if [ "$DISCOVER" = "true" ]; then
+              CMD="$CMD --discover"
+              DID_WORK="true"
+            fi
+            if [ "$SCRAPE" = "true" ]; then
+              CMD="$CMD --scrape-profiles --batch-size $BATCH"
+              DID_WORK="true"
+            fi
+            if [ "$DID_WORK" != "true" ]; then
+              CMD="$CMD --report-only"
+            fi
+          fi
+          if [ -n "$TOWNS" ]; then
+            CMD="$CMD --towns \"$TOWNS\""
+          fi
+
+          echo "Running: $CMD"
+          eval "$CMD"
+
+      - name: Commit and push results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "data: zillow leaderboard $(date -u +%Y-%m-%d-%H%M)"
+          git pull --rebase origin main || {
+            echo "Rebase failed, aborting and trying merge..."
+            git rebase --abort
+            git pull --no-rebase origin main
+          }
+          git push || {
+            echo "Push failed, retrying once..."
+            git pull --rebase origin main
+            git push
+          }
+
+      - name: Prepare Pages artifact
+        if: always()
+        run: |
+          mkdir -p _site
+          if [ -f data/dashboard.html ]; then
+            cp data/dashboard.html _site/index.html
+          fi
+          if [ -f data/zillow_dashboard.html ]; then
+            mkdir -p _site/zillow
+            cp data/zillow_dashboard.html _site/zillow/index.html
+          fi
+      - name: Upload Pages artifact
+        if: always()
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
+        with:
+          path: _site/
+      - name: Deploy to GitHub Pages
+        if: always()
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

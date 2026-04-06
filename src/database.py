@@ -5,6 +5,7 @@ fuzzy deduplication, and ranking queries.
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
 import re
@@ -15,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 # Default database path relative to project root
 _DEFAULT_DB = os.path.join(os.path.dirname(__file__), '..', 'data', 'agent_data.db')
+_DEFAULT_ZILLOW_DB = os.path.join(os.path.dirname(__file__), '..', 'data', 'zillow_agent_data.db')
 
 # Agent designations to strip during normalization
 _DESIGNATIONS = re.compile(
@@ -57,6 +59,33 @@ BROKERAGE_AS_AGENT = {
     "anchor real estate",
 }
 
+_ADDRESS_PUNCTUATION_RE = re.compile(r'[^A-Z0-9\s]')
+_ADDRESS_WHITESPACE_RE = re.compile(r'\s+')
+_ZIP_RE = re.compile(r'(\d{5})')
+_UNIT_TOKEN_RE = re.compile(
+    r'\b(?:APARTMENT|APT|UNIT|SUITE|STE|#)\s*([A-Z0-9-]+)\b',
+    re.IGNORECASE,
+)
+_HASH_UNIT_RE = re.compile(r'#\s*([A-Z0-9-]+)\b', re.IGNORECASE)
+_ADDRESS_TOKEN_MAP = {
+    'AVENUE': 'AVE',
+    'BOULEVARD': 'BLVD',
+    'CIRCLE': 'CIR',
+    'COURT': 'CT',
+    'DRIVE': 'DR',
+    'HIGHWAY': 'HWY',
+    'LANE': 'LN',
+    'PLACE': 'PL',
+    'ROAD': 'RD',
+    'SQUARE': 'SQ',
+    'STREET': 'ST',
+    'TERRACE': 'TER',
+}
+_ROLE_TO_COLUMNS = {
+    'seller': ('listing_agent', 'listing_office'),
+    'buyer': ('buyer_agent', 'buyer_office'),
+}
+
 
 def get_connection(db_path: str | None = None) -> sqlite3.Connection:
     """Return a connection with Row factory enabled."""
@@ -66,6 +95,11 @@ def get_connection(db_path: str | None = None) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute('PRAGMA journal_mode=WAL')
     return conn
+
+
+def get_zillow_connection(db_path: str | None = None) -> sqlite3.Connection:
+    """Return a Zillow connection with Row factory enabled."""
+    return get_connection(db_path or _DEFAULT_ZILLOW_DB)
 
 
 def init_db(conn: sqlite3.Connection) -> None:
@@ -169,6 +203,82 @@ def normalize_office_name(name: str | None) -> str | None:
     return canonical if canonical else stripped
 
 
+def normalize_address(
+    address: str | None,
+    city: str | None = None,
+    state: str | None = None,
+    zip_code: str | None = None,
+) -> str | None:
+    """Normalize address components into a stable uppercase dedup string."""
+    if not any([address, city, state, zip_code]):
+        return None
+
+    street = (address or '').upper().strip()
+    street = street.replace('&', ' AND ')
+    street = _HASH_UNIT_RE.sub(r' UNIT \1', street)
+    street = _UNIT_TOKEN_RE.sub(r' UNIT \1', street)
+    street = _ADDRESS_PUNCTUATION_RE.sub(' ', street)
+    street = _ADDRESS_WHITESPACE_RE.sub(' ', street).strip()
+    if street:
+        tokens = [_ADDRESS_TOKEN_MAP.get(token, token) for token in street.split()]
+        street = ' '.join(tokens)
+
+    normalized_city = _ADDRESS_PUNCTUATION_RE.sub(' ', (city or '').upper())
+    normalized_city = _ADDRESS_WHITESPACE_RE.sub(' ', normalized_city).strip()
+    normalized_state = _ADDRESS_PUNCTUATION_RE.sub(' ', (state or '').upper())
+    normalized_state = _ADDRESS_WHITESPACE_RE.sub(' ', normalized_state).strip()
+
+    zip_match = _ZIP_RE.search(str(zip_code or ''))
+    normalized_zip = zip_match.group(1) if zip_match else ''
+
+    parts = [part for part in [street, normalized_city, normalized_state, normalized_zip] if part]
+    return ' | '.join(parts) if parts else None
+
+
+def sha256_text(value: str | None) -> str | None:
+    """Return a SHA-256 hex digest for the given string."""
+    if value is None:
+        return None
+    return hashlib.sha256(value.encode('utf-8')).hexdigest()
+
+
+def build_transaction_match_key(
+    normalized_address_hash: str | None,
+    sale_date: str | None,
+    sale_price,
+) -> str | None:
+    """Build the future cross-source transaction dedup key."""
+    if not normalized_address_hash or not sale_date or sale_price in (None, ''):
+        return None
+    return sha256_text(f'{normalized_address_hash}|{sale_date}|{_to_int(sale_price)}')
+
+
+def build_observation_id(
+    agent_profile_url: str | None,
+    represented_side: str | None,
+    normalized_address_hash: str | None,
+    sale_date: str | None,
+    sale_price,
+) -> str | None:
+    """Build a stable Zillow row identifier."""
+    if not all([agent_profile_url, represented_side, normalized_address_hash, sale_date]):
+        return None
+    price = _to_int(sale_price)
+    if price is None:
+        return None
+    return sha256_text(
+        f'{agent_profile_url}|{represented_side.lower()}|{normalized_address_hash}|{sale_date}|{price}'
+    )
+
+
+def get_role_columns(role: str) -> tuple[str, str]:
+    """Return the agent/office columns for a logical role."""
+    columns = _ROLE_TO_COLUMNS.get(role.lower())
+    if not columns:
+        raise ValueError(f'Unknown role: {role}')
+    return columns
+
+
 def upsert_transaction(conn: sqlite3.Connection, record: dict) -> bool:
     """Insert or update a transaction, deduplicating on mls_number.
 
@@ -246,6 +356,385 @@ def upsert_transaction(conn: sqlite3.Connection, record: dict) -> bool:
     except sqlite3.IntegrityError as e:
         logger.warning('Insert failed for MLS %s: %s', mls, e)
         return False
+
+
+def init_zillow_db(conn: sqlite3.Connection) -> None:
+    """Create Zillow-specific schema on top of the shared transactions table."""
+    init_db(conn)
+
+    for col, typedef in [
+        ('represented_side', 'TEXT'),
+        ('agent_profile_url', 'TEXT'),
+        ('profile_type', 'TEXT'),
+        ('normalized_address', 'TEXT'),
+        ('normalized_address_hash', 'TEXT'),
+        ('transaction_match_key', 'TEXT'),
+        ('observation_id', 'TEXT'),
+        ('local_directory_town', 'TEXT'),
+        ('attribution_confidence', 'TEXT'),
+    ]:
+        assert col.isidentifier(), f'Invalid Zillow column name: {col}'
+        try:
+            conn.execute(f'ALTER TABLE transactions ADD COLUMN {col} {typedef}')
+        except sqlite3.OperationalError:
+            pass
+
+    conn.executescript('''
+        CREATE TABLE IF NOT EXISTS zillow_profiles (
+            profile_url TEXT PRIMARY KEY,
+            profile_type TEXT NOT NULL,
+            profile_name TEXT,
+            office_name TEXT,
+            raw_card_text TEXT,
+            sales_last_12_months INTEGER,
+            total_sales INTEGER,
+            average_price INTEGER,
+            price_range TEXT,
+            scrape_status TEXT,
+            scrape_attempts INTEGER DEFAULT 0,
+            last_error TEXT,
+            discovered_at TEXT NOT NULL,
+            last_scraped_at TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS zillow_profile_towns (
+            profile_url TEXT NOT NULL,
+            town TEXT NOT NULL,
+            local_sales_count INTEGER DEFAULT 0,
+            discovered_at TEXT NOT NULL,
+            PRIMARY KEY (profile_url, town)
+        );
+
+        CREATE TABLE IF NOT EXISTS zillow_team_members (
+            team_profile_url TEXT NOT NULL,
+            member_profile_url TEXT NOT NULL,
+            member_name TEXT,
+            discovered_at TEXT NOT NULL,
+            PRIMARY KEY (team_profile_url, member_profile_url)
+        );
+
+        CREATE TABLE IF NOT EXISTS team_only_sales_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            team_profile_url TEXT NOT NULL,
+            team_name TEXT,
+            property_url TEXT,
+            represented_side TEXT NOT NULL,
+            sale_date TEXT,
+            sale_price INTEGER,
+            normalized_address TEXT,
+            normalized_address_hash TEXT,
+            transaction_match_key TEXT,
+            local_town TEXT,
+            resolved_by_member INTEGER DEFAULT 0,
+            created_at TEXT NOT NULL,
+            UNIQUE(team_profile_url, represented_side, transaction_match_key)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_transactions_match_key ON transactions(transaction_match_key);
+        CREATE INDEX IF NOT EXISTS idx_transactions_profile_url ON transactions(agent_profile_url);
+        CREATE INDEX IF NOT EXISTS idx_transactions_represented_side ON transactions(represented_side);
+        CREATE INDEX IF NOT EXISTS idx_zillow_profiles_status ON zillow_profiles(scrape_status, profile_type);
+        CREATE INDEX IF NOT EXISTS idx_zillow_profile_towns_town ON zillow_profile_towns(town);
+        CREATE INDEX IF NOT EXISTS idx_team_only_sales_log_resolved ON team_only_sales_log(resolved_by_member);
+        CREATE INDEX IF NOT EXISTS idx_team_only_sales_log_match_key
+            ON team_only_sales_log(transaction_match_key, represented_side);
+    ''')
+    conn.commit()
+
+
+def upsert_zillow_transaction(conn: sqlite3.Connection, record: dict) -> bool:
+    """Insert or update a Zillow observation in the Zillow transactions table."""
+    normalized_address = record.get('normalized_address') or normalize_address(
+        record.get('address'),
+        record.get('city'),
+        record.get('state'),
+        record.get('zip'),
+    )
+    normalized_address_hash = (
+        record.get('normalized_address_hash') or sha256_text(normalized_address)
+    )
+    transaction_match_key = record.get('transaction_match_key') or build_transaction_match_key(
+        normalized_address_hash,
+        record.get('sale_date'),
+        record.get('sale_price'),
+    )
+    observation_id = record.get('observation_id') or build_observation_id(
+        record.get('agent_profile_url'),
+        record.get('represented_side'),
+        normalized_address_hash,
+        record.get('sale_date'),
+        record.get('sale_price'),
+    )
+    if not observation_id:
+        return False
+
+    raw_listing = record.get('listing_agent')
+    raw_buyer = record.get('buyer_agent')
+    normalized_listing = normalize_agent_name(raw_listing)
+    normalized_buyer = normalize_agent_name(raw_buyer)
+    listing_office = normalize_office_name(record.get('listing_office'))
+    buyer_office = normalize_office_name(record.get('buyer_office'))
+
+    try:
+        conn.execute('''
+            INSERT INTO transactions (
+                mls_number, address, city, state, zip,
+                sale_price, list_price, beds, baths, sqft,
+                year_built, days_on_market, sale_date,
+                listing_agent, buyer_agent, listing_office, buyer_office,
+                source_url, data_source, scraped_at,
+                raw_listing_agent, raw_buyer_agent, property_type,
+                represented_side, agent_profile_url, profile_type,
+                normalized_address, normalized_address_hash, transaction_match_key,
+                observation_id, local_directory_town, attribution_confidence
+            ) VALUES (
+                :mls_number, :address, :city, :state, :zip,
+                :sale_price, :list_price, :beds, :baths, :sqft,
+                :year_built, :days_on_market, :sale_date,
+                :listing_agent, :buyer_agent, :listing_office, :buyer_office,
+                :source_url, :data_source, :scraped_at,
+                :raw_listing_agent, :raw_buyer_agent, :property_type,
+                :represented_side, :agent_profile_url, :profile_type,
+                :normalized_address, :normalized_address_hash, :transaction_match_key,
+                :observation_id, :local_directory_town, :attribution_confidence
+            )
+            ON CONFLICT(mls_number) DO UPDATE SET
+                sale_price = COALESCE(excluded.sale_price, transactions.sale_price),
+                list_price = COALESCE(excluded.list_price, transactions.list_price),
+                sale_date = COALESCE(excluded.sale_date, transactions.sale_date),
+                listing_agent = COALESCE(excluded.listing_agent, transactions.listing_agent),
+                buyer_agent = COALESCE(excluded.buyer_agent, transactions.buyer_agent),
+                listing_office = COALESCE(excluded.listing_office, transactions.listing_office),
+                buyer_office = COALESCE(excluded.buyer_office, transactions.buyer_office),
+                source_url = COALESCE(excluded.source_url, transactions.source_url),
+                scraped_at = excluded.scraped_at,
+                raw_listing_agent = COALESCE(excluded.raw_listing_agent, transactions.raw_listing_agent),
+                raw_buyer_agent = COALESCE(excluded.raw_buyer_agent, transactions.raw_buyer_agent),
+                represented_side = COALESCE(excluded.represented_side, transactions.represented_side),
+                agent_profile_url = COALESCE(excluded.agent_profile_url, transactions.agent_profile_url),
+                profile_type = COALESCE(excluded.profile_type, transactions.profile_type),
+                normalized_address = COALESCE(excluded.normalized_address, transactions.normalized_address),
+                normalized_address_hash = COALESCE(excluded.normalized_address_hash, transactions.normalized_address_hash),
+                transaction_match_key = COALESCE(excluded.transaction_match_key, transactions.transaction_match_key),
+                observation_id = COALESCE(excluded.observation_id, transactions.observation_id),
+                local_directory_town = COALESCE(excluded.local_directory_town, transactions.local_directory_town),
+                attribution_confidence = COALESCE(excluded.attribution_confidence, transactions.attribution_confidence)
+        ''', {
+            'mls_number': observation_id,
+            'address': record.get('address'),
+            'city': record.get('city'),
+            'state': record.get('state', 'ME'),
+            'zip': record.get('zip'),
+            'sale_price': _to_int(record.get('sale_price')),
+            'list_price': _to_int(record.get('list_price')),
+            'beds': _to_int(record.get('beds')),
+            'baths': _to_float(record.get('baths')),
+            'sqft': _to_int(record.get('sqft')),
+            'year_built': _to_int(record.get('year_built')),
+            'days_on_market': _to_int(record.get('days_on_market')),
+            'sale_date': record.get('sale_date'),
+            'listing_agent': normalized_listing,
+            'buyer_agent': normalized_buyer,
+            'listing_office': listing_office,
+            'buyer_office': buyer_office,
+            'source_url': record.get('source_url'),
+            'data_source': record.get('data_source', 'zillow'),
+            'scraped_at': record.get('scraped_at', datetime.utcnow().isoformat()),
+            'raw_listing_agent': raw_listing,
+            'raw_buyer_agent': raw_buyer,
+            'property_type': record.get('property_type'),
+            'represented_side': record.get('represented_side'),
+            'agent_profile_url': record.get('agent_profile_url'),
+            'profile_type': record.get('profile_type', 'individual'),
+            'normalized_address': normalized_address,
+            'normalized_address_hash': normalized_address_hash,
+            'transaction_match_key': transaction_match_key,
+            'observation_id': observation_id,
+            'local_directory_town': record.get('local_directory_town'),
+            'attribution_confidence': record.get('attribution_confidence'),
+        })
+        return True
+    except sqlite3.IntegrityError as e:
+        logger.warning('Insert failed for Zillow observation %s: %s', observation_id, e)
+        return False
+
+
+def record_zillow_directory_profile(
+    conn: sqlite3.Connection,
+    town: str,
+    profile_url: str,
+    profile_type: str,
+    local_sales_count: int,
+    raw_card_text: str | None = None,
+) -> None:
+    """Upsert a discovered Zillow profile and its town appearance."""
+    now = datetime.utcnow().isoformat()
+    conn.execute('''
+        INSERT INTO zillow_profiles (
+            profile_url, profile_type, raw_card_text, discovered_at
+        ) VALUES (
+            ?, ?, ?, ?
+        )
+        ON CONFLICT(profile_url) DO UPDATE SET
+            profile_type = COALESCE(zillow_profiles.profile_type, excluded.profile_type),
+            raw_card_text = COALESCE(excluded.raw_card_text, zillow_profiles.raw_card_text)
+    ''', (profile_url, profile_type, raw_card_text, now))
+    conn.execute('''
+        INSERT INTO zillow_profile_towns (
+            profile_url, town, local_sales_count, discovered_at
+        ) VALUES (
+            ?, ?, ?, ?
+        )
+        ON CONFLICT(profile_url, town) DO UPDATE SET
+            local_sales_count = MAX(zillow_profile_towns.local_sales_count, excluded.local_sales_count)
+    ''', (profile_url, town, local_sales_count, now))
+    conn.commit()
+
+
+def record_zillow_team_member(
+    conn: sqlite3.Connection,
+    team_profile_url: str,
+    member_profile_url: str,
+    member_name: str | None = None,
+) -> None:
+    """Record a team-to-member relationship and enqueue the member profile."""
+    now = datetime.utcnow().isoformat()
+    conn.execute('''
+        INSERT INTO zillow_team_members (
+            team_profile_url, member_profile_url, member_name, discovered_at
+        ) VALUES (?, ?, ?, ?)
+        ON CONFLICT(team_profile_url, member_profile_url) DO UPDATE SET
+            member_name = COALESCE(excluded.member_name, zillow_team_members.member_name)
+    ''', (team_profile_url, member_profile_url, member_name, now))
+    conn.execute('''
+        INSERT INTO zillow_profiles (
+            profile_url, profile_type, profile_name, discovered_at
+        ) VALUES (?, 'individual', ?, ?)
+        ON CONFLICT(profile_url) DO UPDATE SET
+            profile_name = COALESCE(excluded.profile_name, zillow_profiles.profile_name),
+            profile_type = 'individual'
+    ''', (member_profile_url, member_name, now))
+    conn.commit()
+
+
+def get_pending_zillow_profiles(
+    conn: sqlite3.Connection,
+    batch_size: int = 25,
+) -> list[dict]:
+    """Return pending Zillow profiles, prioritizing teams for member discovery."""
+    rows = conn.execute('''
+        SELECT profile_url, profile_type, profile_name
+        FROM zillow_profiles
+        WHERE scrape_status IS NULL
+           OR (scrape_status IN ('failed', 'blocked', 'captcha') AND scrape_attempts < 3)
+        ORDER BY CASE profile_type WHEN 'team' THEN 0 ELSE 1 END, profile_url
+        LIMIT ?
+    ''', (batch_size,)).fetchall()
+    return [dict(r) for r in rows]
+
+
+def mark_zillow_profile_status(
+    conn: sqlite3.Connection,
+    profile_url: str,
+    status: str,
+    error: str | None = None,
+    metadata: dict | None = None,
+) -> None:
+    """Update Zillow profile scrape status and optional profile metadata."""
+    metadata = metadata or {}
+    try:
+        conn.execute('''
+            UPDATE zillow_profiles
+            SET scrape_status = ?,
+                scrape_attempts = COALESCE(scrape_attempts, 0) + 1,
+                last_error = ?,
+                last_scraped_at = ?,
+                profile_name = COALESCE(?, profile_name),
+                office_name = COALESCE(?, office_name),
+                sales_last_12_months = COALESCE(?, sales_last_12_months),
+                total_sales = COALESCE(?, total_sales),
+                average_price = COALESCE(?, average_price),
+                price_range = COALESCE(?, price_range)
+            WHERE profile_url = ?
+        ''', (
+            status,
+            error,
+            datetime.utcnow().isoformat(),
+            metadata.get('profile_name'),
+            metadata.get('office_name'),
+            _to_int(metadata.get('sales_last_12_months')),
+            _to_int(metadata.get('total_sales')),
+            _to_int(metadata.get('average_price')),
+            metadata.get('price_range'),
+            profile_url,
+        ))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+
+
+def log_team_only_sale(conn: sqlite3.Connection, record: dict) -> None:
+    """Upsert a team-only sale for later gap analysis."""
+    conn.execute('''
+        INSERT INTO team_only_sales_log (
+            team_profile_url, team_name, property_url, represented_side,
+            sale_date, sale_price, normalized_address, normalized_address_hash,
+            transaction_match_key, local_town, resolved_by_member, created_at
+        ) VALUES (
+            :team_profile_url, :team_name, :property_url, :represented_side,
+            :sale_date, :sale_price, :normalized_address, :normalized_address_hash,
+            :transaction_match_key, :local_town, :resolved_by_member, :created_at
+        )
+        ON CONFLICT(team_profile_url, represented_side, transaction_match_key) DO UPDATE SET
+            team_name = COALESCE(excluded.team_name, team_only_sales_log.team_name),
+            property_url = COALESCE(excluded.property_url, team_only_sales_log.property_url),
+            local_town = COALESCE(excluded.local_town, team_only_sales_log.local_town)
+    ''', {
+        'team_profile_url': record.get('team_profile_url'),
+        'team_name': record.get('team_name'),
+        'property_url': record.get('property_url'),
+        'represented_side': record.get('represented_side'),
+        'sale_date': record.get('sale_date'),
+        'sale_price': _to_int(record.get('sale_price')),
+        'normalized_address': record.get('normalized_address'),
+        'normalized_address_hash': record.get('normalized_address_hash'),
+        'transaction_match_key': record.get('transaction_match_key'),
+        'local_town': record.get('local_town'),
+        'resolved_by_member': 1 if record.get('resolved_by_member') else 0,
+        'created_at': record.get('created_at', datetime.utcnow().isoformat()),
+    })
+    conn.commit()
+
+
+def resolve_team_only_sales(
+    conn: sqlite3.Connection,
+    transaction_match_key: str | None,
+    represented_side: str | None,
+) -> int:
+    """Mark team-only rows as resolved when matched by an individual observation."""
+    if not transaction_match_key or not represented_side:
+        return 0
+    cursor = conn.execute('''
+        UPDATE team_only_sales_log
+        SET resolved_by_member = 1
+        WHERE transaction_match_key = ?
+          AND LOWER(represented_side) = LOWER(?)
+    ''', (transaction_match_key, represented_side))
+    conn.commit()
+    return cursor.rowcount
+
+
+def get_team_gap_rows(conn: sqlite3.Connection) -> list[dict]:
+    """Return unresolved team-only rows for reporting."""
+    rows = conn.execute('''
+        SELECT team_name, team_profile_url, local_town, represented_side,
+               sale_date, sale_price, property_url
+        FROM team_only_sales_log
+        WHERE resolved_by_member = 0
+        ORDER BY team_name, sale_date DESC
+    ''').fetchall()
+    return [dict(r) for r in rows]
 
 
 def fuzzy_merge_agents(conn: sqlite3.Connection, threshold: int = 90) -> list[tuple[str, str]]:
