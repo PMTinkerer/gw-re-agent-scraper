@@ -80,11 +80,19 @@ jobs:
             exit 1
           fi
 
-          TOWNS="${{ github.event.inputs.towns || '' }}"
-          BATCH="${{ github.event.inputs.batch_size || '10' }}"
-          DISCOVER="${{ github.event.inputs.discover || 'true' }}"
-          SCRAPE="${{ github.event.inputs.scrape_profiles || 'true' }}"
-          REPORT_ONLY="${{ github.event.inputs.report_only || 'false' }}"
+          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+            TOWNS="York,Kittery"
+            BATCH="5"
+            DISCOVER="true"
+            SCRAPE="true"
+            REPORT_ONLY="false"
+          else
+            TOWNS="${{ github.event.inputs.towns || '' }}"
+            BATCH="${{ github.event.inputs.batch_size || '10' }}"
+            DISCOVER="${{ github.event.inputs.discover || 'true' }}"
+            SCRAPE="${{ github.event.inputs.scrape_profiles || 'true' }}"
+            REPORT_ONLY="${{ github.event.inputs.report_only || 'false' }}"
+          fi
 
           CMD="python -m src.zillow_main"
           if [ "$REPORT_ONLY" = "true" ]; then
@@ -111,25 +119,27 @@ jobs:
           eval "$CMD"
 
       - name: Commit and push results
+        if: github.event_name == 'workflow_dispatch'
         run: |
+          CURRENT_BRANCH="${GITHUB_REF_NAME}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/
           git diff --cached --quiet && echo "No changes to commit" && exit 0
           git commit -m "data: zillow leaderboard $(date -u +%Y-%m-%d-%H%M)"
-          git pull --rebase origin main || {
+          git pull --rebase origin "$CURRENT_BRANCH" || {
             echo "Rebase failed, aborting and trying merge..."
-            git rebase --abort
-            git pull --no-rebase origin main
+            git rebase --abort || true
+            git pull --no-rebase origin "$CURRENT_BRANCH"
           }
-          git push || {
+          git push origin "HEAD:$CURRENT_BRANCH" || {
             echo "Push failed, retrying once..."
-            git pull --rebase origin main
-            git push
+            git pull --rebase origin "$CURRENT_BRANCH"
+            git push origin "HEAD:$CURRENT_BRANCH"
           }
 
       - name: Prepare Pages artifact
-        if: always()
+        if: always() && github.event_name == 'workflow_dispatch'
         run: |
           mkdir -p _site
           if [ -f data/dashboard.html ]; then
@@ -140,10 +150,10 @@ jobs:
             cp data/zillow_dashboard.html _site/zillow/index.html
           fi
       - name: Upload Pages artifact
-        if: always()
+        if: always() && github.event_name == 'workflow_dispatch'
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
         with:
           path: _site/
       - name: Deploy to GitHub Pages
-        if: always()
+        if: always() && github.event_name == 'workflow_dispatch'
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

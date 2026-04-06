@@ -39,7 +39,6 @@ _DEFAULT_SELLER_REPORT = os.path.join(os.path.dirname(__file__), '..', 'data', '
 _DEFAULT_BUYER_REPORT = os.path.join(os.path.dirname(__file__), '..', 'data', 'zillow_buyer_leaderboard.md')
 _DEFAULT_TEAM_GAP_REPORT = os.path.join(os.path.dirname(__file__), '..', 'data', 'zillow_team_gap.md')
 _DEFAULT_DASHBOARD = os.path.join(os.path.dirname(__file__), '..', 'data', 'zillow_dashboard.html')
-_ZILLOW_HOME_URL = 'https://www.zillow.com/'
 _ZILLOW_PROFESSIONALS_HOME_URL = 'https://www.zillow.com/professionals/real-estate-agent-reviews/'
 
 _DIRECTORY_LOCAL_SALES_RE = re.compile(
@@ -668,9 +667,10 @@ def _format_status_message(status_info: dict, phase: str) -> str:
     return f'{phase} {status} ({reason}){code_text}'
 
 
-def _warm_context_session(page, *, label: str) -> None:
+def _warm_context_session(page, *, label: str, warmup_url: str | None = None) -> None:
     logger.debug('Pre-warming Zillow session for %s', label)
-    warm_response = page.goto(_ZILLOW_HOME_URL, wait_until='domcontentloaded', timeout=30000)
+    warmup_target = warmup_url or _ZILLOW_PROFESSIONALS_HOME_URL
+    warm_response = page.goto(warmup_target, wait_until='domcontentloaded', timeout=30000)
     page.wait_for_timeout(random.randint(2000, 4000))
     _simulate_human(page)
     status_info = _check_zillow_page_status(page, response=warm_response)
@@ -711,7 +711,20 @@ def _load_zillow_page(
         try:
             logger.info('Zillow %s attempt %d/%d: %s', page_kind, attempt, max_attempts, target_url)
             context, page = _new_page(browser, proxy_base, route_handler)
-            _warm_context_session(page, label=page_kind)
+            try:
+                _warm_context_session(
+                    page,
+                    label=page_kind,
+                    warmup_url=_ZILLOW_PROFESSIONALS_HOME_URL,
+                )
+            except ZillowAccessError as warmup_exc:
+                logger.warning(
+                    'Zillow %s warmup failed (%s). Retrying target URL without warmup on a fresh context.',
+                    page_kind,
+                    warmup_exc,
+                )
+                _close_context(context)
+                context, page = _new_page(browser, proxy_base, route_handler)
 
             response = page.goto(target_url, wait_until='domcontentloaded', timeout=45000)
             page.wait_for_timeout(random.randint(2500, 4500))
