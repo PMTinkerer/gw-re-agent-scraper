@@ -1018,6 +1018,21 @@ def run_zillow_smoke_check(
 
     result['passed'] = _smoke_check_passed(result)
     result['report_path'] = write_smoke_report(result, output_path)
+    ip_probe = result['ip_probe']
+    if ip_probe.get('ok'):
+        logger.info('Zillow smoke IP probe: %s', ip_probe.get('ip'))
+    else:
+        logger.info('Zillow smoke IP probe failed: %s', ip_probe.get('error'))
+    for probe in result['requests_probes'] + result['playwright_probes']:
+        logger.info(
+            'Zillow smoke probe [%s] %s -> %s (%s) http=%s note=%s',
+            probe['transport'],
+            probe['url'],
+            probe['status'],
+            probe['reason'],
+            probe.get('status_code'),
+            probe.get('note'),
+        )
     return result
 
 
