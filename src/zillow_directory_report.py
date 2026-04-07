@@ -296,6 +296,10 @@ def generate_directory_dashboard(
             <div class="stat"><div class="label">Teams</div><div class="value">{stats["teams"]:,}</div></div>
             <div class="stat"><div class="label">Towns</div><div class="value">{stats["towns_with_data"]}</div></div>
         </div>
+        <p class="sub" style="margin: 24px 0 8px; font-size: 0.75rem; color: var(--text-3);">
+            <strong>Local Sales</strong> = closed transactions in our 10 towns only.
+            <strong>12-Mo Sales</strong> = agent&rsquo;s total sales across all areas (not limited to our territory).
+        </p>
         <main>{body}</main>
         <footer class="footer">
             Generated {_e(generated_at)} &middot; Data source: Zillow Directory &middot; gw-re-agent-scraper
