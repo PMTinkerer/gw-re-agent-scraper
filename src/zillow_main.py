@@ -52,7 +52,7 @@ def main() -> int:
 
     towns = _parse_towns(args.towns)
     headless = os.environ.get('CI') == 'true'
-    pipeline_requested = args.discover or args.scrape_profiles or args.report_only
+    pipeline_requested = args.discover or args.scrape_profiles or args.report_only or args.directory_report
 
     if args.smoke_check:
         logger.info('Starting Zillow smoke check...')
