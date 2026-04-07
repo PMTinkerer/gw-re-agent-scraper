@@ -1,8 +1,8 @@
 """Directory-only leaderboard and dashboard for Zillow data.
 
-Generates reports from zillow_profiles + zillow_profile_towns tables
-without requiring individual transaction data. Used with the Firecrawl
-directory-scraping approach (Approach A).
+Generates two leaderboards — Brokerages and Agents — from
+zillow_profiles + zillow_profile_towns tables without requiring
+individual transaction data.
 """
 from __future__ import annotations
 
@@ -31,27 +31,24 @@ def query_directory_top_agents(
     limit: int = 30,
     town: str | None = None,
 ) -> list[dict]:
-    """Top agents ranked by total local sales count across towns."""
+    """Top agents (individuals + teams, excluding brokerages)."""
     params: list = []
-    where = ''
+    town_filter = ''
     if town:
-        where = 'WHERE pt.town = ?'
+        town_filter = 'AND pt.town = ?'
         params.append(town)
 
     params.append(limit)
     rows = conn.execute(f'''
         SELECT
-            p.profile_url,
-            p.profile_name,
-            p.office_name,
-            p.profile_type,
-            p.sales_last_12_months,
-            p.price_range,
+            p.profile_url, p.profile_name, p.office_name,
+            p.profile_type, p.sales_last_12_months, p.price_range,
             SUM(pt.local_sales_count) AS total_local_sales,
             GROUP_CONCAT(DISTINCT pt.town) AS towns
         FROM zillow_profiles p
         JOIN zillow_profile_towns pt ON p.profile_url = pt.profile_url
-        {where}
+        WHERE p.profile_type != 'brokerage'
+        {town_filter}
         GROUP BY p.profile_url
         ORDER BY total_local_sales DESC
         LIMIT ?
@@ -60,36 +57,78 @@ def query_directory_top_agents(
     return [dict(r) for r in rows]
 
 
-def query_directory_top_brokerages(
+def query_directory_brokerage_leaderboard(
     conn: sqlite3.Connection,
     *,
-    limit: int = 15,
+    limit: int = 20,
     town: str | None = None,
 ) -> list[dict]:
-    """Top brokerages ranked by aggregate local sales of their agents."""
+    """Top brokerages combining agent rollup + direct brokerage profiles."""
+    town_filter = ''
     params: list = []
-    where = ''
     if town:
-        where = 'WHERE pt.town = ?'
-        params.append(town)
+        town_filter = 'AND pt.town = ?'
+        params = [town, town]
 
-    params.append(limit)
-    rows = conn.execute(f'''
+    agent_rows = conn.execute(f'''
         SELECT
-            p.office_name,
+            p.office_name AS brokerage,
             COUNT(DISTINCT p.profile_url) AS agent_count,
-            SUM(pt.local_sales_count) AS total_local_sales,
-            SUM(COALESCE(p.sales_last_12_months, 0)) AS total_12mo_sales
+            SUM(pt.local_sales_count) AS agent_sales
         FROM zillow_profiles p
         JOIN zillow_profile_towns pt ON p.profile_url = pt.profile_url
-        {where}
-        AND p.office_name IS NOT NULL
+        WHERE p.profile_type IN ('individual', 'team')
+          AND p.office_name IS NOT NULL
+          {town_filter}
         GROUP BY p.office_name
-        ORDER BY total_local_sales DESC
-        LIMIT ?
-    ''', params).fetchall()
+    ''', params[:1] if town else []).fetchall()
 
-    return [dict(r) for r in rows]
+    direct_rows = conn.execute(f'''
+        SELECT
+            p.profile_name AS brokerage,
+            SUM(pt.local_sales_count) AS direct_sales,
+            MAX(p.sales_last_12_months) AS sales_12mo
+        FROM zillow_profiles p
+        JOIN zillow_profile_towns pt ON p.profile_url = pt.profile_url
+        WHERE p.profile_type = 'brokerage'
+          {town_filter}
+        GROUP BY p.profile_name
+    ''', params[1:] if town else []).fetchall()
+
+    return _merge_brokerage_data(agent_rows, direct_rows, limit)
+
+
+def _merge_brokerage_data(agent_rows, direct_rows, limit: int) -> list[dict]:
+    """Merge agent rollup and direct brokerage data."""
+    brokerages: dict[str, dict] = {}
+    for r in agent_rows:
+        name = r['brokerage']
+        brokerages[name] = {
+            'brokerage': name,
+            'agent_count': r['agent_count'],
+            'agent_sales': r['agent_sales'],
+            'direct_sales': None,
+            'sales_12mo': None,
+        }
+    for r in direct_rows:
+        name = r['brokerage']
+        if name in brokerages:
+            brokerages[name]['direct_sales'] = r['direct_sales']
+            brokerages[name]['sales_12mo'] = r['sales_12mo']
+        else:
+            brokerages[name] = {
+                'brokerage': name,
+                'agent_count': 0,
+                'agent_sales': 0,
+                'direct_sales': r['direct_sales'],
+                'sales_12mo': r['sales_12mo'],
+            }
+
+    for b in brokerages.values():
+        b['total_sales'] = b['direct_sales'] or b['agent_sales'] or 0
+
+    ranked = sorted(brokerages.values(), key=lambda x: x['total_sales'], reverse=True)
+    return ranked[:limit]
 
 
 def get_directory_stats(conn: sqlite3.Connection) -> dict:
@@ -98,13 +137,21 @@ def get_directory_stats(conn: sqlite3.Connection) -> dict:
     teams = conn.execute(
         "SELECT COUNT(*) FROM zillow_profiles WHERE profile_type = 'team'",
     ).fetchone()[0]
+    brokerages = conn.execute(
+        "SELECT COUNT(*) FROM zillow_profiles WHERE profile_type = 'brokerage'",
+    ).fetchone()[0]
+    individuals = conn.execute(
+        "SELECT COUNT(*) FROM zillow_profiles WHERE profile_type = 'individual'",
+    ).fetchone()[0]
     towns_with_data = conn.execute(
         'SELECT COUNT(DISTINCT town) FROM zillow_profile_towns',
     ).fetchone()[0]
     return {
-        'total_agents': total,
+        'total_profiles': total,
+        'agents': individuals + teams,
         'teams': teams,
-        'individuals': total - teams,
+        'individuals': individuals,
+        'brokerages': brokerages,
         'towns_with_data': towns_with_data,
     }
 
@@ -118,15 +165,40 @@ def generate_directory_leaderboard(
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     stats = get_directory_stats(conn)
     lines = [
-        '# Zillow Agent Leaderboard — Southern Coastal Maine',
-        f'*Directory data: {stats["total_agents"]} agents '
-        f'({stats["teams"]} teams, {stats["individuals"]} individuals) '
-        f'across {stats["towns_with_data"]} towns*\n',
+        '# Zillow Leaderboard — Southern Coastal Maine',
+        f'*{stats["agents"]} agents ({stats["teams"]} teams, '
+        f'{stats["individuals"]} individuals), '
+        f'{stats["brokerages"]} brokerages, '
+        f'{stats["towns_with_data"]} towns*\n',
     ]
 
-    lines.append('## Top 30 Agents — All Towns\n')
-    lines.append('| # | Agent | Office | Type | Local Sales | 12-Mo Sales | Towns |')
-    lines.append('|---|-------|--------|------|-------------|-------------|-------|')
+    _append_brokerage_section(conn, lines)
+    _append_agent_section(conn, lines)
+    _append_town_sections(conn, lines)
+
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write('\n'.join(lines) + '\n')
+    logger.info('Directory leaderboard written to %s', output_path)
+    return output_path
+
+
+def _append_brokerage_section(conn, lines: list[str]) -> None:
+    lines.append('## Top 20 Brokerages\n')
+    lines.append('| # | Brokerage | Agents | Total Sales | 12-Mo Sales |')
+    lines.append('|---|-----------|--------|-------------|-------------|')
+    for i, b in enumerate(query_directory_brokerage_leaderboard(conn), 1):
+        lines.append(
+            f'| {i} | {b["brokerage"]} '
+            f'| {b["agent_count"]} '
+            f'| {b["total_sales"]:,} '
+            f'| {b["sales_12mo"] or "N/A"} |'
+        )
+
+
+def _append_agent_section(conn, lines: list[str]) -> None:
+    lines.append('\n## Top 30 Agents\n')
+    lines.append('| # | Agent | Office | Type | Local Sales | 12-Mo | Towns |')
+    lines.append('|---|-------|--------|------|-------------|-------|-------|')
     for i, a in enumerate(query_directory_top_agents(conn, limit=30), 1):
         lines.append(
             f'| {i} | {a["profile_name"] or "N/A"} '
@@ -137,36 +209,35 @@ def generate_directory_leaderboard(
             f'| {a["towns"] or "N/A"} |'
         )
 
-    lines.append('\n## Top 15 Brokerages\n')
-    lines.append('| # | Brokerage | Agents | Local Sales | 12-Mo Sales |')
-    lines.append('|---|-----------|--------|-------------|-------------|')
-    for i, b in enumerate(query_directory_top_brokerages(conn, limit=15), 1):
-        lines.append(
-            f'| {i} | {b["office_name"]} '
-            f'| {b["agent_count"]} '
-            f'| {b["total_local_sales"]:,} '
-            f'| {b["total_12mo_sales"]:,} |'
-        )
 
+def _append_town_sections(conn, lines: list[str]) -> None:
     for town in TOWNS:
         agents = query_directory_top_agents(conn, limit=10, town=town)
-        if not agents:
+        broks = query_directory_brokerage_leaderboard(conn, limit=5, town=town)
+        if not agents and not broks:
             continue
-        lines.append(f'\n## Top Agents — {town}\n')
-        lines.append('| # | Agent | Office | Local Sales | 12-Mo |')
-        lines.append('|---|-------|--------|-------------|-------|')
-        for i, a in enumerate(agents, 1):
-            lines.append(
-                f'| {i} | {a["profile_name"] or "N/A"} '
-                f'| {a["office_name"] or "N/A"} '
-                f'| {a["total_local_sales"]:,} '
-                f'| {a["sales_last_12_months"] or "N/A"} |'
-            )
-
-    with open(output_path, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(lines) + '\n')
-    logger.info('Directory leaderboard written to %s', output_path)
-    return output_path
+        lines.append(f'\n## {town}\n')
+        if broks:
+            lines.append('### Top Brokerages\n')
+            lines.append('| # | Brokerage | Agents | Sales |')
+            lines.append('|---|-----------|--------|-------|')
+            for i, b in enumerate(broks, 1):
+                lines.append(
+                    f'| {i} | {b["brokerage"]} '
+                    f'| {b["agent_count"]} '
+                    f'| {b["total_sales"]:,} |'
+                )
+        if agents:
+            lines.append('\n### Top Agents\n')
+            lines.append('| # | Agent | Office | Sales | 12-Mo |')
+            lines.append('|---|-------|--------|-------|-------|')
+            for i, a in enumerate(agents, 1):
+                lines.append(
+                    f'| {i} | {a["profile_name"] or "N/A"} '
+                    f'| {a["office_name"] or "N/A"} '
+                    f'| {a["total_local_sales"]:,} '
+                    f'| {a["sales_last_12_months"] or "N/A"} |'
+                )
 
 
 def _e(text) -> str:
@@ -185,14 +256,17 @@ def generate_directory_dashboard(
 
     stats = get_directory_stats(conn)
     generated_at = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+    top_brokerages = query_directory_brokerage_leaderboard(conn, limit=20)
     top_agents = query_directory_top_agents(conn, limit=30)
-    top_brokerages = query_directory_top_brokerages(conn, limit=15)
 
-    sections = [_build_agents_section(top_agents, 'Top Agents — All Towns')]
-    sections.append(_build_brokerages_section(top_brokerages))
+    sections = [_build_brokerages_section(top_brokerages)]
+    sections.append(_build_agents_section(top_agents, 'Top Agents — All Towns'))
 
     for town in TOWNS:
+        broks = query_directory_brokerage_leaderboard(conn, limit=10, town=town)
         agents = query_directory_top_agents(conn, limit=10, town=town)
+        if broks:
+            sections.append(_build_brokerages_section(broks, f'Top Brokerages — {town}'))
         if agents:
             sections.append(_build_agents_section(agents, f'Top Agents — {town}'))
 
@@ -202,17 +276,18 @@ def generate_directory_dashboard(
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zillow Agent Leaderboard &mdash; Southern Coastal Maine</title>
+    <title>Zillow Leaderboard &mdash; Southern Coastal Maine</title>
     <style>{_css()}</style>
 </head>
 <body>
     <div class="wrap">
         <header class="header">
-            <h1>Zillow Agent Leaderboard</h1>
+            <h1>Zillow Leaderboard</h1>
             <p class="sub">Southern Coastal Maine &middot; 10 Towns &middot; {_e(generated_at)}</p>
         </header>
         <div class="stats">
-            <div class="stat"><div class="label">Agents Tracked</div><div class="value">{stats["total_agents"]:,}</div></div>
+            <div class="stat"><div class="label">Brokerages</div><div class="value">{stats["brokerages"]:,}</div></div>
+            <div class="stat"><div class="label">Agents</div><div class="value">{stats["agents"]:,}</div></div>
             <div class="stat"><div class="label">Teams</div><div class="value">{stats["teams"]:,}</div></div>
             <div class="stat"><div class="label">Towns</div><div class="value">{stats["towns_with_data"]}</div></div>
         </div>
@@ -235,11 +310,13 @@ def _build_agents_section(agents: list[dict], title: str) -> str:
     rows = ''
     for i, a in enumerate(agents, 1):
         cls = ' class="rank-1"' if i == 1 else ''
+        ptype = a.get('profile_type', '')
+        type_badge = 'TEAM' if ptype == 'team' else ''
         rows += f'''<tr{cls}>
             <td class="num">{i}</td>
             <td class="agent-name">{_e(a.get("profile_name"))}</td>
             <td class="office">{_e(a.get("office_name"))}</td>
-            <td class="num">{_e(a.get("profile_type"))}</td>
+            <td class="num">{type_badge}</td>
             <td class="num">{a["total_local_sales"]:,}</td>
             <td class="num">{a.get("sales_last_12_months") or "N/A"}</td>
             <td class="towns">{_e(a.get("towns"))}</td>
@@ -262,20 +339,20 @@ def _build_agents_section(agents: list[dict], title: str) -> str:
     </section>'''
 
 
-def _build_brokerages_section(brokerages: list[dict]) -> str:
+def _build_brokerages_section(brokerages: list[dict], title: str = 'Top Brokerages') -> str:
     rows = ''
     for i, b in enumerate(brokerages, 1):
         cls = ' class="rank-1"' if i == 1 else ''
         rows += f'''<tr{cls}>
             <td class="num">{i}</td>
-            <td class="office">{_e(b.get("office_name"))}</td>
+            <td class="office">{_e(b.get("brokerage"))}</td>
             <td class="num">{b["agent_count"]}</td>
-            <td class="num">{b["total_local_sales"]:,}</td>
-            <td class="num">{b["total_12mo_sales"]:,}</td>
+            <td class="num">{b["total_sales"]:,}</td>
+            <td class="num">{b.get("sales_12mo") or "N/A"}</td>
         </tr>'''
 
     return f'''<section class="section">
-        <h2>Top Brokerages</h2>
+        <h2>{_e(title)}</h2>
         <div class="table-wrap"><table>
             <colgroup>
                 <col style="width:5%"><col style="width:35%">
@@ -283,7 +360,7 @@ def _build_brokerages_section(brokerages: list[dict]) -> str:
             </colgroup>
             <thead><tr>
                 <th class="num">#</th><th>Brokerage</th>
-                <th class="num">Agents</th><th class="num">Local Sales</th>
+                <th class="num">Agents</th><th class="num">Total Sales</th>
                 <th class="num">12-Mo Sales</th>
             </tr></thead>
             <tbody>{rows}</tbody>

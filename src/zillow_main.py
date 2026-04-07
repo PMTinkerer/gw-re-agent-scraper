@@ -46,7 +46,7 @@ def main() -> int:
     parser.add_argument('--db', type=str, default=None, help='Path to the Zillow SQLite database')
     parser.add_argument('--state', type=str, default=None, help='Path to the Zillow state JSON file')
     parser.add_argument('--use-firecrawl', action='store_true', help='Use Firecrawl API instead of Playwright for directory discovery')
-    parser.add_argument('--max-pages', type=int, default=5, help='Max directory pages per town when using Firecrawl (default: 5)')
+    parser.add_argument('--max-pages', type=int, default=25, help='Max directory pages per town when using Firecrawl (default: 25)')
     parser.add_argument('--directory-report', action='store_true', help='Generate directory-only leaderboard and dashboard')
     args = parser.parse_args()
 
@@ -146,8 +146,8 @@ def main() -> int:
         dashboard_path = generate_directory_dashboard(conn)
         dir_stats = get_directory_stats(conn)
         logger.info(
-            'Directory outputs: %d agents, %d teams, %d towns — %s, %s',
-            dir_stats['total_agents'], dir_stats['teams'],
+            'Directory outputs: %d agents, %d brokerages, %d teams, %d towns — %s, %s',
+            dir_stats['agents'], dir_stats['brokerages'], dir_stats['teams'],
             dir_stats['towns_with_data'], report_path, dashboard_path,
         )
 
