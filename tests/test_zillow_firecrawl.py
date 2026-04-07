@@ -302,7 +302,6 @@ class TestDiscoveryIntegration:
             towns=['York'],
             max_pages=1,
             state_path=str(tmp_path / 'state.json'),
-            delay=0,
         )
 
         assert result['towns_processed'] == 1
@@ -322,7 +321,6 @@ class TestDiscoveryIntegration:
             towns=['York'],
             max_pages=1,
             state_path=str(tmp_path / 'state.json'),
-            delay=0,
         )
 
         assert result['towns_processed'] == 0
@@ -337,7 +335,7 @@ class TestDiscoveryIntegration:
         from src.zillow_firecrawl import discover_zillow_profiles_firecrawl
         discover_zillow_profiles_firecrawl(
             db, mock_state, towns=['York'], max_pages=1,
-            state_path=str(tmp_path / 'state.json'), delay=0,
+            state_path=str(tmp_path / 'state.json'),
         )
 
         types = db.execute(

@@ -71,31 +71,35 @@ def _classify_markdown_response(markdown: str) -> str:
     return 'ok'
 
 
-def _clean_card_text(raw: str) -> str:
-    """Clean a raw markdown card into a space-joined text string.
-
-    Strips image markdown, backslash escapes, bold markers, and
-    inserts spaces between digits and 'sales'/'team sales' so that
-    existing regex patterns match correctly.
-    Also trims leading noise (nav text, CTA ads) before the card.
-    """
-    text = _IMAGE_MD_RE.sub('', raw)
-    text = text.replace('\\', ' ')
-    # Trim leading noise — find where the card actually starts
-    # Cards begin with optional "TEAM" then a rating like "5.0(N)"
-    card_start = re.search(r'(?:TEAM\s+)?\d\.\d\(\d+\)', text)
-    if card_start:
-        text = text[card_start.start():]
-    text = _BOLD_RE.sub(r'\1', text)
-    text = ' '.join(text.split())
-    text = _DIGIT_WORD_RE.sub(r'\1 \2', text)
-    return text.strip()
-
-
+_RATING_RE = re.compile(r'\d\.\d\(\d+\)')
+_CARD_START_RE = re.compile(r'(?:TEAM\s+)?\d\.\d\(\d+\)')
 _STAT_BOUNDARY_RE = re.compile(
     r'\$[\dKMB,.]|(?:\d[\d,]*\s*(?:team\s+)?(?:sales?|sale)\b)|No (?:recent|sales)',
     re.IGNORECASE,
 )
+
+
+def _strip_card_noise(raw: str) -> str:
+    """Strip image markdown, backslash escapes, and leading nav noise."""
+    text = _IMAGE_MD_RE.sub('', raw)
+    text = text.replace('\\', ' ')
+    bold_match = _BOLD_RE.search(text)
+    card_start = _CARD_START_RE.search(text)
+    if card_start:
+        trim_to = card_start.start()
+        if bold_match and bold_match.start() < trim_to:
+            trim_to = bold_match.start()
+        text = text[trim_to:]
+    return text
+
+
+def _clean_card_text(raw: str) -> str:
+    """Clean a raw markdown card into a space-joined text for stat extraction."""
+    text = _strip_card_noise(raw)
+    text = _BOLD_RE.sub(r'\1', text)
+    text = ' '.join(text.split())
+    text = _DIGIT_WORD_RE.sub(r'\1 \2', text)
+    return text.strip()
 
 
 def _extract_name_office_and_type(raw: str) -> tuple[str | None, str | None, str]:
@@ -105,26 +109,16 @@ def _extract_name_office_and_type(raw: str) -> tuple[str | None, str | None, str
     Text between the bold name and the first stat boundary is the office.
     No office text → brokerage. TEAM prefix → team. Otherwise → individual.
     """
-    text = _IMAGE_MD_RE.sub('', raw)
-    text = text.replace('\\', ' ')
-
-    # Find both the bold name and the rating — keep whichever comes first
-    bold_match = _BOLD_RE.search(text)
-    card_start = re.search(r'(?:TEAM\s+)?\d\.\d\(\d+\)', text)
-    if card_start:
-        trim_to = card_start.start()
-        if bold_match and bold_match.start() < trim_to:
-            trim_to = bold_match.start()
-        text = text[trim_to:]
-        bold_match = _BOLD_RE.search(text)
-
+    text = _strip_card_noise(raw)
     is_team = bool(re.search(r'\bTEAM\b', text[:50] if len(text) > 50 else text, re.IGNORECASE))
+
+    bold_match = _BOLD_RE.search(text)
     if not bold_match:
         return None, None, 'individual'
 
     name = bold_match.group(1).strip()
-    after_bold = text[bold_match.end():]
-    after_bold = ' '.join(after_bold.split())
+    after_bold = ' '.join(text[bold_match.end():].split())
+    after_bold = re.sub(r'^\d\.\d\(\d+\)\s*', '', after_bold)
 
     stat_hit = _STAT_BOUNDARY_RE.search(after_bold)
     office = after_bold[:stat_hit.start()].strip() if stat_hit else after_bold.strip()
@@ -199,11 +193,11 @@ def _scrape_directory_page(client, url: str, last_call: float) -> tuple[str, flo
     )
     markdown = getattr(result, 'markdown', '') or ''
     if not markdown:
-        raise ZillowAccessError('Empty response from Firecrawl')
+        raise ZillowAccessError('empty', 'Empty response from Firecrawl')
 
     status = _classify_markdown_response(markdown)
     if status == 'blocked':
-        raise ZillowAccessError(f'Zillow blocked Firecrawl request to {url}')
+        raise ZillowAccessError('blocked', f'Zillow blocked Firecrawl request to {url}')
 
     return markdown, now
 
@@ -215,7 +209,6 @@ def discover_zillow_profiles_firecrawl(
     towns: list[str] | None = None,
     max_pages: int = 5,
     state_path: str | None = None,
-    delay: float = _MIN_DELAY_SECONDS,
 ) -> dict:
     """Discover Zillow agent profiles via Firecrawl directory scraping.
 
@@ -237,7 +230,7 @@ def discover_zillow_profiles_firecrawl(
 
         try:
             town_profiles, last_call = _discover_town(
-                client, conn, town, max_pages, delay, last_call,
+                client, conn, town, max_pages, last_call,
             )
             mark_complete(state, town, profiles_found=town_profiles)
             towns_processed += 1
@@ -245,7 +238,7 @@ def discover_zillow_profiles_firecrawl(
             logger.info(
                 'Town %s complete: %d profiles discovered', town, town_profiles,
             )
-        except (ZillowAccessError, Exception) as exc:
+        except ZillowAccessError as exc:
             mark_failed(state, town, str(exc))
             logger.error('Town %s failed: %s', town, exc)
 
@@ -259,7 +252,6 @@ def _discover_town(
     conn,
     town: str,
     max_pages: int,
-    delay: float,
     last_call: float,
 ) -> tuple[int, float]:
     """Scrape directory pages for a single town. Returns (profiles_found, last_call)."""

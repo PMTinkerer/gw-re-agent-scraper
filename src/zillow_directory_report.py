@@ -65,10 +65,10 @@ def query_directory_brokerage_leaderboard(
 ) -> list[dict]:
     """Top brokerages combining agent rollup + direct brokerage profiles."""
     town_filter = ''
-    params: list = []
+    town_params: list = []
     if town:
         town_filter = 'AND pt.town = ?'
-        params = [town, town]
+        town_params = [town]
 
     agent_rows = conn.execute(f'''
         SELECT
@@ -81,7 +81,7 @@ def query_directory_brokerage_leaderboard(
           AND p.office_name IS NOT NULL
           {town_filter}
         GROUP BY p.office_name
-    ''', params[:1] if town else []).fetchall()
+    ''', town_params).fetchall()
 
     direct_rows = conn.execute(f'''
         SELECT
@@ -93,7 +93,7 @@ def query_directory_brokerage_leaderboard(
         WHERE p.profile_type = 'brokerage'
           {town_filter}
         GROUP BY p.profile_name
-    ''', params[1:] if town else []).fetchall()
+    ''', town_params).fetchall()
 
     return _merge_brokerage_data(agent_rows, direct_rows, limit)
 
@@ -125,7 +125,7 @@ def _merge_brokerage_data(agent_rows, direct_rows, limit: int) -> list[dict]:
             }
 
     for b in brokerages.values():
-        b['total_sales'] = b['direct_sales'] or b['agent_sales'] or 0
+        b['total_sales'] = b['direct_sales'] if b['direct_sales'] is not None else (b['agent_sales'] or 0)
 
     ranked = sorted(brokerages.values(), key=lambda x: x['total_sales'], reverse=True)
     return ranked[:limit]
