@@ -45,6 +45,9 @@ def main() -> int:
     parser.add_argument('--towns', type=str, default=None, help='Comma-separated town names to limit discovery/scrape scope')
     parser.add_argument('--db', type=str, default=None, help='Path to the Zillow SQLite database')
     parser.add_argument('--state', type=str, default=None, help='Path to the Zillow state JSON file')
+    parser.add_argument('--use-firecrawl', action='store_true', help='Use Firecrawl API instead of Playwright for directory discovery')
+    parser.add_argument('--max-pages', type=int, default=5, help='Max directory pages per town when using Firecrawl (default: 5)')
+    parser.add_argument('--directory-report', action='store_true', help='Generate directory-only leaderboard and dashboard')
     args = parser.parse_args()
 
     towns = _parse_towns(args.towns)
@@ -82,14 +85,25 @@ def main() -> int:
     did_work = False
 
     if args.discover:
-        logger.info('Starting Zillow directory discovery...')
-        result = discover_zillow_profiles(
-            conn,
-            state,
-            towns=towns,
-            headless=headless,
-            state_path=args.state,
-        )
+        if args.use_firecrawl:
+            from .zillow_firecrawl import discover_zillow_profiles_firecrawl
+            logger.info('Starting Zillow directory discovery via Firecrawl (max_pages=%d)...', args.max_pages)
+            result = discover_zillow_profiles_firecrawl(
+                conn,
+                state,
+                towns=towns,
+                max_pages=args.max_pages,
+                state_path=args.state,
+            )
+        else:
+            logger.info('Starting Zillow directory discovery via Playwright...')
+            result = discover_zillow_profiles(
+                conn,
+                state,
+                towns=towns,
+                headless=headless,
+                state_path=args.state,
+            )
         logger.info('Discovery complete: %d towns processed, %d profiles found',
                     result['towns_processed'], result['profiles_found'])
         did_work = True
@@ -121,6 +135,21 @@ def main() -> int:
             unresolved_team_rows,
         )
         logger.info('Artifacts: %s', outputs)
+
+    if args.directory_report or (args.use_firecrawl and did_work):
+        from .zillow_directory_report import (
+            generate_directory_dashboard,
+            generate_directory_leaderboard,
+            get_directory_stats,
+        )
+        report_path = generate_directory_leaderboard(conn)
+        dashboard_path = generate_directory_dashboard(conn)
+        dir_stats = get_directory_stats(conn)
+        logger.info(
+            'Directory outputs: %d agents, %d teams, %d towns — %s, %s',
+            dir_stats['total_agents'], dir_stats['teams'],
+            dir_stats['towns_with_data'], report_path, dashboard_path,
+        )
 
     save_state(state, args.state)
     conn.close()

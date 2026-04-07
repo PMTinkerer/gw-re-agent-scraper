@@ -566,19 +566,30 @@ def record_zillow_directory_profile(
     profile_type: str,
     local_sales_count: int,
     raw_card_text: str | None = None,
+    profile_name: str | None = None,
+    office_name: str | None = None,
+    sales_last_12_months: int | None = None,
+    price_range: str | None = None,
 ) -> None:
     """Upsert a discovered Zillow profile and its town appearance."""
     now = datetime.utcnow().isoformat()
     conn.execute('''
         INSERT INTO zillow_profiles (
-            profile_url, profile_type, raw_card_text, discovered_at
+            profile_url, profile_type, raw_card_text,
+            profile_name, office_name, sales_last_12_months, price_range,
+            discovered_at
         ) VALUES (
-            ?, ?, ?, ?
+            ?, ?, ?, ?, ?, ?, ?, ?
         )
         ON CONFLICT(profile_url) DO UPDATE SET
             profile_type = COALESCE(zillow_profiles.profile_type, excluded.profile_type),
-            raw_card_text = COALESCE(excluded.raw_card_text, zillow_profiles.raw_card_text)
-    ''', (profile_url, profile_type, raw_card_text, now))
+            raw_card_text = COALESCE(excluded.raw_card_text, zillow_profiles.raw_card_text),
+            profile_name = COALESCE(excluded.profile_name, zillow_profiles.profile_name),
+            office_name = COALESCE(excluded.office_name, zillow_profiles.office_name),
+            sales_last_12_months = COALESCE(excluded.sales_last_12_months, zillow_profiles.sales_last_12_months),
+            price_range = COALESCE(excluded.price_range, zillow_profiles.price_range)
+    ''', (profile_url, profile_type, raw_card_text,
+          profile_name, office_name, sales_last_12_months, price_range, now))
     conn.execute('''
         INSERT INTO zillow_profile_towns (
             profile_url, town, local_sales_count, discovered_at

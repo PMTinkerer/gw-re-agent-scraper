@@ -27,6 +27,12 @@ on:
       report_only:
         description: 'Skip discovery/scraping and regenerate Zillow outputs only (true/false)'
         default: 'false'
+      use_firecrawl:
+        description: 'Use Firecrawl API for directory discovery (bypasses PerimeterX, no proxy needed)'
+        default: 'false'
+      max_pages:
+        description: 'Max directory pages per town when using Firecrawl (default: 5)'
+        default: '5'
 
 permissions:
   contents: write
@@ -58,12 +64,18 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          python -m playwright install chromium --with-deps
+          USE_FC="${{ github.event.inputs.use_firecrawl || 'false' }}"
+          if [ "$USE_FC" != "true" ]; then
+            python -m playwright install chromium --with-deps
+          else
+            echo "Firecrawl mode — skipping Playwright install"
+          fi
 
       - name: Run Zillow pipeline
         env:
           CI: 'true'
           PROXY_URL: ${{ secrets.PROXY_URL }}
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
           ZILLOW_STARTUP_DELAY_MIN: '25'
           ZILLOW_STARTUP_DELAY_MAX: '45'
           ZILLOW_WARMUP_DELAY_MIN: '3'
@@ -81,8 +93,11 @@ jobs:
           ZILLOW_DIRECTORY_ATTEMPTS: '3'
           ZILLOW_PROFILE_ATTEMPTS: '3'
         run: |
-          if [ -z "$PROXY_URL" ]; then
-            echo "PROXY_URL secret is required for Zillow runs"
+          USE_FC="${{ github.event.inputs.use_firecrawl || 'false' }}"
+          MAX_PAGES="${{ github.event.inputs.max_pages || '5' }}"
+
+          if [ "$USE_FC" != "true" ] && [ -z "$PROXY_URL" ]; then
+            echo "PROXY_URL secret is required for Playwright Zillow runs (use Firecrawl mode to skip)"
             exit 1
           fi
 
@@ -104,7 +119,7 @@ jobs:
             REPORT_ONLY="${{ github.event.inputs.report_only || 'false' }}"
           fi
 
-          if [ "$SMOKE_CHECK" = "true" ]; then
+          if [ "$USE_FC" != "true" ] && [ "$SMOKE_CHECK" = "true" ]; then
             SMOKE_CMD="python -m src.zillow_main --smoke-check --smoke-strict --smoke-output data/zillow_proxy_diagnostics.md"
             if [ -n "$TOWNS" ]; then
               SMOKE_CMD="$SMOKE_CMD --towns \"$TOWNS\""
@@ -126,11 +141,13 @@ jobs:
               CMD="$CMD --discover"
               DID_WORK="true"
             fi
-            if [ "$SCRAPE" = "true" ]; then
+            if [ "$USE_FC" = "true" ]; then
+              CMD="$CMD --use-firecrawl --max-pages $MAX_PAGES --directory-report"
+            elif [ "$SCRAPE" = "true" ]; then
               CMD="$CMD --scrape-profiles --batch-size $BATCH"
               DID_WORK="true"
             fi
-            if [ "$DID_WORK" != "true" ]; then
+            if [ "$DID_WORK" != "true" ] && [ "$USE_FC" != "true" ]; then
               CMD="$CMD --report-only"
             fi
           fi
@@ -174,13 +191,15 @@ jobs:
       - name: Prepare Pages artifact
         if: always() && github.event_name == 'workflow_dispatch'
         run: |
-          mkdir -p _site
+          mkdir -p _site/zillow
           if [ -f data/dashboard.html ]; then
             cp data/dashboard.html _site/index.html
           fi
           if [ -f data/zillow_dashboard.html ]; then
-            mkdir -p _site/zillow
             cp data/zillow_dashboard.html _site/zillow/index.html
+          fi
+          if [ -f data/zillow_directory_dashboard.html ]; then
+            cp data/zillow_directory_dashboard.html _site/zillow/index.html
           fi
       - name: Upload Pages artifact
         if: always() && github.event_name == 'workflow_dispatch'
