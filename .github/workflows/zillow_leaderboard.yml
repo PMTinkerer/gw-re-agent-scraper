@@ -12,6 +12,12 @@ on:
       batch_size:
         description: 'Number of profiles to scrape this run'
         default: '10'
+      smoke_check:
+        description: 'Run fast Zillow proxy smoke check first (true/false)'
+        default: 'true'
+      smoke_only:
+        description: 'Only run the smoke check and skip full discovery/scrape (true/false)'
+        default: 'false'
       discover:
         description: 'Run directory discovery before scraping (true/false)'
         default: 'true'
@@ -83,15 +89,32 @@ jobs:
           if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
             TOWNS="York,Kittery"
             BATCH="5"
-            DISCOVER="true"
-            SCRAPE="true"
+            SMOKE_CHECK="true"
+            SMOKE_ONLY="true"
+            DISCOVER="false"
+            SCRAPE="false"
             REPORT_ONLY="false"
           else
             TOWNS="${{ github.event.inputs.towns || '' }}"
             BATCH="${{ github.event.inputs.batch_size || '10' }}"
+            SMOKE_CHECK="${{ github.event.inputs.smoke_check || 'true' }}"
+            SMOKE_ONLY="${{ github.event.inputs.smoke_only || 'false' }}"
             DISCOVER="${{ github.event.inputs.discover || 'true' }}"
             SCRAPE="${{ github.event.inputs.scrape_profiles || 'true' }}"
             REPORT_ONLY="${{ github.event.inputs.report_only || 'false' }}"
+          fi
+
+          if [ "$SMOKE_CHECK" = "true" ]; then
+            SMOKE_CMD="python -m src.zillow_main --smoke-check --smoke-strict --smoke-output data/zillow_proxy_diagnostics.md"
+            if [ -n "$TOWNS" ]; then
+              SMOKE_CMD="$SMOKE_CMD --towns \"$TOWNS\""
+            fi
+            echo "Running: $SMOKE_CMD"
+            eval "$SMOKE_CMD"
+          fi
+
+          if [ "$SMOKE_ONLY" = "true" ]; then
+            exit 0
           fi
 
           CMD="python -m src.zillow_main"
@@ -117,6 +140,13 @@ jobs:
 
           echo "Running: $CMD"
           eval "$CMD"
+
+      - name: Publish Zillow smoke summary
+        if: always()
+        run: |
+          if [ -f data/zillow_proxy_diagnostics.md ]; then
+            cat data/zillow_proxy_diagnostics.md >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Commit and push results
         if: github.event_name == 'workflow_dispatch'
