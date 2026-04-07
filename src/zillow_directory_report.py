@@ -74,7 +74,8 @@ def query_directory_brokerage_leaderboard(
         SELECT
             p.office_name AS brokerage,
             COUNT(DISTINCT p.profile_url) AS agent_count,
-            SUM(pt.local_sales_count) AS agent_sales
+            SUM(pt.local_sales_count) AS agent_sales,
+            SUM(COALESCE(p.sales_last_12_months, 0)) AS agent_12mo_sales
         FROM zillow_profiles p
         JOIN zillow_profile_towns pt ON p.profile_url = pt.profile_url
         WHERE p.profile_type IN ('individual', 'team')
@@ -107,6 +108,7 @@ def _merge_brokerage_data(agent_rows, direct_rows, limit: int) -> list[dict]:
             'brokerage': name,
             'agent_count': r['agent_count'],
             'agent_sales': r['agent_sales'],
+            'agent_12mo_sales': r['agent_12mo_sales'],
             'direct_sales': None,
             'sales_12mo': None,
         }
@@ -120,12 +122,15 @@ def _merge_brokerage_data(agent_rows, direct_rows, limit: int) -> list[dict]:
                 'brokerage': name,
                 'agent_count': 0,
                 'agent_sales': 0,
+                'agent_12mo_sales': 0,
                 'direct_sales': r['direct_sales'],
                 'sales_12mo': r['sales_12mo'],
             }
 
     for b in brokerages.values():
         b['total_sales'] = b['direct_sales'] if b['direct_sales'] is not None else (b['agent_sales'] or 0)
+        if b['sales_12mo'] is None:
+            b['sales_12mo'] = b.get('agent_12mo_sales') or 0
 
     ranked = sorted(brokerages.values(), key=lambda x: x['total_sales'], reverse=True)
     return ranked[:limit]
