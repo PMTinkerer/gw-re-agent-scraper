@@ -582,7 +582,7 @@ def record_zillow_directory_profile(
             ?, ?, ?, ?, ?, ?, ?, ?
         )
         ON CONFLICT(profile_url) DO UPDATE SET
-            profile_type = COALESCE(zillow_profiles.profile_type, excluded.profile_type),
+            profile_type = excluded.profile_type,
             raw_card_text = COALESCE(excluded.raw_card_text, zillow_profiles.raw_card_text),
             profile_name = COALESCE(excluded.profile_name, zillow_profiles.profile_name),
             office_name = COALESCE(excluded.office_name, zillow_profiles.office_name),

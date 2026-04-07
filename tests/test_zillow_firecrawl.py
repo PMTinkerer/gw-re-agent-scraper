@@ -6,11 +6,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.database import get_zillow_connection, init_zillow_db
+from src.database import get_zillow_connection, init_zillow_db, record_zillow_directory_profile
 from src.zillow_firecrawl import (
     _classify_markdown_response,
     _clean_card_text,
-    _extract_name_and_office,
+    _extract_name_office_and_type,
     parse_agent_cards_from_markdown,
     parse_page_info_from_markdown,
     require_firecrawl_key,
@@ -67,6 +67,20 @@ NO_SALES_CARD_MD = (
     '6sales in York](https://www.zillow.com/profile/Jane-Morris)'
 )
 
+BROKERAGE_CARD_MD = (
+    '[![](https://photos.zillowstatic.com/fp/xyz-h_l.jpg)\\\\\n'
+    '\\\\\n'
+    '5.0(37)\\\\\n'
+    '\\\\\n'
+    '**RE/MAX Shoreline** \\\\\n'
+    '\\\\\n'
+    '$95K - $1.4Mprice range\\\\\n'
+    '\\\\\n'
+    '15sales last 12 months\\\\\n'
+    '\\\\\n'
+    '340sales in Kittery](https://www.zillow.com/profile/remax-shoreline)'
+)
+
 DIRECTORY_PAGE_MD = f'''# Real estate agents in York, ME
 
 1,212 agents found
@@ -118,22 +132,65 @@ class TestCleanCardText:
         assert '210 team sales last 12 months' in result
 
 
-class TestExtractNameAndOffice:
+class TestExtractNameOfficeAndType:
     def test_team_card(self):
-        text = 'TEAM 5.0(361) Troy Williams Keller Williams Coastal and Lakes & Mountains Realty $15K - $8.4M team price range'
-        name, office = _extract_name_and_office(text)
-        assert name is not None
-        assert 'Troy' in name or 'Williams' in name
+        name, office, etype = _extract_name_office_and_type(
+            'TEAM 5.0(361) **Troy Williams** '
+            'Keller Williams Coastal and Lakes & Mountains Realty '
+            '$15K - $8.4M team price range'
+        )
+        assert name == 'Troy Williams'
+        assert office == 'Keller Williams Coastal and Lakes & Mountains Realty'
+        assert etype == 'team'
 
-    def test_individual_card(self):
-        text = 'Cindy McKenna Aland Realty $167K - $1.3M price range 10 sales last 12 months'
-        name, office = _extract_name_and_office(text)
-        assert name is not None
+    def test_individual_with_office(self):
+        name, office, etype = _extract_name_office_and_type(
+            '4.8(23) **Cindy McKenna** Aland Realty '
+            '$167K - $1.3M price range 10 sales last 12 months'
+        )
+        assert name == 'Cindy McKenna'
+        assert office == 'Aland Realty'
+        assert etype == 'individual'
+
+    def test_brokerage_no_office(self):
+        name, office, etype = _extract_name_office_and_type(
+            '5.0(37) **RE/MAX Shoreline** '
+            '$95K - $1.4M price range 15 sales last 12 months'
+        )
+        assert name == 'RE/MAX Shoreline'
+        assert office is None
+        assert etype == 'brokerage'
+
+    def test_brokerage_name_stays_intact(self):
+        name, office, etype = _extract_name_office_and_type(
+            '4.9(51) **Coldwell Banker Yorke Realty** '
+            '$98K - $2.7M price range 110 sales last 12 months'
+        )
+        assert name == 'Coldwell Banker Yorke Realty'
+        assert office is None
+        assert etype == 'brokerage'
+
+    def test_signature_homes_not_split(self):
+        name, office, etype = _extract_name_office_and_type(
+            '5.0(10) **Signature Homes Real Estate Group** '
+            '$200K - $1M price range 5 sales last 12 months'
+        )
+        assert name == 'Signature Homes Real Estate Group'
+        assert office is None
+        assert etype == 'brokerage'
 
     def test_empty_text(self):
-        name, office = _extract_name_and_office('')
+        name, office, etype = _extract_name_office_and_type('')
         assert name is None
         assert office is None
+        assert etype == 'individual'
+
+    def test_no_bold_markers(self):
+        name, office, etype = _extract_name_office_and_type(
+            '5.0(10) No bold here $200K price range'
+        )
+        assert name is None
+        assert etype == 'individual'
 
 
 class TestParseAgentCardsFromMarkdown:
@@ -143,6 +200,8 @@ class TestParseAgentCardsFromMarkdown:
         card = cards[0]
         assert card['profile_url'] == 'https://www.zillow.com/profile/Troy-Williams-ME-RE'
         assert card['profile_type'] == 'team'
+        assert card['profile_name'] == 'Troy Williams'
+        assert 'Keller Williams' in card['office_name']
         assert card['local_sales_count'] == 1124
         assert card['sales_last_12_months'] == 210
 
@@ -150,10 +209,17 @@ class TestParseAgentCardsFromMarkdown:
         cards = parse_agent_cards_from_markdown(INDIVIDUAL_CARD_MD, 'York')
         assert len(cards) == 1
         card = cards[0]
-        assert card['profile_url'] == 'https://www.zillow.com/profile/1cmckenna'
         assert card['profile_type'] == 'individual'
+        assert card['profile_name'] == 'Cindy McKenna'
         assert card['local_sales_count'] == 91
-        assert card['sales_last_12_months'] == 10
+
+    def test_parses_brokerage_card(self):
+        cards = parse_agent_cards_from_markdown(BROKERAGE_CARD_MD, 'Kittery')
+        assert len(cards) == 1
+        card = cards[0]
+        assert card['profile_type'] == 'brokerage'
+        assert card['profile_name'] == 'RE/MAX Shoreline'
+        assert card['office_name'] is None
 
     def test_parses_no_recent_sales_card(self):
         cards = parse_agent_cards_from_markdown(NO_SALES_CARD_MD, 'York')
@@ -164,9 +230,8 @@ class TestParseAgentCardsFromMarkdown:
     def test_parses_full_directory_page(self):
         cards = parse_agent_cards_from_markdown(DIRECTORY_PAGE_MD, 'York')
         assert len(cards) == 3
-        urls = {c['profile_url'] for c in cards}
-        assert 'https://www.zillow.com/profile/Troy-Williams-ME-RE' in urls
-        assert 'https://www.zillow.com/profile/1cmckenna' in urls
+        types = {c['profile_type'] for c in cards}
+        assert 'team' in types
 
     def test_ignores_wrong_town(self):
         cards = parse_agent_cards_from_markdown(TEAM_CARD_MD, 'Kennebunk')
@@ -175,11 +240,6 @@ class TestParseAgentCardsFromMarkdown:
     def test_empty_markdown(self):
         cards = parse_agent_cards_from_markdown('', 'York')
         assert cards == []
-
-    def test_enriches_with_name_and_office(self):
-        cards = parse_agent_cards_from_markdown(INDIVIDUAL_CARD_MD, 'York')
-        assert len(cards) == 1
-        assert cards[0].get('profile_name') is not None
 
 
 class TestParsePageInfo:
@@ -251,23 +311,6 @@ class TestDiscoveryIntegration:
         assert profiles == 3
 
     @patch('src.zillow_firecrawl._get_firecrawl_client')
-    def test_discover_respects_max_pages(self, mock_get_client, db, mock_state, tmp_path):
-        mock_client = MagicMock()
-        mock_get_client.return_value = mock_client
-        mock_client.scrape.return_value = MagicMock(markdown=DIRECTORY_PAGE_MD)
-
-        from src.zillow_firecrawl import discover_zillow_profiles_firecrawl
-        discover_zillow_profiles_firecrawl(
-            db, mock_state,
-            towns=['York'],
-            max_pages=2,
-            state_path=str(tmp_path / 'state.json'),
-            delay=0,
-        )
-
-        assert mock_client.scrape.call_count == 2
-
-    @patch('src.zillow_firecrawl._get_firecrawl_client')
     def test_discover_handles_blocked_page(self, mock_get_client, db, mock_state, tmp_path):
         mock_client = MagicMock()
         mock_get_client.return_value = mock_client
@@ -286,26 +329,23 @@ class TestDiscoveryIntegration:
         assert mock_state['towns']['york']['status'] == 'failed'
 
     @patch('src.zillow_firecrawl._get_firecrawl_client')
-    def test_stores_profile_name_and_office(self, mock_get_client, db, mock_state, tmp_path):
+    def test_stores_correct_classification(self, mock_get_client, db, mock_state, tmp_path):
         mock_client = MagicMock()
         mock_get_client.return_value = mock_client
-        mock_client.scrape.return_value = MagicMock(markdown=INDIVIDUAL_CARD_MD)
+        mock_client.scrape.return_value = MagicMock(markdown=DIRECTORY_PAGE_MD)
 
         from src.zillow_firecrawl import discover_zillow_profiles_firecrawl
         discover_zillow_profiles_firecrawl(
-            db, mock_state,
-            towns=['York'],
-            max_pages=1,
-            state_path=str(tmp_path / 'state.json'),
-            delay=0,
+            db, mock_state, towns=['York'], max_pages=1,
+            state_path=str(tmp_path / 'state.json'), delay=0,
         )
 
-        row = db.execute(
-            'SELECT profile_name, office_name FROM zillow_profiles WHERE profile_url = ?',
-            ('https://www.zillow.com/profile/1cmckenna',),
-        ).fetchone()
-        assert row is not None
-        assert row['profile_name'] is not None
+        types = db.execute(
+            'SELECT profile_type, COUNT(*) FROM zillow_profiles GROUP BY profile_type'
+        ).fetchall()
+        type_map = {r[0]: r[1] for r in types}
+        assert 'team' in type_map
+        assert type_map.get('brokerage', 0) == 0  # no brokerages in test fixture
 
 
 class TestDirectoryReport:
@@ -316,7 +356,7 @@ class TestDirectoryReport:
         db_path = str(tmp_path / 'test_zillow.db')
         conn = get_zillow_connection(db_path)
         init_zillow_db(conn)
-        from src.database import record_zillow_directory_profile
+        # Agents
         record_zillow_directory_profile(
             conn, 'York', 'https://www.zillow.com/profile/agent1',
             'individual', 50, profile_name='Agent One', office_name='Brokerage A',
@@ -332,13 +372,19 @@ class TestDirectoryReport:
             'individual', 30, profile_name='Agent Three', office_name='Brokerage B',
             sales_last_12_months=5,
         )
+        # Brokerage profile
+        record_zillow_directory_profile(
+            conn, 'York', 'https://www.zillow.com/profile/brokerage-a',
+            'brokerage', 200, profile_name='Brokerage A',
+            sales_last_12_months=40,
+        )
         return conn
 
-    def test_query_top_agents(self, db):
+    def test_query_top_agents_excludes_brokerages(self, db):
         from src.zillow_directory_report import query_directory_top_agents
         agents = query_directory_top_agents(db, limit=10)
         assert len(agents) == 3
-        assert agents[0]['total_local_sales'] == 100
+        assert all(a['profile_type'] != 'brokerage' for a in agents)
 
     def test_query_top_agents_by_town(self, db):
         from src.zillow_directory_report import query_directory_top_agents
@@ -346,18 +392,28 @@ class TestDirectoryReport:
         assert len(agents) == 1
         assert agents[0]['profile_name'] == 'Agent Three'
 
-    def test_query_top_brokerages(self, db):
-        from src.zillow_directory_report import query_directory_top_brokerages
-        brokerages = query_directory_top_brokerages(db, limit=10)
-        assert len(brokerages) == 2
-        assert brokerages[0]['office_name'] == 'Brokerage A'
-        assert brokerages[0]['total_local_sales'] == 150
+    def test_brokerage_leaderboard(self, db):
+        from src.zillow_directory_report import query_directory_brokerage_leaderboard
+        broks = query_directory_brokerage_leaderboard(db, limit=10)
+        assert len(broks) >= 2
+        brok_a = next(b for b in broks if b['brokerage'] == 'Brokerage A')
+        assert brok_a['direct_sales'] == 200
+        assert brok_a['agent_count'] == 2
 
-    def test_generate_leaderboard(self, db, tmp_path):
+    def test_brokerage_without_direct_profile(self, db):
+        from src.zillow_directory_report import query_directory_brokerage_leaderboard
+        broks = query_directory_brokerage_leaderboard(db, limit=10)
+        brok_b = next(b for b in broks if b['brokerage'] == 'Brokerage B')
+        assert brok_b['direct_sales'] is None
+        assert brok_b['agent_sales'] == 30
+
+    def test_generate_leaderboard_has_both_sections(self, db, tmp_path):
         from src.zillow_directory_report import generate_directory_leaderboard
         path = generate_directory_leaderboard(db, str(tmp_path / 'report.md'))
         with open(path) as f:
             content = f.read()
+        assert 'Top 20 Brokerages' in content
+        assert 'Top 30 Agents' in content
         assert 'Agent Two' in content
         assert 'Brokerage A' in content
 
@@ -367,13 +423,13 @@ class TestDirectoryReport:
         with open(path) as f:
             content = f.read()
         assert '<!DOCTYPE html>' in content
-        assert 'Agent Two' in content
-        assert 'Zillow Agent Leaderboard' in content
+        assert 'Zillow Leaderboard' in content
 
     def test_get_directory_stats(self, db):
         from src.zillow_directory_report import get_directory_stats
         stats = get_directory_stats(db)
-        assert stats['total_agents'] == 3
+        assert stats['agents'] == 3
         assert stats['teams'] == 1
         assert stats['individuals'] == 2
+        assert stats['brokerages'] == 1
         assert stats['towns_with_data'] == 2

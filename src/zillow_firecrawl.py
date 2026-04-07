@@ -92,35 +92,50 @@ def _clean_card_text(raw: str) -> str:
     return text.strip()
 
 
-def _extract_name_and_office(cleaned_text: str) -> tuple[str | None, str | None]:
-    """Extract profile name and office from cleaned card text.
+_STAT_BOUNDARY_RE = re.compile(
+    r'\$[\dKMB,.]|(?:\d[\d,]*\s*(?:team\s+)?(?:sales?|sale)\b)|No (?:recent|sales)',
+    re.IGNORECASE,
+)
 
-    The card text (after stripping TEAM, rating, and image) follows:
-    'Name OfficeName $price_range N sales last 12 months ...'
-    We grab the name as the first segment, and office as everything
-    between name and the first stat/price indicator.
+
+def _extract_name_office_and_type(raw: str) -> tuple[str | None, str | None, str]:
+    """Extract name, office, and entity type from raw card text.
+
+    Uses **bold** markers as the authoritative name delimiter.
+    Text between the bold name and the first stat boundary is the office.
+    No office text → brokerage. TEAM prefix → team. Otherwise → individual.
     """
-    text = cleaned_text
-    if text.upper().startswith('TEAM '):
-        text = text[5:]
-    text = re.sub(r'^\d+\.\d+\(\d+\)\s*', '', text)
+    text = _IMAGE_MD_RE.sub('', raw)
+    text = text.replace('\\', ' ')
 
-    stat_boundary = re.search(
-        r'\$[\dKMB,.]|(?:\d[\d,]*\s*(?:team\s+)?sales?\b)|No (?:recent|sales)',
-        text,
-        re.IGNORECASE,
-    )
-    header = text[:stat_boundary.start()].strip() if stat_boundary else text.strip()
-    if not header:
-        return None, None
+    # Find both the bold name and the rating — keep whichever comes first
+    bold_match = _BOLD_RE.search(text)
+    card_start = re.search(r'(?:TEAM\s+)?\d\.\d\(\d+\)', text)
+    if card_start:
+        trim_to = card_start.start()
+        if bold_match and bold_match.start() < trim_to:
+            trim_to = bold_match.start()
+        text = text[trim_to:]
+        bold_match = _BOLD_RE.search(text)
 
-    parts = [p.strip() for p in header.split('  ') if p.strip()]
-    if len(parts) >= 2:
-        return parts[0], parts[1]
-    words = header.split()
-    if len(words) <= 3:
-        return header, None
-    return ' '.join(words[:2]), ' '.join(words[2:])
+    is_team = bool(re.search(r'\bTEAM\b', text[:50] if len(text) > 50 else text, re.IGNORECASE))
+    if not bold_match:
+        return None, None, 'individual'
+
+    name = bold_match.group(1).strip()
+    after_bold = text[bold_match.end():]
+    after_bold = ' '.join(after_bold.split())
+
+    stat_hit = _STAT_BOUNDARY_RE.search(after_bold)
+    office = after_bold[:stat_hit.start()].strip() if stat_hit else after_bold.strip()
+
+    if not office:
+        if is_team:
+            return name, None, 'team'
+        return name, None, 'brokerage'
+    if is_team:
+        return name, office, 'team'
+    return name, office, 'individual'
 
 
 def parse_agent_cards_from_markdown(
@@ -130,22 +145,28 @@ def parse_agent_cards_from_markdown(
 
     Returns a list of candidate dicts compatible with the existing
     database.record_zillow_directory_profile() interface, enriched
-    with profile_name and office_name fields.
+    with profile_name, office_name, and corrected profile_type.
     """
     raw_links = []
+    enrichment: dict[str, tuple] = {}
     for match in _PROFILE_LINK_RE.finditer(markdown):
         raw_text = match.group(1)
         href = match.group(2)
         cleaned = _clean_card_text(raw_text)
         if cleaned:
             raw_links.append({'href': href, 'text': cleaned})
+            name, office, etype = _extract_name_office_and_type(raw_text)
+            enrichment[href] = (name, office, etype)
 
     candidates = _extract_profile_card_candidates(raw_links, town)
 
     for candidate in candidates:
-        name, office = _extract_name_and_office(candidate.get('raw_card_text', ''))
-        candidate['profile_name'] = name
-        candidate['office_name'] = office
+        url = candidate['profile_url']
+        if url in enrichment:
+            name, office, etype = enrichment[url]
+            candidate['profile_name'] = name
+            candidate['office_name'] = office
+            candidate['profile_type'] = etype
 
     return candidates
 
