@@ -5,17 +5,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What This Project Does
 Scrapes publicly visible sold property data from Redfin for 10 southern coastal Maine towns, then enriches each transaction with listing agent and brokerage data by visiting individual Redfin property pages via Playwright. The primary deliverables are `data/dashboard.html` (HTML leaderboard with trend badges, hosted on GitHub Pages) and `data/agent_leaderboard.md` (markdown version). Runs on GitHub Actions free tier with resumable chunk-based processing.
 
-## Current State (as of 2026-04-04)
-- **2,311 SFH/Condo transactions in SQLite** — non-residential records purged, property type filter active
-- **1,967 transactions enriched with agent data** (85%) — ~322 URLs pending enrichment
-- **Property type filter active** — only Single Family Residential + Condo/Co-op (`uipt=1,2`); purge complete, all records tagged with `property_type`
-- **HTML dashboard** at `data/dashboard.html` — 6-section leaderboard with trend badges, auto-deployed to GitHub Pages
-- **GitHub Pages live** at `https://pmtinkerer.github.io/gw-re-agent-scraper/` — auto-updates after every CI run
-- **Brokerage-as-agent exclusion** — known brokerage-named agents (Anchor Real Estate, Anne Erwin Real Estate) excluded from agent rankings via `BROKERAGE_AS_AGENT` set; also auto-excludes where agent name = office name
-- **Office name normalization** — 15 variant office spellings merged to canonical names via `OFFICE_NORMALIZATION` map in `database.py`; applied at upsert time
-- **Workflow concurrency control** — only one scraper run at a time to prevent merge conflicts
-- **125 unit tests passing**
-- **Public repo on GitHub** — automated enrichment running 4x/day via residential proxy (IPRoyal)
+## Current State (as of 2026-04-07)
+- **Redfin pipeline**: 2,311 SFH/Condo transactions in SQLite, ~85% enriched with agent data via Playwright + IPRoyal proxy
+- **Zillow pipeline (NEW)**: 740 unique agents (125 teams, 615 individuals) across all 10 towns, scraped via Firecrawl API (bypasses PerimeterX). Two-leaderboard dashboard: Brokerages + Agents
+- **HTML dashboards** — Redfin at `data/dashboard.html`, Zillow at `data/zillow_directory_dashboard.html`, both auto-deployed to GitHub Pages
+- **GitHub Pages live** at `https://pmtinkerer.github.io/gw-re-agent-scraper/`
+- **128 unit tests passing**
+- **Public repo on GitHub**
 
 ## Service Territory (10 Towns)
 Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old Orchard Beach, Scarborough — all in Maine.
@@ -43,6 +39,28 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 - React hydration wait: `wait_for_selector('.agent-card-wrapper, .listing-agent-item, .buyer-agent-item', timeout=8000)`
 - CLI: `python -m src.main --enrich --batch-size 40`
 
+### Phase 3: Zillow Directory via Firecrawl (BUILT — RUNNING)
+- Firecrawl API scrapes Zillow agent directory pages, bypassing PerimeterX anti-bot (Playwright+proxy was blocked)
+- Scrapes all 25 pages per town (~15 agents/page), capturing agents with ≥1 sale in each town
+- Extracts: agent name, office/brokerage, team indicator, local sales count, 12-month sales, price range
+- Classifies profiles as `team` (TEAM badge) or `individual` (no badge) using `**bold**` markers as name delimiter
+- Two-leaderboard output: Brokerage leaderboard (agents grouped by office_name) + Agent leaderboard (individuals + teams)
+- Office branches kept **separate** — "Coldwell Banker Yorke Realty" ≠ "Coldwell Banker Realty"
+- No office name normalization applied (Zillow data is cleaner than Redfin; branches are competitors)
+- Separate DB: `data/zillow_agent_data.db`, state: `data/zillow_scrape_state.json`
+- ~250 Firecrawl credits per full run (~30 min), requires `FIRECRAWL_API_KEY` env var
+- CLI: `python -m src.zillow_main --discover --use-firecrawl --max-pages 25 --directory-report`
+
+### Future: Zillow Profile Enrichment (PLANNED — NOT YET BUILT)
+- Scrape individual agent profile pages via Firecrawl to get:
+  - **Buyer vs seller representation** from sold rows ("Represented: Buyer|Seller")
+  - **Active listings count** from "For Sale (N)" section
+  - **Total career sales** and **average price**
+  - **Team member links** for team profiles
+- ~740 credits for all agents (1 credit per profile page)
+- Sold section is paginated (5 rows per page, click-to-paginate) — first page only via basic scrape, full pagination would require Firecrawl `instruct` mode
+- Zillow caps directory pagination at 25 pages (~375 visible cards), even when "1,161 agents found" — agents beyond page 25 are inaccessible
+
 ## Key Decisions
 - **Redfin CSV** for property data (reliable, structured, no browser needed)
 - **Playwright** for agent data (Redfin pages require real browser, show agent info when visited)
@@ -63,43 +81,24 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 
 ## Verification Commands
 ```bash
-# Regenerate leaderboard + HTML dashboard from existing data
-python -m src.main --report-only
+# --- Redfin Pipeline ---
+python -m src.main --report-only                          # Regenerate Redfin leaderboard
+python -m src.main --enrich --batch-size 40               # Playwright agent enrichment
+python -m src.main --merge-agents                         # Fuzzy agent merge
 
-# Test a single Redfin CSV chunk locally
-python -m src.main --mode initial --max-chunks 1 --towns "York, ME"
+# --- Zillow Pipeline (Firecrawl) ---
+python -m src.zillow_main --discover --use-firecrawl --max-pages 25 --directory-report  # Full scrape
+python -m src.zillow_main --discover --use-firecrawl --max-pages 2 --towns "York, Kittery" --directory-report  # Quick test
+python -m src.zillow_main --directory-report               # Regenerate from existing data
 
-# Discover/verify Redfin region IDs
-python -m src.main --discover-regions
+# --- Tests ---
+python -m pytest tests/ -v                                 # All tests
+python -m pytest tests/test_zillow_firecrawl.py -v         # Zillow Firecrawl tests only
 
-# Run Playwright agent enrichment (40 URLs per batch)
-python -m src.main --enrich --batch-size 40
-
-# Run fuzzy agent merge
-python -m src.main --merge-agents
-
-# Reset all scraping progress
-python -m src.main --reset-state
-
-# Inspect scrape progress
-python -m json.tool data/scrape_state.json
-
-# Run unit tests
-python -m pytest tests/
-
-# Run a single test file or class
-python -m pytest tests/test_dashboard.py -v
-python -m pytest tests/test_report.py::TestBrokerageAsAgentExclusion -v
-
-# Check database stats
+# --- Database Checks ---
 sqlite3 data/agent_data.db "SELECT city, COUNT(*) FROM transactions GROUP BY city ORDER BY COUNT(*) DESC;"
-sqlite3 data/agent_data.db "SELECT COUNT(*), COUNT(listing_agent) FROM transactions;"
-
-# Check enrichment progress
-sqlite3 data/agent_data.db "SELECT enrichment_status, COUNT(*) FROM transactions GROUP BY enrichment_status;"
-
-# Purge non-residential records (after re-scrape tags property_type)
-python -m src.main --purge-non-residential
+sqlite3 data/zillow_agent_data.db "SELECT profile_type, COUNT(*) FROM zillow_profiles GROUP BY profile_type;"
+sqlite3 data/zillow_agent_data.db "SELECT town, COUNT(*) FROM zillow_profile_towns GROUP BY town ORDER BY COUNT(*) DESC;"
 ```
 
 ## Known Constraints
@@ -121,20 +120,28 @@ Cape Neddick → York, Moody → Wells, Ocean Park → Old Orchard Beach, Cape P
 ```
 gw-re-agent-scraper/
 ├── src/
-│   ├── main.py        # CLI orchestrator (argparse, 10 flags incl --enrich, --batch-size)
-│   ├── scraper.py     # Redfin CSV + Playwright agent enrichment
-│   ├── database.py    # SQLite schema, upsert, normalization, rankings, enrichment tracking
-│   ├── report.py      # Leaderboard markdown generator
-│   ├── dashboard.py   # HTML dashboard generator (trend badges, 365-day rolling)
-│   └── state.py       # Chunk-based resumable state machine
-├── tests/             # Unit tests (all passing)
+│   ├── main.py                  # Redfin CLI orchestrator
+│   ├── scraper.py               # Redfin CSV + Playwright enrichment
+│   ├── database.py              # SQLite schema, upsert, normalization (Redfin + Zillow)
+│   ├── report.py                # Redfin leaderboard markdown generator
+│   ├── dashboard.py             # Redfin HTML dashboard generator
+│   ├── state.py                 # Redfin chunk-based state machine
+│   ├── zillow_main.py           # Zillow CLI orchestrator
+│   ├── zillow_firecrawl.py      # Firecrawl-based Zillow directory scraping
+│   ├── zillow_directory_report.py # Zillow two-leaderboard report + dashboard
+│   ├── zillow.py                # Playwright-based Zillow scraper (blocked, kept as fallback)
+│   └── zillow_state.py          # Zillow discovery state machine
+├── tests/                       # 128 unit tests
 ├── data/
-│   ├── agent_data.db       # 2,311 SFH/Condo transactions
-│   ├── agent_leaderboard.md # Generated markdown report
-│   ├── dashboard.html      # Generated HTML dashboard with trend indicators
-│   └── scrape_state.json   # Tracks scraping progress
-├── .github/workflows/scrape_agents.yml
-├── CLAUDE.md, AGENTS.md, PROJECT_PLAN.md, README.md
+│   ├── agent_data.db            # Redfin transactions (2,311 SFH/Condo)
+│   ├── zillow_agent_data.db     # Zillow profiles (740 agents, 125 teams)
+│   ├── dashboard.html           # Redfin HTML dashboard
+│   ├── zillow_directory_dashboard.html  # Zillow HTML dashboard
+│   └── zillow_agent_leaderboard.md      # Zillow markdown report
+├── .github/workflows/
+│   ├── scrape_agents.yml        # Redfin enrichment (4x/day)
+│   └── zillow_leaderboard.yml   # Zillow Firecrawl discovery (manual dispatch)
+├── CLAUDE.md, AGENTS.md, README.md
 ├── requirements.txt
 └── .gitignore
 ```

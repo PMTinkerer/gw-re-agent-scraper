@@ -1,13 +1,52 @@
 # AGENTS.md — gw-re-agent-scraper
 
 ## Current Status
-**Phase: Agent Data Enrichment (running) + Dashboard Live**
+**Phase: Redfin Enrichment (running) + Zillow Firecrawl Directory (live) + Dashboard Live**
 
-2,311 SFH/Condo transactions across all 10 towns (March 2023–March 2026). Non-residential records (land, multi-family, mobile) have been purged. All records tagged with `property_type`.
+### Redfin Pipeline
+2,311 SFH/Condo transactions across all 10 towns (March 2023–March 2026). Playwright enrichment running via GitHub Actions with IPRoyal proxy. ~85% enriched.
 
-**Playwright enrichment pipeline running in production** via GitHub Actions with residential proxy (IPRoyal). 1,762 URLs enriched successfully (76%). ~526 URLs pending. Estimated ~7 runs at 80 URLs/batch to complete.
+### Zillow Firecrawl Pipeline (NEW — April 7, 2026)
+**740 unique agents** (125 teams, 615 individuals) across all 10 towns. Scraped via Firecrawl API which bypasses Zillow's PerimeterX anti-bot system. Two-leaderboard dashboard: Brokerages (grouped by office_name) + Agents (individuals + teams).
 
-**HTML dashboard live** at https://pmtinkerer.github.io/gw-re-agent-scraper/ — auto-deploys to GitHub Pages after every CI run.
+- Full coverage: all 25 pages per town (~250 Firecrawl credits per run)
+- Office branches kept separate (e.g., "Coldwell Banker Yorke Realty" ≠ "Coldwell Banker Realty")
+- Top brokerages by agent count: Portside Real Estate Group (47), Keller Williams Realty (37), Coldwell Banker Realty (35)
+- Zillow caps directory pagination at 25 pages even when "1,161 agents found" — agents beyond page 25 are inaccessible
+- Agents with 0 sales in a town are filtered out (not useful for rankings)
+
+### Future: Zillow Profile Enrichment (PLANNED)
+- Scrape individual profile pages via Firecrawl (~740 credits) to get:
+  - **Buyer vs seller representation** from sold rows
+  - **Active listings count** from "For Sale (N)" section
+  - **Total career sales** and **average price**
+  - **Team member links** for decomposing team sales
+- Not yet built — deferred to avoid exhausting monthly Firecrawl credits
+
+## Zillow Implementation Status
+- Firecrawl-based directory scraping live and tested:
+  - `src/zillow_firecrawl.py` — Firecrawl discovery + markdown parsing
+  - `src/zillow_directory_report.py` — Two-leaderboard report + dashboard
+  - `src/zillow_main.py` — CLI with `--use-firecrawl`, `--max-pages`, `--directory-report`
+  - `tests/test_zillow_firecrawl.py` — 39 tests
+  - `.github/workflows/zillow_leaderboard.yml` — GitHub Actions with Firecrawl support
+- Separate Zillow database/state/output paths:
+  - `data/zillow_agent_data.db`
+  - `data/zillow_scrape_state.json`
+  - `data/zillow_agent_leaderboard.md`
+  - `data/zillow_buyer_leaderboard.md`
+  - `data/zillow_dashboard.html`
+  - `data/zillow_team_gap.md`
+- Zillow pipeline modules implemented:
+  - `src/zillow.py`
+  - `src/zillow_main.py`
+  - `src/zillow_state.py`
+- Shared reporting/dashboard layer refactored to be explicit `source`-scoped and `role`-scoped so Zillow seller/buyer data can coexist with Redfin data.
+- Zillow GitHub Actions workflow implemented at `.github/workflows/zillow_leaderboard.yml`.
+- Fast proxy smoke diagnostics added:
+  - `data/zillow_proxy_diagnostics.md`
+  - smoke-only workflow mode for temp-branch validation
+  - fail-fast exit code `2` when no Zillow probe returns `ok`
 
 ## What's In the Database
 | Town | Transactions | Avg Price | Date Range |
@@ -36,6 +75,12 @@
 8. **Redfin CloudFront blocks rapid sequential requests from same browser session** — must create fresh browser context per page (new user-agent, viewport, cookies). 5-10s delay caused 403s; 10-20s delay with context rotation works reliably.
 9. **React hydration timing** — agent cards take 3-8s to render after `domcontentloaded`. Fixed 2-second `wait_for_timeout` failed; must use `wait_for_selector('.agent-card-wrapper, .agent-info-section', timeout=8000)` with fallback.
 10. **Some Redfin URLs return intermittent CloudFront 403s** ("The request could not be satisfied") — these are transient CDN errors, not captchas. Marked as `error` and retried up to 3 times.
+11. **Zillow public agent pages expose richer transaction detail than Redfin** — seller/buyer side (`Represented: Buyer|Seller`), sold rows, and profile-level sales stats are visible on public directory/profile pages, so a parallel Zillow dataset is viable if access can be stabilized.
+12. **Current GitHub `PROXY_URL` is blocked by Zillow's PerimeterX** — as of April 7, 2026, both `requests` and Playwright probes return captcha HTTP `403` on Zillow professionals pages even when routed through the repo's configured proxy.
+13. **Warmup strategy is not the root problem on Zillow** — making warmup non-fatal and retrying direct target navigation still resulted in captcha HTTP `403` on the actual directory pages.
+14. **The first Zillow Actions failure was workflow plumbing, not the scraper itself** — initial temp-branch runs failed after scraping due to branch rebase/merge logic. Push-triggered smoke runs now skip commit/deploy steps and run as diagnostics only.
+15. **Fast smoke-check workflow is now the preferred way to validate Zillow access** — it records the observed egress IP, runs `requests` + Playwright probes against a few Zillow URLs, writes `data/zillow_proxy_diagnostics.md`, and fails in ~1 minute if the proxy is blocked.
+16. **Firecrawl may be worth a one-URL smoke test; Cloudflare Browser Rendering is less promising** — Firecrawl offers enhanced proxy/browser handling, while Cloudflare's Browser Rendering is documented as bot-identifiable. Local environment currently lacks `node`/`npm`/`npx`, so Firecrawl was not tested yet.
 
 ## Open Issues
 - **~526 URLs still pending enrichment** — pipeline running, ~7 runs at 80/batch to complete
@@ -43,11 +88,16 @@
 - Some pages may have `no_agent` (listing removed, very old, etc.) — accept this as data gap
 - Realtor.com GraphQL API investigated as alternative enrichment source — has agent data but far less comprehensive than Redfin (1,066 vs 2,311 records, data months stale). Not viable as replacement.
 - PrimeMLS evaluated as data source — authoritative MLS but Cloudflare-protected, explicit anti-scraping ToS, sold data likely behind member login. Not viable without MLS membership.
+- **Zillow blocked on current proxy** — latest smoke check on April 7, 2026 observed egress IP `96.191.2.240`; all Zillow professionals probes returned captcha HTTP `403`.
+- **Zillow code is currently on temp branch only** — branch `zillow-actions-smoke-20260406` contains the Zillow pipeline/workflow/smoke diagnostics work; it has not been merged into `main`.
+- **Need a different Zillow-capable proxy or compliant data source** — current blocker appears to be IP/session reputation, not DOM parsing or Playwright setup.
 
 ## Next Steps (Priority Order)
-1. **Let enrichment complete** — running automatically 4x/day via GitHub Actions
-2. **Review fuzzy agent merge results** after enrichment is mostly complete
-3. **Review dashboard** at https://pmtinkerer.github.io/gw-re-agent-scraper/ as data fills in
+1. **Zillow profile enrichment** — scrape agent profile pages via Firecrawl for buyer/seller splits, active listings, career stats (~740 credits, deferred to next billing cycle)
+2. **Merge Zillow branch to main** — push `zillow-actions-smoke-20260406` branch, open PR, deploy
+3. **Let Redfin enrichment complete** — running automatically 4x/day via GitHub Actions
+4. **Review fuzzy agent merge results** after enrichment is mostly complete
+5. **Schedule recurring Zillow Firecrawl runs** via GitHub Actions workflow_dispatch (monthly refresh)
 
 ## Session Log
 - 2026-03-21 (session 1): Initial build from spec. All modules, GitHub Actions workflow, unit tests, and docs created.
@@ -58,3 +108,6 @@
 - 2026-03-23 (session 6): Fixed merge conflict in dashboard from concurrent CI runs — added workflow concurrency control. Investigated Realtor.com GraphQL API as alternative enrichment source — functional but far less comprehensive than Redfin (1,066 vs 2,311 records, months stale). Decided to keep Redfin Playwright as primary enrichment. Fixed Pages auto-deploy by moving deployment into scraper workflow (GitHub bot pushes don't trigger separate workflows).
 - 2026-03-30 (session 7): Diagnosed IPRoyal proxy outage (ERR_TUNNEL_CONNECTION_FAILED since Mar 28). User renewed subscription, enrichment resumed. Evaluated PrimeMLS as data source — authoritative MLS but Cloudflare-protected, explicit anti-scraping ToS, not viable. Fixed table column alignment with table-layout:fixed + colgroups.
 - 2026-03-31 (session 8): Added 365-day rolling brokerage leaderboard with trend badges and operating towns. Split brokerage section into all-time + rolling (6 sections total). Added office name normalization — 15 variant spellings merged to canonical names (139 rows). Added Anne Erwin Real Estate to BROKERAGE_AS_AGENT exclusion list. 125 tests passing. Enrichment at 76% (1,762/2,311).
+- 2026-04-06 (session 9): Reviewed project and planned Zillow V1 as a parallel dataset rather than a Redfin replacement. Implemented separate Zillow DB/state/artifacts, buyer/seller role-aware reporting, Zillow workflow, dashboard support, and Zillow test coverage. Local Zillow suites passed, but live local smoke tests showed Zillow serving PerimeterX captcha pages.
+- 2026-04-07 (session 10): Hardened Zillow scraper with retries, warmup fallback, proxy/session telemetry, and GitHub Actions smoke-only mode. Ran multiple GitHub Actions validations on temp branch `zillow-actions-smoke-20260406`. Confirmed repo `PROXY_URL` secret is blocked by Zillow: latest smoke run observed egress IP `96.191.2.240` and both `requests` and Playwright got captcha HTTP `403` on Zillow professionals root, York, and Kittery. Added `data/zillow_proxy_diagnostics.md` and fail-fast smoke-check workflow to validate replacement proxies quickly.
+- 2026-04-07 (session 11): Replaced blocked Playwright approach with Firecrawl API for Zillow. Smoke-tested Firecrawl against Zillow — bypassed PerimeterX completely. Built `zillow_firecrawl.py` (directory scraping + markdown parsing), `zillow_directory_report.py` (two-leaderboard report + dashboard), 39 new tests. Ran full 10-town scrape: 740 agents, 125 teams, ~250 credits. Fixed name/office parsing (bold markers as delimiter, strip rating bleed), added brokerage classification. Code review: fixed eval injection in workflow, added pip-audit, fixed or-chain bug, removed dead code. Buyer/seller split deferred to profile enrichment (next billing cycle). Key learnings: (a) Firecrawl SDK uses `client.scrape()` not `client.scrape_url()`, returns objects not dicts; (b) Zillow caps directory at 25 pages regardless of total count; (c) office branches must stay separate (competing entities within same chain); (d) brokerage profiles on Zillow have no structural difference from individual agents — classification by missing office_name works for unit tests but real data rarely has null office.
