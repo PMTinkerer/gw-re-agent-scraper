@@ -1,12 +1,15 @@
 """Zillow discovery, scraping, and output helpers."""
 from __future__ import annotations
 
+import json
 import logging
 import os
 import random
 import re
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
+
+import requests
 
 from .dashboard import generate_scoped_dashboard
 from .database import (
@@ -39,7 +42,9 @@ _DEFAULT_SELLER_REPORT = os.path.join(os.path.dirname(__file__), '..', 'data', '
 _DEFAULT_BUYER_REPORT = os.path.join(os.path.dirname(__file__), '..', 'data', 'zillow_buyer_leaderboard.md')
 _DEFAULT_TEAM_GAP_REPORT = os.path.join(os.path.dirname(__file__), '..', 'data', 'zillow_team_gap.md')
 _DEFAULT_DASHBOARD = os.path.join(os.path.dirname(__file__), '..', 'data', 'zillow_dashboard.html')
+_DEFAULT_PROXY_DIAGNOSTICS = os.path.join(os.path.dirname(__file__), '..', 'data', 'zillow_proxy_diagnostics.md')
 _ZILLOW_PROFESSIONALS_HOME_URL = 'https://www.zillow.com/professionals/real-estate-agent-reviews/'
+_IPIFY_URL = 'https://api.ipify.org?format=json'
 
 _DIRECTORY_LOCAL_SALES_RE = re.compile(
     r'(?P<count>[\d,]+)\s+(?:team\s+)?sales?\s+in\s+(?P<town>[A-Za-z ]+)',
@@ -604,6 +609,16 @@ def _build_proxy_base() -> dict | None:
     }
 
 
+def _build_requests_proxies(proxy_url: str | None = None) -> dict | None:
+    proxy = proxy_url or os.environ.get('PROXY_URL')
+    if not proxy:
+        return None
+    return {
+        'http': proxy,
+        'https': proxy,
+    }
+
+
 def _rotated_proxy(proxy_base: dict | None) -> dict | None:
     if not proxy_base:
         return None
@@ -665,6 +680,187 @@ def _format_status_message(status_info: dict, phase: str) -> str:
     status_code = status_info.get('status_code')
     code_text = f' status={status_code}' if status_code is not None else ''
     return f'{phase} {status} ({reason}){code_text}'
+
+
+def _build_probe_record(
+    *,
+    transport: str,
+    url: str,
+    status: str,
+    reason: str,
+    status_code: int | None = None,
+    final_url: str | None = None,
+    title: str | None = None,
+    note: str | None = None,
+) -> dict:
+    return {
+        'transport': transport,
+        'url': url,
+        'status': status,
+        'reason': reason,
+        'status_code': status_code,
+        'final_url': final_url or url,
+        'title': title,
+        'note': note,
+    }
+
+
+def _probe_ip_via_requests() -> dict:
+    headers = {
+        'User-Agent': random.choice(_USER_AGENTS),
+        'Accept-Language': 'en-US,en;q=0.9',
+    }
+    try:
+        response = requests.get(
+            _IPIFY_URL,
+            headers=headers,
+            proxies=_build_requests_proxies(),
+            timeout=20,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        return {
+            'ok': True,
+            'ip': payload.get('ip'),
+            'status_code': response.status_code,
+        }
+    except Exception as exc:
+        return {
+            'ok': False,
+            'error': str(exc),
+        }
+
+
+def _probe_zillow_with_requests(url: str) -> dict:
+    headers = {
+        'User-Agent': random.choice(_USER_AGENTS),
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Upgrade-Insecure-Requests': '1',
+    }
+    try:
+        response = requests.get(
+            url,
+            headers=headers,
+            proxies=_build_requests_proxies(),
+            timeout=30,
+            allow_redirects=True,
+        )
+        status_info = _classify_zillow_document(
+            response.text,
+            page_url=str(response.url),
+            status_code=response.status_code,
+        )
+        return _build_probe_record(
+            transport='requests',
+            url=url,
+            status=status_info['status'],
+            reason=status_info['reason'],
+            status_code=response.status_code,
+            final_url=str(response.url),
+        )
+    except Exception as exc:
+        return _build_probe_record(
+            transport='requests',
+            url=url,
+            status='error',
+            reason='request_exception',
+            note=str(exc),
+        )
+
+
+def _probe_zillow_with_playwright(
+    browser,
+    proxy_base: dict | None,
+    route_handler,
+    url: str,
+    *,
+    page_kind: str,
+) -> dict:
+    context = page = None
+    try:
+        context, page = _new_page(browser, proxy_base, route_handler)
+        response = page.goto(url, wait_until='domcontentloaded', timeout=30000)
+        page.wait_for_timeout(1200)
+        _simulate_human(page)
+        status_info = _check_zillow_page_status(page, response=response)
+        try:
+            title = page.title()
+        except Exception:
+            title = None
+        note = None
+        if page_kind == 'directory':
+            note = 'profile_links_found' if _has_profile_links(page) else 'no_profile_links'
+        elif page_kind == 'profile':
+            note = 'profile_identity_found' if _profile_has_identity(page) else 'no_profile_identity'
+        return _build_probe_record(
+            transport='playwright',
+            url=url,
+            status=status_info['status'],
+            reason=status_info['reason'],
+            status_code=status_info.get('status_code'),
+            final_url=getattr(page, 'url', url),
+            title=title,
+            note=note,
+        )
+    except Exception as exc:
+        return _build_probe_record(
+            transport='playwright',
+            url=url,
+            status='error',
+            reason='playwright_exception',
+            note=str(exc),
+        )
+    finally:
+        _close_context(context)
+
+
+def _smoke_check_passed(result: dict) -> bool:
+    probes = result.get('requests_probes', []) + result.get('playwright_probes', [])
+    return any(probe.get('status') == 'ok' for probe in probes)
+
+
+def _render_smoke_report(result: dict) -> str:
+    generated_at = result.get('generated_at') or datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+    lines = [
+        '# Zillow Proxy Smoke Check',
+        '',
+        f'_Generated: {generated_at}_',
+        '',
+        f'- **Passed:** {"Yes" if result.get("passed") else "No"}',
+        f'- **Proxy configured:** {"Yes" if result.get("proxy_configured") else "No"}',
+        f'- **Proxy server:** {result.get("proxy_server") or "N/A"}',
+    ]
+    ip_probe = result.get('ip_probe') or {}
+    if ip_probe.get('ok'):
+        lines.append(f'- **Observed egress IP:** {ip_probe.get("ip") or "Unknown"}')
+    else:
+        lines.append(f'- **Observed egress IP:** unavailable ({ip_probe.get("error") or "unknown error"})')
+
+    lines.extend([
+        '',
+        '## Probes',
+        '',
+        '| Transport | URL | Status | HTTP | Reason | Note |',
+        '|-----------|-----|--------|------|--------|------|',
+    ])
+    probes = result.get('requests_probes', []) + result.get('playwright_probes', [])
+    for probe in probes:
+        lines.append(
+            f'| {probe.get("transport")} | {probe.get("url")} | {probe.get("status")} | '
+            f'{probe.get("status_code") or ""} | {probe.get("reason") or ""} | {probe.get("note") or ""} |'
+        )
+
+    return '\n'.join(lines)
+
+
+def write_smoke_report(result: dict, output_path: str | None = None) -> str:
+    output_path = output_path or _DEFAULT_PROXY_DIAGNOSTICS
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    report = _render_smoke_report(result)
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(report)
+    logger.info('Zillow proxy diagnostics written to %s', output_path)
+    return output_path
 
 
 def _warm_context_session(page, *, label: str, warmup_url: str | None = None) -> None:
@@ -770,6 +966,59 @@ def _load_zillow_page(
         _format_status_message(last_status, page_kind),
         status_code=last_status.get('status_code'),
     )
+
+
+def run_zillow_smoke_check(
+    *,
+    towns: list[str] | None = None,
+    headless: bool = True,
+    output_path: str | None = None,
+) -> dict:
+    """Run a fast proxy/access diagnostic against Zillow."""
+    from playwright.sync_api import sync_playwright
+
+    proxy_base = _build_proxy_base()
+    towns_to_probe = (towns or ['York'])[:2]
+    request_urls = [_ZILLOW_PROFESSIONALS_HOME_URL] + [_town_directory_url(town) for town in towns_to_probe]
+    blocked_resource_types = {'image', 'media'}
+
+    def _block_heavy(route):
+        if route.request.resource_type in blocked_resource_types:
+            route.abort()
+        else:
+            route.fallback()
+
+    result = {
+        'generated_at': datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC'),
+        'proxy_configured': bool(proxy_base),
+        'proxy_server': proxy_base.get('server') if proxy_base else None,
+        'ip_probe': _probe_ip_via_requests(),
+        'requests_probes': [],
+        'playwright_probes': [],
+    }
+    for url in request_urls:
+        result['requests_probes'].append(_probe_zillow_with_requests(url))
+
+    with sync_playwright() as pw:
+        browser = _launch_browser(pw, headless=headless)
+        try:
+            for url in request_urls:
+                page_kind = 'directory' if '/professionals/' in url else 'profile'
+                result['playwright_probes'].append(
+                    _probe_zillow_with_playwright(
+                        browser,
+                        proxy_base,
+                        _block_heavy,
+                        url,
+                        page_kind=page_kind,
+                    )
+                )
+        finally:
+            browser.close()
+
+    result['passed'] = _smoke_check_passed(result)
+    result['report_path'] = write_smoke_report(result, output_path)
+    return result
 
 
 def discover_zillow_profiles(

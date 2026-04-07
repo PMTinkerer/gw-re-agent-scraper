@@ -11,6 +11,7 @@ from .report import get_report_stats
 from .zillow import (
     discover_zillow_profiles,
     generate_zillow_outputs,
+    run_zillow_smoke_check,
     scrape_zillow_profiles,
 )
 from .zillow_state import load_state, reset_state, save_state
@@ -37,6 +38,9 @@ def main() -> int:
     parser.add_argument('--scrape-profiles', action='store_true', help='Scrape pending Zillow team and individual profiles')
     parser.add_argument('--report-only', action='store_true', help='Regenerate Zillow outputs from existing data')
     parser.add_argument('--reset-state', action='store_true', help='Reset Zillow discovery state to all pending')
+    parser.add_argument('--smoke-check', action='store_true', help='Run a fast Zillow proxy/access smoke check')
+    parser.add_argument('--smoke-strict', action='store_true', help='Exit non-zero if Zillow smoke check does not get an ok response')
+    parser.add_argument('--smoke-output', type=str, default=None, help='Path to write Zillow smoke diagnostics markdown')
     parser.add_argument('--batch-size', type=int, default=20, help='Profiles to scrape in one run (default: 20)')
     parser.add_argument('--towns', type=str, default=None, help='Comma-separated town names to limit discovery/scrape scope')
     parser.add_argument('--db', type=str, default=None, help='Path to the Zillow SQLite database')
@@ -44,16 +48,36 @@ def main() -> int:
     args = parser.parse_args()
 
     towns = _parse_towns(args.towns)
+    headless = os.environ.get('CI') == 'true'
+    pipeline_requested = args.discover or args.scrape_profiles or args.report_only
+
+    if args.smoke_check:
+        logger.info('Starting Zillow smoke check...')
+        smoke_result = run_zillow_smoke_check(
+            towns=towns,
+            headless=headless,
+            output_path=args.smoke_output,
+        )
+        logger.info(
+            'Smoke check complete: passed=%s, proxy_configured=%s, report=%s',
+            smoke_result['passed'],
+            smoke_result['proxy_configured'],
+            smoke_result['report_path'],
+        )
+        if args.smoke_strict and not smoke_result['passed']:
+            return 2
 
     if args.reset_state:
         reset_state(args.state)
         logger.info('Zillow discovery state reset.')
         return 0
 
+    if not pipeline_requested:
+        return 0
+
     state = load_state(args.state)
     conn = get_zillow_connection(args.db)
     init_zillow_db(conn)
-    headless = os.environ.get('CI') == 'true'
 
     did_work = False
 

@@ -27,6 +27,8 @@ from src.zillow import (
     _extract_profile_card_candidates,
     _parse_page_info,
     _parse_sold_row,
+    _render_smoke_report,
+    _smoke_check_passed,
 )
 
 
@@ -121,6 +123,44 @@ class TestBlockClassification:
             status_code=403,
         )
         assert status['status'] == 'blocked'
+
+
+class TestSmokeDiagnostics:
+    def test_smoke_check_passes_when_any_probe_ok(self):
+        result = {
+            'requests_probes': [{'status': 'captcha'}],
+            'playwright_probes': [{'status': 'ok'}],
+        }
+        assert _smoke_check_passed(result) is True
+
+    def test_smoke_report_renders_probe_summary(self):
+        report = _render_smoke_report({
+            'generated_at': '2026-04-07 00:00 UTC',
+            'passed': False,
+            'proxy_configured': True,
+            'proxy_server': 'http://proxy.example:1234',
+            'ip_probe': {'ok': True, 'ip': '203.0.113.10'},
+            'requests_probes': [{
+                'transport': 'requests',
+                'url': 'https://www.zillow.com/professionals/real-estate-agent-reviews/',
+                'status': 'captcha',
+                'reason': 'captcha_indicators',
+                'status_code': 403,
+                'note': None,
+            }],
+            'playwright_probes': [{
+                'transport': 'playwright',
+                'url': 'https://www.zillow.com/professionals/real-estate-agent-reviews/york-me/',
+                'status': 'blocked',
+                'reason': 'http_403',
+                'status_code': 403,
+                'note': 'no_profile_links',
+            }],
+        })
+        assert '# Zillow Proxy Smoke Check' in report
+        assert '**Observed egress IP:** 203.0.113.10' in report
+        assert '| requests | https://www.zillow.com/professionals/real-estate-agent-reviews/ | captcha | 403 | captcha_indicators |  |' in report
+        assert '| playwright | https://www.zillow.com/professionals/real-estate-agent-reviews/york-me/ | blocked | 403 | http_403 | no_profile_links |' in report
 
 
 class TestZillowStorage:
