@@ -1,9 +1,6 @@
 name: Zillow Leaderboard
 
 on:
-  push:
-    branches:
-      - zillow-actions-smoke-20260406
   workflow_dispatch:
     inputs:
       towns:
@@ -71,6 +68,11 @@ jobs:
             echo "Firecrawl mode — skipping Playwright install"
           fi
 
+      - name: Audit dependencies
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt
+
       - name: Run Zillow pipeline
         env:
           CI: 'true'
@@ -119,44 +121,36 @@ jobs:
             REPORT_ONLY="${{ github.event.inputs.report_only || 'false' }}"
           fi
 
+          # Smoke check (Playwright mode only)
           if [ "$USE_FC" != "true" ] && [ "$SMOKE_CHECK" = "true" ]; then
-            SMOKE_CMD="python -m src.zillow_main --smoke-check --smoke-strict --smoke-output data/zillow_proxy_diagnostics.md"
-            if [ -n "$TOWNS" ]; then
-              SMOKE_CMD="$SMOKE_CMD --towns \"$TOWNS\""
-            fi
-            echo "Running: $SMOKE_CMD"
-            eval "$SMOKE_CMD"
+            smoke_args=(--smoke-check --smoke-strict --smoke-output data/zillow_proxy_diagnostics.md)
+            if [ -n "$TOWNS" ]; then smoke_args+=(--towns "$TOWNS"); fi
+            python -m src.zillow_main "${smoke_args[@]}"
           fi
 
           if [ "$SMOKE_ONLY" = "true" ]; then
             exit 0
           fi
 
-          CMD="python -m src.zillow_main"
+          # Build pipeline arguments
+          args=()
           if [ "$REPORT_ONLY" = "true" ]; then
-            CMD="$CMD --report-only"
+            args+=(--report-only)
           else
-            DID_WORK="false"
-            if [ "$DISCOVER" = "true" ]; then
-              CMD="$CMD --discover"
-              DID_WORK="true"
-            fi
+            if [ "$DISCOVER" = "true" ]; then args+=(--discover); fi
             if [ "$USE_FC" = "true" ]; then
-              CMD="$CMD --use-firecrawl --max-pages $MAX_PAGES --directory-report"
+              args+=(--use-firecrawl --max-pages "$MAX_PAGES" --directory-report)
             elif [ "$SCRAPE" = "true" ]; then
-              CMD="$CMD --scrape-profiles --batch-size $BATCH"
-              DID_WORK="true"
+              args+=(--scrape-profiles --batch-size "$BATCH")
             fi
-            if [ "$DID_WORK" != "true" ] && [ "$USE_FC" != "true" ]; then
-              CMD="$CMD --report-only"
+            if [ ${#args[@]} -eq 0 ] && [ "$USE_FC" != "true" ]; then
+              args+=(--report-only)
             fi
           fi
-          if [ -n "$TOWNS" ]; then
-            CMD="$CMD --towns \"$TOWNS\""
-          fi
+          if [ -n "$TOWNS" ]; then args+=(--towns "$TOWNS"); fi
 
-          echo "Running: $CMD"
-          eval "$CMD"
+          echo "Running: python -m src.zillow_main ${args[*]}"
+          python -m src.zillow_main "${args[@]}"
 
       - name: Publish Zillow smoke summary
         if: always()
