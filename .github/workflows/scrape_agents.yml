@@ -283,10 +283,12 @@ jobs:
         if: always()
         run: |
           mkdir -p _site
-          cp data/dashboard.html _site/index.html
-          if [ -f data/zillow_dashboard.html ]; then
-            mkdir -p _site/zillow
-            cp data/zillow_dashboard.html _site/zillow/index.html
+          cp data/index.html _site/index.html
+          cp data/dashboard.html _site/redfin.html
+          if [ -f data/zillow_directory_dashboard.html ]; then
+            cp data/zillow_directory_dashboard.html _site/zillow.html
+          elif [ -f data/zillow_dashboard.html ]; then
+            cp data/zillow_dashboard.html _site/zillow.html
           fi
       - name: Upload Pages artifact
         if: always()
