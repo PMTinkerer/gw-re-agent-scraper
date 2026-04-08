@@ -207,15 +207,12 @@ def scrape_redfin(town: str, region_id: int, conn, state_dict: dict | None = Non
     session.headers['Referer'] = 'https://www.redfin.com/'
 
     total_rows = 0
-    page = 0
     cutoff_date = (datetime.utcnow() - timedelta(days=1095)).strftime('%Y-%m-%d')
 
     # Look up region info — minorcivildivision towns use York County instead
     slug = _town_slug(town)
     region_info = _REDFIN_REGIONS.get(slug, {})
     if region_info.get('type') == 40:
-        # Minorcivildivision — CSV API doesn't support this type
-        # Use York County and filter by city name
         actual_region_id = 1309
         actual_region_type = 5
         logger.info('Using York County (1309/type=5) for %s (minorcivildivision)', town)
@@ -223,12 +220,60 @@ def scrape_redfin(town: str, region_id: int, conn, state_dict: dict | None = Non
         actual_region_id = region_id
         actual_region_type = region_info.get('type', 6)
 
+    # County queries use 6-month date chunks to avoid dilution across
+    # the full county dataset. City queries use a single 3-year window.
+    if actual_region_type == 5:
+        chunks = _build_date_chunks(1095, chunk_days=180)
+        logger.info('County query: splitting into %d date chunks for %s', len(chunks), town)
+    else:
+        chunks = [(1095, cutoff_date)]
+
+    for sold_within_days, _ in chunks:
+        chunk_rows = _scrape_redfin_chunk(
+            session, conn, town, actual_region_id, actual_region_type,
+            sold_within_days, cutoff_date,
+        )
+        total_rows += chunk_rows
+
+    logger.info('Redfin %s total: %d rows', town, total_rows)
+    return total_rows
+
+
+def _build_date_chunks(total_days: int, chunk_days: int = 180) -> list[tuple[int, str]]:
+    """Build date chunks for county queries.
+
+    Returns list of (sold_within_days, cutoff_date) tuples, newest first.
+    Each chunk covers `chunk_days` worth of data by querying with
+    progressively larger sold_within_days windows and deduping via MLS#.
+    """
+    chunks = []
+    now = datetime.utcnow()
+    days = chunk_days
+    while days <= total_days:
+        cutoff = (now - timedelta(days=days)).strftime('%Y-%m-%d')
+        chunks.append((days, cutoff))
+        days += chunk_days
+    if chunks and chunks[-1][0] < total_days:
+        cutoff = (now - timedelta(days=total_days)).strftime('%Y-%m-%d')
+        chunks.append((total_days, cutoff))
+    return chunks
+
+
+def _scrape_redfin_chunk(
+    session, conn, town: str,
+    region_id: int, region_type: int,
+    sold_within_days: int, cutoff_date: str,
+) -> int:
+    """Scrape one date chunk of Redfin CSV data. Returns rows inserted."""
+    chunk_rows = 0
+    page = 0
+
     while True:
         url = (
             f'https://www.redfin.com/stingray/api/gis-csv'
             f'?al=1&num_homes=350&ord=redfin-recommended-asc'
-            f'&page_number={page}&region_id={actual_region_id}&region_type={actual_region_type}'
-            f'&sold_within_days=1095&status=9'
+            f'&page_number={page}&region_id={region_id}&region_type={region_type}'
+            f'&sold_within_days={sold_within_days}&status=9'
             f'&uipt=1,2&v=8'
         )
 
@@ -243,79 +288,78 @@ def scrape_redfin(town: str, region_id: int, conn, state_dict: dict | None = Non
             logger.warning('Empty CSV response for %s page %d', town, page)
             break
 
-        reader = csv.DictReader(io.StringIO(text))
-        page_rows = 0
-        csv_row_count = 0
-
-        for row in reader:
-            csv_row_count += 1
-
-            # Extract and normalize city
-            city = _normalize_city(row.get('CITY'))
-
-            # Filter: only our target towns (important for county-level queries)
-            # For county queries, keep ALL target towns (not just the requested one)
-            # since the data is already being downloaded anyway
-            if not _is_target_town(city):
-                continue
-
-            # Parse and filter sold date (Redfin uses "June-30-2025" format)
-            raw_date = row.get('SOLD DATE', '').strip()
-            sale_date = _parse_redfin_date(raw_date)
-            if sale_date and sale_date < cutoff_date:
-                continue
-
-            mls = row.get('MLS#', '').strip()
-            if not mls:
-                continue
-
-            # Note: Redfin CSV no longer includes agent columns (as of 2026)
-            # Agent data will be enriched from Realtor.com
-            record = {
-                'mls_number': mls,
-                'address': row.get('ADDRESS', '').strip() or None,
-                'city': city,
-                'state': row.get('STATE OR PROVINCE', 'ME').strip(),
-                'zip': row.get('ZIP OR POSTAL CODE', '').strip() or None,
-                'sale_price': row.get('PRICE'),
-                'list_price': None,
-                'beds': row.get('BEDS'),
-                'baths': row.get('BATHS'),
-                'sqft': row.get('SQUARE FEET'),
-                'year_built': row.get('YEAR BUILT'),
-                'days_on_market': row.get('DAYS ON MARKET'),
-                'sale_date': sale_date or None,
-                'listing_agent': row.get('LISTING AGENT', '').strip() or None,
-                'buyer_agent': row.get("BUYER'S AGENT", '').strip() or None,
-                'listing_office': row.get('LISTING BROKER', '').strip() or None,
-                'buyer_office': row.get("BUYER'S BROKER", '').strip() or None,
-                'source_url': row.get('URL (SEE https://www.redfin.com/buy-a-home/comparative-market-analysis FOR INFO ON PRICING)', '').strip() or None,
-                'property_type': row.get('PROPERTY TYPE', '').strip() or None,
-                'data_source': 'redfin',
-                'scraped_at': datetime.utcnow().isoformat(),
-            }
-
-            if upsert_transaction(conn, record):
-                page_rows += 1
-
+        page_rows, csv_row_count = _parse_redfin_csv_page(
+            text, conn, town, cutoff_date,
+        )
         conn.commit()
-        total_rows += page_rows
-        logger.info('Redfin %s page %d: %d rows inserted (%d CSV rows total)', town, page, page_rows, csv_row_count)
+        chunk_rows += page_rows
+        logger.info(
+            'Redfin %s chunk=%dd page %d: %d rows inserted (%d CSV rows)',
+            town, sold_within_days, page, page_rows, csv_row_count,
+        )
 
-        # Paginate based on total CSV rows returned, not just inserted rows
         if csv_row_count < 350:
             break
-
         page += 1
-        # Safety: don't paginate forever
-        # County queries need more pages (York County has 10K+ transactions)
-        max_pages = 50 if actual_region_type == 5 else 20
+        max_pages = 50 if region_type == 5 else 20
         if page > max_pages:
             logger.warning('Redfin pagination limit (%d) reached for %s', max_pages, town)
             break
 
-    logger.info('Redfin %s total: %d rows', town, total_rows)
-    return total_rows
+    return chunk_rows
+
+
+def _parse_redfin_csv_page(
+    text: str, conn, town: str, cutoff_date: str,
+) -> tuple[int, int]:
+    """Parse a single page of Redfin CSV. Returns (rows_inserted, csv_row_count)."""
+    reader = csv.DictReader(io.StringIO(text))
+    page_rows = 0
+    csv_row_count = 0
+
+    for row in reader:
+        csv_row_count += 1
+        city = _normalize_city(row.get('CITY'))
+        if not _is_target_town(city):
+            continue
+
+        raw_date = row.get('SOLD DATE', '').strip()
+        sale_date = _parse_redfin_date(raw_date)
+        if sale_date and sale_date < cutoff_date:
+            continue
+
+        mls = row.get('MLS#', '').strip()
+        if not mls:
+            continue
+
+        record = {
+            'mls_number': mls,
+            'address': row.get('ADDRESS', '').strip() or None,
+            'city': city,
+            'state': row.get('STATE OR PROVINCE', 'ME').strip(),
+            'zip': row.get('ZIP OR POSTAL CODE', '').strip() or None,
+            'sale_price': row.get('PRICE'),
+            'list_price': None,
+            'beds': row.get('BEDS'),
+            'baths': row.get('BATHS'),
+            'sqft': row.get('SQUARE FEET'),
+            'year_built': row.get('YEAR BUILT'),
+            'days_on_market': row.get('DAYS ON MARKET'),
+            'sale_date': sale_date or None,
+            'listing_agent': row.get('LISTING AGENT', '').strip() or None,
+            'buyer_agent': row.get("BUYER'S AGENT", '').strip() or None,
+            'listing_office': row.get('LISTING BROKER', '').strip() or None,
+            'buyer_office': row.get("BUYER'S BROKER", '').strip() or None,
+            'source_url': row.get('URL (SEE https://www.redfin.com/buy-a-home/comparative-market-analysis FOR INFO ON PRICING)', '').strip() or None,
+            'property_type': row.get('PROPERTY TYPE', '').strip() or None,
+            'data_source': 'redfin',
+            'scraped_at': datetime.utcnow().isoformat(),
+        }
+
+        if upsert_transaction(conn, record):
+            page_rows += 1
+
+    return page_rows, csv_row_count
 
 
 # --- Realtor.com RapidAPI ---
