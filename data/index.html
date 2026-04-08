@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RE Agent Leaderboard &mdash; Southern Coastal Maine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg-base: hsl(220, 15%, 8%);
+            --bg-surface: hsl(220, 13%, 11%);
+            --bg-elevated: hsl(220, 12%, 14%);
+            --text-1: rgba(255,255,255,0.90);
+            --text-2: rgba(255,255,255,0.55);
+            --text-3: rgba(255,255,255,0.32);
+            --accent: hsl(42, 78%, 60%);
+            --radius: 10px;
+            --font: 'DM Sans', sans-serif;
+            --mono: 'JetBrains Mono', monospace;
+        }
+        html, body { height: 100%; }
+        body {
+            font-family: var(--font);
+            background: var(--bg-base);
+            color: var(--text-1);
+            display: flex;
+            flex-direction: column;
+        }
+        .tab-bar {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 12px 24px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            flex-shrink: 0;
+        }
+        .tab-bar .logo {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-1);
+            margin-right: 24px;
+        }
+        .tab-bar .logo span {
+            color: var(--accent);
+        }
+        .tab {
+            padding: 8px 20px;
+            border-radius: var(--radius);
+            font-size: 0.82rem;
+            font-weight: 500;
+            font-family: var(--mono);
+            letter-spacing: 0.01em;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: var(--text-3);
+            transition: all 0.15s ease;
+        }
+        .tab:hover {
+            color: var(--text-2);
+            background: var(--bg-elevated);
+        }
+        .tab.active {
+            color: var(--text-1);
+            background: var(--bg-elevated);
+            box-shadow: inset 0 -2px 0 var(--accent);
+        }
+        .tab-content {
+            flex: 1;
+            position: relative;
+        }
+        .tab-content iframe {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: none;
+        }
+        .tab-content iframe.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <nav class="tab-bar">
+        <div class="logo">Southern Coastal <span>Maine</span></div>
+        <button class="tab active" data-tab="redfin">Redfin &mdash; Transactions</button>
+        <button class="tab" data-tab="zillow">Zillow &mdash; Brokerages &amp; Agents</button>
+    </nav>
+    <div class="tab-content">
+        <iframe id="redfin" class="active" src="redfin.html"></iframe>
+        <iframe id="zillow" src="zillow.html"></iframe>
+    </div>
+    <script>
+        document.querySelectorAll('.tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content iframe').forEach(f => f.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

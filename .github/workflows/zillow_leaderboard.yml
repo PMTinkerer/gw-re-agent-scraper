@@ -185,15 +185,13 @@ jobs:
       - name: Prepare Pages artifact
         if: always() && github.event_name == 'workflow_dispatch'
         run: |
-          mkdir -p _site/zillow
-          if [ -f data/dashboard.html ]; then
-            cp data/dashboard.html _site/index.html
-          fi
-          if [ -f data/zillow_dashboard.html ]; then
-            cp data/zillow_dashboard.html _site/zillow/index.html
-          fi
+          mkdir -p _site
+          cp data/index.html _site/index.html
+          cp data/dashboard.html _site/redfin.html
           if [ -f data/zillow_directory_dashboard.html ]; then
-            cp data/zillow_directory_dashboard.html _site/zillow/index.html
+            cp data/zillow_directory_dashboard.html _site/zillow.html
+          elif [ -f data/zillow_dashboard.html ]; then
+            cp data/zillow_dashboard.html _site/zillow.html
           fi
       - name: Upload Pages artifact
         if: always() && github.event_name == 'workflow_dispatch'
