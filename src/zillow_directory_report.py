@@ -375,3 +375,36 @@ def _build_brokerages_section(brokerages: list[dict], title: str = 'Top Brokerag
             <tbody>{rows}</tbody>
         </table></div>
     </section>'''
+
+
+def build_zillow_search_index(conn: sqlite3.Connection) -> list[dict]:
+    """Build a search index of all Zillow profiles with per-town data."""
+    rows = conn.execute('''
+        SELECT p.profile_url, p.profile_name, p.office_name,
+               p.profile_type, p.sales_last_12_months, p.price_range,
+               pt.town, pt.local_sales_count
+        FROM zillow_profiles p
+        JOIN zillow_profile_towns pt ON p.profile_url = pt.profile_url
+        WHERE p.profile_name IS NOT NULL
+    ''').fetchall()
+
+    profiles: dict[str, dict] = {}
+    for r in rows:
+        url = r['profile_url']
+        if url not in profiles:
+            profiles[url] = {
+                'name': r['profile_name'],
+                'office': r['office_name'],
+                'type': r['profile_type'],
+                'sales_12mo': r['sales_last_12_months'],
+                'price_range': r['price_range'],
+                'profile_url': url,
+                'total_local_sales': 0,
+                'towns': {},
+            }
+        p = profiles[url]
+        count = r['local_sales_count'] or 0
+        p['towns'][r['town']] = count
+        p['total_local_sales'] += count
+
+    return sorted(profiles.values(), key=lambda x: x['total_local_sales'], reverse=True)
