@@ -91,7 +91,7 @@ jobs:
 
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Cache Playwright browsers
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
@@ -112,6 +112,7 @@ jobs:
       - name: Run scraper
         env:
           RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+          HEALTHCHECK_PING_URL: ${{ secrets.HEALTHCHECK_PING_URL }}
         run: |
           CHUNKS="${{ github.event.inputs.max_chunks || '3' }}"
           MODE="${{ github.event.inputs.mode || 'auto' }}"
@@ -236,29 +237,19 @@ jobs:
       - name: Alert on enrichment failure
         if: always() && steps.health.outputs.ALERT == 'true'
         env:
-          GMAIL_USER: ${{ secrets.GMAIL_USER }}
-          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
+          PUSHOVER_API_TOKEN: ${{ secrets.PUSHOVER_API_TOKEN }}
           ALERT_MSG: ${{ steps.health.outputs.ALERT_MSG }}
         run: |
-          python3 -c "
-          import smtplib, os
-          from email.mime.text import MIMEText
-
-          user = os.environ['GMAIL_USER'].strip().replace('\xa0', '')
-          pwd = os.environ['GMAIL_APP_PASSWORD'].strip().replace('\xa0', '')
-          body = os.environ.get('ALERT_MSG', 'Enrichment alert triggered but no details available.')
-
-          msg = MIMEText(body)
-          msg['Subject'] = 'Agent Scraper Alert - enrichment issue detected'
-          msg['From'] = user
-          msg['To'] = 'lucas.knowles@grandwelcome.com'
-
-          with smtplib.SMTP('smtp.gmail.com', 587) as server:
-              server.starttls()
-              server.login(user, pwd)
-              server.send_message(msg)
-              print('Alert email sent to lucas.knowles@grandwelcome.com')
-          "
+          if [ -n "$PUSHOVER_USER_KEY" ]; then
+            curl -s -f \
+              --form-string "token=$PUSHOVER_API_TOKEN" \
+              --form-string "user=$PUSHOVER_USER_KEY" \
+              --form-string "title=Agent Scraper Alert" \
+              --form-string "message=${ALERT_MSG:-Enrichment issue detected. Check: https://github.com/PMTinkerer/gw-re-agent-scraper/actions}" \
+              --form-string "priority=1" \
+              https://api.pushover.net/1/messages.json || true
+          fi
 
       - name: Commit and push results
         run: |

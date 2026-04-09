@@ -330,6 +330,17 @@ def main() -> int:
         return 2  # Total failure
     elif fail_count > 0:
         return 1  # Partial failure
+
+    # Ping Healthchecks.io dead-man-switch on successful run
+    import os as _os
+    ping_url = _os.environ.get("HEALTHCHECK_PING_URL")
+    if ping_url:
+        try:
+            import requests as _req
+            _req.get(ping_url, timeout=10)
+        except Exception:
+            pass
+
     return 0
 
 
