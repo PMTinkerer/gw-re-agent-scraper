@@ -438,3 +438,54 @@ def query_top_agents_by_town(
 
 def get_report_stats(conn, *, source: str | None = None, role: str = 'seller') -> dict:
     return _get_report_stats(conn, source=source, role=role)
+
+
+def build_agent_search_index(conn) -> list[dict]:
+    """Build a search index of all agents with per-town breakdowns."""
+    from datetime import timedelta
+    since_365 = (datetime.utcnow() - timedelta(days=365)).strftime('%Y-%m-%d')
+
+    rows = conn.execute('''
+        SELECT listing_agent, listing_office, city,
+               COUNT(*) as sides,
+               SUM(COALESCE(sale_price, list_price, 0)) as volume,
+               MAX(sale_date) as most_recent
+        FROM transactions
+        WHERE listing_agent IS NOT NULL AND city IS NOT NULL
+        GROUP BY listing_agent, city
+    ''').fetchall()
+
+    rolling = conn.execute('''
+        SELECT listing_agent, COUNT(*) as sides,
+               SUM(COALESCE(sale_price, list_price, 0)) as volume
+        FROM transactions
+        WHERE listing_agent IS NOT NULL AND sale_date >= ?
+        GROUP BY listing_agent
+    ''', (since_365,)).fetchall()
+    rolling_map = {r['listing_agent']: {'sides': r['sides'], 'volume': r['volume']} for r in rolling}
+
+    agents: dict[str, dict] = {}
+    for r in rows:
+        name = r['listing_agent']
+        if name not in agents:
+            agents[name] = {
+                'name': name, 'office': r['listing_office'],
+                'total_sides': 0, 'total_volume': 0,
+                'most_recent': None, 'towns': {},
+            }
+        a = agents[name]
+        a['total_sides'] += r['sides']
+        a['total_volume'] += r['volume']
+        if r['listing_office']:
+            a['office'] = r['listing_office']
+        if r['most_recent'] and (not a['most_recent'] or r['most_recent'] > a['most_recent']):
+            a['most_recent'] = r['most_recent']
+        a['towns'][r['city']] = {'sides': r['sides'], 'volume': r['volume']}
+
+    for a in agents.values():
+        a['avg_price'] = round(a['total_volume'] / a['total_sides']) if a['total_sides'] else 0
+        roll = rolling_map.get(a['name'], {})
+        a['rolling_sides'] = roll.get('sides', 0)
+        a['rolling_volume'] = roll.get('volume', 0)
+
+    return sorted(agents.values(), key=lambda x: x['total_volume'], reverse=True)

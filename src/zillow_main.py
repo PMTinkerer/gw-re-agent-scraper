@@ -151,6 +151,12 @@ def main() -> int:
             dir_stats['towns_with_data'], report_path, dashboard_path,
         )
 
+        from .database import get_connection
+        from .index_page import generate_index_html
+        redfin_conn = get_connection()
+        generate_index_html(redfin_conn=redfin_conn, zillow_conn=conn)
+        redfin_conn.close()
+
     save_state(state, args.state)
     conn.close()
     return 0
