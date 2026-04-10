@@ -1,20 +1,20 @@
 # Real Estate Agent Leaderboard -- Southern Coastal Maine
-_Generated: 2026-04-10 12:52 UTC | Data: 2023-03-24 to 2026-03-20 | Sources: redfin_
-_Total sales analyzed: 2,311 | Unique listing agents: 806_
+_Generated: 2026-04-10 19:01 UTC | Data: 2023-03-24 to 2026-04-07 | Source: redfin | Role: Seller-side_
+_Total sales analyzed: 2,397 | Unique agents: 786_
 
 ## Top 30 Listing Agents by Total Volume
 
-| Rank | Agent | Office | Listing Sides | Total Volume | Avg Price | High-Value (>=500K) | Primary Towns | Most Recent |
-|------|-------|--------|--------------|-------------|-----------|-------------------|--------------|-------------|
-| 1 | Carrie Scoville Amy Foley | Signature Homes Real Estate Group, LLC | 62 | $41.9M | $676K | 45 | Scarborough, Kennebunk, Kittery | 2026-03-20 |
+| Rank | Agent | Office | Sides | Total Volume | Avg Price | High-Value (>=500K) | Primary Towns | Most Recent |
+|------|-------|--------|------|-------------|-----------|-------------------|--------------|-------------|
+| 1 | Carrie Scoville Amy Foley | Signature Homes Real Estate Group, LLC | 60 | $40.4M | $673K | 43 | Scarborough, Kennebunk, Kittery | 2026-03-20 |
 | 2 | William Gaynor | Legacy Properties Sotheby's International Realty | 7 | $37.1M | $5.3M | 7 | Kennebunkport, Kennebunk | 2025-08-07 |
-| 3 | Scott Townsend | Keller Williams Realty | 43 | $34.9M | $811K | 36 | Scarborough, Old Orchard Beach | 2026-02-18 |
-| 4 | Tracy Jackson Mccarty | The Aland Realty Group, LLC | 34 | $33.9M | $997K | 32 | York | 2026-02-04 |
-| 5 | Troy Williams | Keller Williams Coastal and Lakes & Mountains Realty | 41 | $28.7M | $701K | 20 | York, Kittery, Wells | 2026-03-20 |
-| 6 | Adam Parent | Maine Real Estate Co | 50 | $26.7M | $533K | 21 | Saco, Biddeford, Old Orchard Beach | 2026-02-20 |
-| 7 | Sandra Murray | Keller Williams Realty | 13 | $25.2M | $1.9M | 13 | Saco, Scarborough, Old Orchard Beach | 2025-10-30 |
-| 8 | Heidi Maynard | Pack Maynard and Associates | 17 | $23.9M | $1.4M | 16 | Kennebunkport, Kennebunk, Old Orchard Beach | 2024-12-02 |
-| 9 | Jessica Girard | Pack Maynard and Associates | 18 | $22.8M | $1.3M | 16 | Kennebunkport, Kennebunk | 2025-12-03 |
+| 3 | Tracy Jackson Mccarty | The Aland Realty Group, LLC | 34 | $33.9M | $997K | 32 | York | 2026-02-04 |
+| 4 | Troy Williams | Keller Williams Coastal and Lakes & Mountains Realty | 41 | $28.7M | $701K | 20 | York, Kittery, Wells | 2026-03-20 |
+| 5 | Adam Parent | Maine Real Estate Co | 50 | $26.7M | $533K | 21 | Saco, Biddeford, Old Orchard Beach | 2026-02-20 |
+| 6 | Sandra Murray | Keller Williams Realty | 13 | $25.2M | $1.9M | 13 | Saco, Scarborough, Old Orchard Beach | 2025-10-30 |
+| 7 | Heidi Maynard | Pack Maynard and Associates | 17 | $23.9M | $1.4M | 16 | Kennebunkport, Kennebunk, Old Orchard Beach | 2024-12-02 |
+| 8 | Jessica Girard | Pack Maynard and Associates | 18 | $22.8M | $1.3M | 16 | Kennebunkport, Kennebunk | 2025-12-03 |
+| 9 | Scott Townsend | Keller Williams Realty | 27 | $19.6M | $725K | 23 | Scarborough, Old Orchard Beach | 2026-01-26 |
 | 10 | Victoria Benenti | Pack Maynard and Associates | 14 | $17.8M | $1.3M | 13 | Kennebunkport, Kennebunk | 2026-03-06 |
 | 11 | Nancy Moreshead | The Real Estate Store | 30 | $17.8M | $592K | 19 | Old Orchard Beach, Scarborough, Saco | 2026-03-20 |
 | 12 | Rebecca Bassett | Portside Real Estate Group | 18 | $16.3M | $907K | 14 | Kennebunk, Kennebunkport, Scarborough | 2025-10-02 |
@@ -39,18 +39,18 @@ _Total sales analyzed: 2,311 | Unique listing agents: 806_
 
 ## Top 15 Brokerages by Total Volume
 
-| Rank | Brokerage | Listing Sides | Total Volume | Avg Price | Top Agents |
-|------|-----------|--------------|-------------|-----------|------------|
-| 1 | Keller Williams Realty | 260 | $193.0M | $742K | Scott Townsend, Jeffrey Mateja, Sandra Murray |
+| Rank | Brokerage | Sides | Total Volume | Avg Price | Top Agents |
+|------|-----------|------|-------------|-----------|------------|
+| 1 | Keller Williams Realty | 233 | $170.5M | $732K | Scott Townsend, Sandra Murray, Jeffrey Mateja |
 | 2 | Pack Maynard and Associates | 109 | $138.3M | $1.3M | Jessica Girard, Heidi Maynard, Victoria Benenti |
-| 3 | Legacy Properties Sotheby's International Realty | 43 | $102.2M | $2.4M | William Gaynor, Adrienne Robinson, Randal Simon |
-| 4 | Coldwell Banker Realty | 200 | $100.2M | $501K | Margaret Mailman, Bob Letellier, Daniel Letellier |
+| 3 | Legacy Properties Sotheby's International Realty | 42 | $101.3M | $2.4M | William Gaynor, Adrienne Robinson, Randal Simon |
+| 4 | Coldwell Banker Realty | 198 | $98.5M | $497K | Margaret Mailman, Bob Letellier, Daniel Letellier |
 | 5 | The Aland Realty Group, LLC | 96 | $88.5M | $922K | Tracy Jackson Mccarty, Mary Rockett, Christopher Erikson |
-| 6 | Portside Real Estate Group | 136 | $87.3M | $642K | Rebecca Bassett, Cady Toussaint, Erin Oldham |
+| 6 | Portside Real Estate Group | 133 | $84.8M | $638K | Rebecca Bassett, Cady Toussaint, Erin Oldham |
 | 7 | Keller Williams Coastal and Lakes & Mountains Realty | 92 | $62.1M | $675K | Troy Williams, Marcia Giniusz, Alicia Goodwin |
-| 8 | Signature Homes Real Estate Group, LLC | 96 | $60.4M | $629K | Carrie Scoville Amy Foley, Ashley Lutko Donna Galluzzo, Tiffany Libb Pamela Starnes |
-| 9 | Maine Real Estate Co | 81 | $47.6M | $587K | Adam Parent, Yulia Glasgow, Bailey Pate |
-| 10 | EXP Realty | 86 | $44.7M | $519K | Roz Anton, Robert Magazu, John Harmon Ii John Carroll |
+| 8 | Signature Homes Real Estate Group, LLC | 92 | $58.0M | $630K | Carrie Scoville Amy Foley, Ashley Lutko Donna Galluzzo, Tiffany Libb Pamela Starnes |
+| 9 | Maine Real Estate Co | 80 | $46.7M | $583K | Adam Parent, Yulia Glasgow, Bailey Pate |
+| 10 | EXP Realty | 85 | $44.2M | $520K | Roz Anton, Robert Magazu, John Harmon Ii John Carroll |
 | 11 | RE/MAX Shoreline | 55 | $33.4M | $608K | Pamela Gray, Glenn Thibodeau, Thomas Ranello |
 | 12 | Berkshire Hathaway HomeServices Verani Realty | 43 | $30.2M | $703K | Gregory Cloutier Christina Connell, Hylah Riley, Betty Smith |
 | 13 | Kennebunk Beach Realty | 33 | $29.1M | $882K | Denise Hodsdon, Helen Curry, Laura Ross |
@@ -61,8 +61,8 @@ _Total sales analyzed: 2,311 | Unique listing agents: 806_
 
 ### Kittery
 
-| Rank | Agent | Office | Listing Sides | Total Volume |
-|------|-------|--------|--------------|-------------|
+| Rank | Agent | Office | Sides | Total Volume |
+|------|-------|--------|------|-------------|
 | 1 | Dennis Page | Dennis M. Page Real Estate | 24 | $13.6M |
 | 2 | Christopher Erikson | The Aland Realty Group, LLC | 8 | $10.6M |
 | 3 | Troy Williams | Keller Williams Coastal and Lakes & Mountains Realty | 12 | $6.1M |
@@ -71,8 +71,8 @@ _Total sales analyzed: 2,311 | Unique listing agents: 806_
 
 ### York
 
-| Rank | Agent | Office | Listing Sides | Total Volume |
-|------|-------|--------|--------------|-------------|
+| Rank | Agent | Office | Sides | Total Volume |
+|------|-------|--------|------|-------------|
 | 1 | Tracy Jackson Mccarty | The Aland Realty Group, LLC | 34 | $33.9M |
 | 2 | Mary Rockett | The Aland Realty Group, LLC | 12 | $13.0M |
 | 3 | Troy Williams | Keller Williams Coastal and Lakes & Mountains Realty | 15 | $11.8M |
@@ -81,8 +81,8 @@ _Total sales analyzed: 2,311 | Unique listing agents: 806_
 
 ### Ogunquit
 
-| Rank | Agent | Office | Listing Sides | Total Volume |
-|------|-------|--------|--------------|-------------|
+| Rank | Agent | Office | Sides | Total Volume |
+|------|-------|--------|------|-------------|
 | 1 | Donald Wunder | RE/MAX Realty One | 3 | $2.2M |
 | 2 | Bailey Pate | Maine Real Estate Co | 1 | $1.8M |
 | 3 | Scott Rome | Compass New England, LLC | 1 | $1.6M |
@@ -91,8 +91,8 @@ _Total sales analyzed: 2,311 | Unique listing agents: 806_
 
 ### Wells
 
-| Rank | Agent | Office | Listing Sides | Total Volume |
-|------|-------|--------|--------------|-------------|
+| Rank | Agent | Office | Sides | Total Volume |
+|------|-------|--------|------|-------------|
 | 1 | Steven Weigel | Y-Gull & Associates | 2 | $6.2M |
 | 2 | Troy Williams | Keller Williams Coastal and Lakes & Mountains Realty | 5 | $4.8M |
 | 3 | Greg Gosselin | Gosselin Realty Group | 5 | $4.0M |
@@ -101,8 +101,8 @@ _Total sales analyzed: 2,311 | Unique listing agents: 806_
 
 ### Kennebunk
 
-| Rank | Agent | Office | Listing Sides | Total Volume |
-|------|-------|--------|--------------|-------------|
+| Rank | Agent | Office | Sides | Total Volume |
+|------|-------|--------|------|-------------|
 | 1 | Heidi Maynard | Pack Maynard and Associates | 8 | $11.3M |
 | 2 | Elizabeth Coughlan | Legacy Properties Sotheby's International Realty | 2 | $10.8M |
 | 3 | Rebecca Bassett | Portside Real Estate Group | 12 | $10.5M |
@@ -111,8 +111,8 @@ _Total sales analyzed: 2,311 | Unique listing agents: 806_
 
 ### Kennebunkport
 
-| Rank | Agent | Office | Listing Sides | Total Volume |
-|------|-------|--------|--------------|-------------|
+| Rank | Agent | Office | Sides | Total Volume |
+|------|-------|--------|------|-------------|
 | 1 | William Gaynor | Legacy Properties Sotheby's International Realty | 6 | $33.1M |
 | 2 | Victoria Benenti | Pack Maynard and Associates | 10 | $12.6M |
 | 3 | Jessica Girard | Pack Maynard and Associates | 10 | $12.5M |
@@ -121,8 +121,8 @@ _Total sales analyzed: 2,311 | Unique listing agents: 806_
 
 ### Biddeford
 
-| Rank | Agent | Office | Listing Sides | Total Volume |
-|------|-------|--------|--------------|-------------|
+| Rank | Agent | Office | Sides | Total Volume |
+|------|-------|--------|------|-------------|
 | 1 | Peter Mcpheeters | OceanView Properties | 8 | $15.8M |
 | 2 | David Marsden | Marsden Real Estate | 14 | $8.5M |
 | 3 | Bob Letellier | Coldwell Banker Realty | 14 | $6.7M |
@@ -131,8 +131,8 @@ _Total sales analyzed: 2,311 | Unique listing agents: 806_
 
 ### Saco
 
-| Rank | Agent | Office | Listing Sides | Total Volume |
-|------|-------|--------|--------------|-------------|
+| Rank | Agent | Office | Sides | Total Volume |
+|------|-------|--------|------|-------------|
 | 1 | Sandra Murray | Keller Williams Realty | 8 | $12.9M |
 | 2 | Adam Parent | Maine Real Estate Co | 23 | $11.9M |
 | 3 | Angela Adrien | Heart & Home Realty | 10 | $5.8M |
@@ -141,8 +141,8 @@ _Total sales analyzed: 2,311 | Unique listing agents: 806_
 
 ### Old Orchard Beach
 
-| Rank | Agent | Office | Listing Sides | Total Volume |
-|------|-------|--------|--------------|-------------|
+| Rank | Agent | Office | Sides | Total Volume |
+|------|-------|--------|------|-------------|
 | 1 | Nancy Moreshead | The Real Estate Store | 28 | $16.3M |
 | 2 | Adam Parent | Maine Real Estate Co | 9 | $5.8M |
 | 3 | Adrian Ramsdell | Keller Williams Realty | 8 | $4.4M |
@@ -151,30 +151,30 @@ _Total sales analyzed: 2,311 | Unique listing agents: 806_
 
 ### Scarborough
 
-| Rank | Agent | Office | Listing Sides | Total Volume |
-|------|-------|--------|--------------|-------------|
-| 1 | Scott Townsend | Keller Williams Realty | 40 | $33.9M |
-| 2 | Carrie Scoville Amy Foley | Signature Homes Real Estate Group, LLC | 39 | $29.0M |
+| Rank | Agent | Office | Sides | Total Volume |
+|------|-------|--------|------|-------------|
+| 1 | Carrie Scoville Amy Foley | Signature Homes Real Estate Group, LLC | 37 | $27.5M |
+| 2 | Scott Townsend | Keller Williams Realty | 24 | $18.6M |
 | 3 | Sandra Murray | Keller Williams Realty | 3 | $10.2M |
 | 4 | Lesley Craig | Doris Homer Real Estate, Inc. | 2 | $9.8M |
 | 5 | Stacy Salvo | Portside Real Estate Group | 3 | $4.6M |
 
 ## Data Summary
 
-- **Total transactions:** 2,311
-- **With listing agent:** 2,290
-- **Date range:** 2023-03-24 to 2026-03-20
+- **Total transactions:** 2,397
+- **With listing agent:** 2,233
+- **Date range:** 2023-03-24 to 2026-04-07
 - **Sources:**
-  - Redfin: 2,311 properties
+  - Redfin: 2,397 observations
 - **Per-town breakdown:**
-  - Biddeford: 317 sales
+  - Biddeford: 318 sales
   - Kennebunk: 353 sales
-  - Kennebunkport: 186 sales
-  - Kittery: 268 sales
-  - Ogunquit: 18 sales (thin data)
-  - Old Orchard Beach: 338 sales
-  - Saco: 318 sales
+  - Kennebunkport: 187 sales
+  - Kittery: 269 sales
+  - Ogunquit: 22 sales (thin data)
+  - Old Orchard Beach: 340 sales
+  - Saco: 325 sales
   - Scarborough: 341 sales
-  - Wells: 73 sales
-  - York: 99 sales
-- **Report generated:** 2026-04-10 12:52 UTC
+  - Wells: 113 sales
+  - York: 129 sales
+- **Report generated:** 2026-04-10 19:01 UTC
