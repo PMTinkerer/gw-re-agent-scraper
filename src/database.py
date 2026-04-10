@@ -438,7 +438,41 @@ def init_zillow_db(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_team_only_sales_log_resolved ON team_only_sales_log(resolved_by_member);
         CREATE INDEX IF NOT EXISTS idx_team_only_sales_log_match_key
             ON team_only_sales_log(transaction_match_key, represented_side);
+
+        CREATE TABLE IF NOT EXISTS zillow_sold_transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            profile_url TEXT NOT NULL,
+            zpid TEXT,
+            address TEXT,
+            city_state TEXT,
+            sold_date TEXT,
+            closing_price INTEGER,
+            represented TEXT,
+            beds TEXT,
+            baths TEXT,
+            created_at TEXT NOT NULL,
+            UNIQUE(profile_url, zpid)
+        );
+        CREATE INDEX IF NOT EXISTS idx_zillow_sold_profile
+            ON zillow_sold_transactions(profile_url);
     ''')
+
+    # Add enrichment columns to zillow_profiles
+    for col, typedef in [
+        ('for_sale_count', 'INTEGER'),
+        ('total_sold_zillow', 'INTEGER'),
+        ('avg_price_3yr', 'INTEGER'),
+        ('price_range_min', 'INTEGER'),
+        ('price_range_max', 'INTEGER'),
+        ('screen_name', 'TEXT'),
+        ('enrichment_status', 'TEXT'),
+        ('sold_rows_scraped', 'INTEGER DEFAULT 0'),
+    ]:
+        try:
+            conn.execute(f'ALTER TABLE zillow_profiles ADD COLUMN {col} {typedef}')
+        except sqlite3.OperationalError:
+            pass
+
     conn.commit()
 
 

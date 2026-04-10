@@ -48,11 +48,13 @@ def main() -> int:
     parser.add_argument('--use-firecrawl', action='store_true', help='Use Firecrawl API instead of Playwright for directory discovery')
     parser.add_argument('--max-pages', type=int, default=25, help='Max directory pages per town when using Firecrawl (default: 25)')
     parser.add_argument('--directory-report', action='store_true', help='Generate directory-only leaderboard and dashboard')
+    parser.add_argument('--enrich-profiles', action='store_true', help='Enrich Zillow profiles with career stats and sold data via Firecrawl')
+    parser.add_argument('--enrich-batch', type=int, default=50, help='Profiles to enrich per batch (default: 50)')
     args = parser.parse_args()
 
     towns = _parse_towns(args.towns)
     headless = os.environ.get('CI') == 'true'
-    pipeline_requested = args.discover or args.scrape_profiles or args.report_only or args.directory_report
+    pipeline_requested = args.discover or args.scrape_profiles or args.report_only or args.directory_report or args.enrich_profiles
 
     if args.smoke_check:
         logger.info('Starting Zillow smoke check...')
@@ -120,6 +122,16 @@ def main() -> int:
         logger.info(
             'Profile scrape complete: %d profiles processed, %d individual rows, %d team rows, %d blocked',
             result['processed'], result['individual_rows'], result['team_rows'], result['blocked'],
+        )
+        did_work = True
+
+    if args.enrich_profiles:
+        from .zillow_profile_scraper import enrich_zillow_profiles
+        logger.info('Starting Zillow profile enrichment (batch=%d)...', args.enrich_batch)
+        result = enrich_zillow_profiles(conn, batch_size=args.enrich_batch)
+        logger.info(
+            'Profile enrichment: %d enriched, %d failed, %d total',
+            result['enriched'], result['failed'], result['total'],
         )
         did_work = True
 
