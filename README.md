@@ -8,6 +8,7 @@ Identifies the top real estate listing agents in southern coastal Maine using pu
 2. **Enriches with agent data** by visiting individual Redfin property pages via Playwright to extract listing agent name and brokerage
 3. **Normalizes agent names** and fuzzy-merges near-duplicates
 4. **Generates a ranked leaderboard** — HTML dashboard with trend badges + markdown report
+5. **Includes a parallel Zillow pipeline** for seller-side and buyer-side represented sales, published separately from the Redfin dashboard
 
 ## Live dashboard
 
@@ -20,6 +21,7 @@ Identifies the top real estate listing agents in southern coastal Maine using pu
 - Property type filter active — only Single Family Residential + Condo/Co-op
 - Office name normalization — 15 variant spellings merged to canonical names
 - HTML dashboard with 6 sections: all-time + rolling agents, all-time + rolling brokerages (with trends + towns), per-town breakdowns
+- Zillow pipeline scaffolded with separate DB/state, seller-side public dashboard, buyer-side internal report, and team-gap report
 - 125 unit tests passing
 - Public repo on GitHub with automated 4x/day enrichment via residential proxy
 
@@ -45,6 +47,12 @@ python -m src.main --enrich --batch-size 80
 # Regenerate leaderboard + HTML dashboard from existing data
 python -m src.main --report-only
 
+# Zillow: discover town-directory profiles, scrape pending profiles, and regenerate Zillow outputs
+python -m src.zillow_main --discover --scrape-profiles --batch-size 20
+
+# Zillow: regenerate seller dashboard + internal buyer/team-gap reports from existing Zillow data
+python -m src.zillow_main --report-only
+
 # Purge non-residential records (land, multi-family, mobile)
 python -m src.main --purge-non-residential
 
@@ -68,6 +76,12 @@ The scraper runs automatically on GitHub Actions:
 
 Manual trigger available via Actions tab → "Scrape RE Agent Data" → "Run workflow" (supports `enrich_batch_size` input).
 
+Zillow runs separately via the manual **Zillow Leaderboard** workflow. It publishes:
+- `data/zillow_dashboard.html` → GitHub Pages at `/zillow/`
+- `data/zillow_agent_leaderboard.md` → seller-side internal markdown artifact
+- `data/zillow_buyer_leaderboard.md` → buyer-side internal markdown artifact
+- `data/zillow_team_gap.md` → unresolved team-only sales gap report
+
 ## Reading the leaderboard
 
 The HTML dashboard (`data/dashboard.html`, hosted on GitHub Pages) and markdown report (`data/agent_leaderboard.md`) contain:
@@ -78,6 +92,15 @@ The HTML dashboard (`data/dashboard.html`, hosted on GitHub Pages) and markdown 
 5. **Top 5 Agents per Town** — local leaders in each of the 10 towns
 
 Known brokerage-named agents (e.g., "Anchor Real Estate", "Anne Erwin Real Estate") are excluded from agent rankings but included in brokerage rankings. Office name variants are normalized to canonical spellings (e.g., "KW Coastal..." → "Keller Williams Coastal...").
+
+## Zillow leaderboard
+
+The Zillow pipeline is intentionally parallel to Redfin:
+- Separate DB: `data/zillow_agent_data.db`
+- Separate state: `data/zillow_scrape_state.json`
+- Separate public page: `https://pmtinkerer.github.io/gw-re-agent-scraper/zillow/`
+- Seller-side public output only in v1; buyer-side observations are stored and reported internally
+- Team-only sales are logged to a gap report so undercount from team-brand attribution can be measured after each run
 
 ## Data sources
 

@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Zillow seller-side represented sales leaderboard across 10 southern coastal Maine towns.">
+    <title>Zillow Seller-Side Leaderboard &mdash; Southern Coastal Maine</title>
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+        --bg-base: hsl(220, 15%, 8%);
+        --bg-surface: hsl(220, 13%, 11%);
+        --bg-elevated: hsl(220, 12%, 14%);
+        --bg-hover: hsl(220, 11%, 17%);
+        --text-1: rgba(255,255,255,0.90);
+        --text-2: rgba(255,255,255,0.55);
+        --text-3: rgba(255,255,255,0.32);
+        --accent: hsl(42, 78%, 60%);
+        --accent-dim: hsla(42, 78%, 60%, 0.80);
+        --trend-up: hsl(152, 55%, 45%);
+        --trend-down: hsl(0, 60%, 52%);
+        --trend-flat: rgba(255,255,255,0.30);
+        --trend-new: hsl(200, 75%, 52%);
+        --shadow: hsla(220, 40%, 4%, 0.55);
+        --rule: rgba(255,255,255,0.06);
+        --radius: 10px;
+        --font: 'DM Sans', sans-serif;
+        --mono: 'JetBrains Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+        font-family: var(--font);
+        background: var(--bg-base);
+        color: var(--text-1);
+        line-height: 1.5;
+        min-height: 100dvh;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(ellipse at 8% -5%, hsla(42,70%,55%,0.045) 0%, transparent 55%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    body::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        opacity: 0.018;
+        pointer-events: none;
+        z-index: 1;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        background-repeat: repeat;
+        background-size: 256px 256px;
+    }
+
+    .wrap {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 32px;
+        position: relative;
+        z-index: 2;
+    }
+
+    /* --- HEADER --- */
+    .header {
+        padding: 56px 0 20px;
+    }
+    .header h1 {
+        font-size: 2.1rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1.15;
+        color: var(--text-1);
+        text-wrap: balance;
+    }
+    .header .sub {
+        font-size: 0.78rem;
+        color: var(--text-3);
+        margin-top: 6px;
+        font-family: var(--mono);
+        letter-spacing: 0.01em;
+    }
+
+    /* --- STAT CARDS --- */
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin: 28px 0 48px;
+    }
+    .stat {
+        background: var(--bg-surface);
+        border-radius: var(--radius);
+        padding: 22px 26px;
+        transition: transform 180ms ease-out, box-shadow 180ms ease-out;
+        animation: fadeUp 450ms ease-out both;
+    }
+    .stat:nth-child(1) { animation-delay: 0ms; }
+    .stat:nth-child(2) { animation-delay: 70ms; }
+    .stat:nth-child(3) { animation-delay: 140ms; }
+    .stat:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px var(--shadow);
+    }
+    .stat .label {
+        font-family: var(--mono);
+        font-size: 0.62rem;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-3);
+        margin-bottom: 8px;
+    }
+    .stat .value {
+        font-size: 1.85rem;
+        font-weight: 700;
+        color: var(--accent);
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    /* --- SECTIONS --- */
+    .section {
+        background: var(--bg-surface);
+        border-radius: var(--radius);
+        padding: 28px 32px 24px;
+        margin-bottom: 24px;
+        animation: fadeUp 450ms ease-out both;
+    }
+    .section:nth-of-type(1) { animation-delay: 200ms; }
+    .section:nth-of-type(2) { animation-delay: 280ms; }
+    .section:nth-of-type(3) { animation-delay: 360ms; }
+    .section:nth-of-type(4) { animation-delay: 440ms; }
+    .section:nth-of-type(5) { animation-delay: 520ms; }
+    .section:nth-of-type(6) { animation-delay: 600ms; }
+
+    .section h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--text-1);
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--rule);
+        margin-bottom: 4px;
+    }
+
+    /* --- TOWN SUB-SECTIONS --- */
+    .town-group h3 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-2);
+        margin: 24px 0 4px;
+        padding-left: 2px;
+    }
+
+    /* --- TABLES --- */
+    .table-wrap { overflow-x: auto; }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+        table-layout: fixed;
+    }
+    thead th {
+        font-family: var(--mono);
+        font-size: 0.6rem;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-3);
+        text-align: left;
+        padding: 14px 12px 10px;
+        border-bottom: 1px solid var(--rule);
+        position: sticky;
+        top: 0;
+        background: var(--bg-surface);
+    }
+    thead th.num { text-align: right; }
+
+    tbody td {
+        padding: 10px 12px;
+        color: var(--text-2);
+        border: none;
+        transition: background 120ms ease-out, color 120ms ease-out;
+        vertical-align: middle;
+    }
+    tbody tr:nth-child(odd) td { background: transparent; }
+    tbody tr:nth-child(even) td { background: var(--bg-elevated); }
+    tbody tr:hover td { background: var(--bg-hover); }
+
+    td.num {
+        text-align: right;
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+        font-size: 0.8rem;
+    }
+    td.vol {
+        color: var(--accent-dim);
+        font-weight: 500;
+    }
+    td.agent-name, td.office, td.top-agents {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    td.agent-name {
+        color: var(--text-1);
+        font-weight: 500;
+    }
+    td.office {
+        color: var(--text-2);
+    }
+    tr.rank-1 td.agent-name {
+        color: var(--accent);
+        font-weight: 600;
+    }
+    tr.rank-1 td:first-child {
+        border-left: 2px solid var(--accent);
+    }
+
+    td.towns {
+        font-size: 0.75rem;
+        color: var(--text-3);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    td.top-agents {
+        font-size: 0.78rem;
+        color: var(--text-2);
+    }
+
+    .no-data {
+        text-align: center;
+        color: var(--text-3);
+        font-style: italic;
+        padding: 32px 12px;
+    }
+
+    /* --- TREND BADGES --- */
+    .badge {
+        display: inline-block;
+        font-family: var(--mono);
+        font-size: 0.68rem;
+        font-weight: 500;
+        padding: 2px 8px;
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+    .badge-up {
+        color: var(--trend-up);
+        background: hsla(152, 55%, 45%, 0.12);
+    }
+    .badge-down {
+        color: var(--trend-down);
+        background: hsla(0, 60%, 52%, 0.12);
+    }
+    .badge-flat {
+        color: var(--trend-flat);
+        background: rgba(255,255,255,0.05);
+    }
+    .badge-new {
+        color: var(--trend-new);
+        background: hsla(200, 75%, 52%, 0.12);
+    }
+
+    /* --- FOOTER --- */
+    .footer {
+        text-align: center;
+        padding: 40px 0 48px;
+        font-size: 0.7rem;
+        color: var(--text-3);
+        font-family: var(--mono);
+    }
+
+    /* --- ANIMATION --- */
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* --- SORTABLE HEADERS --- */
+    thead th { cursor: pointer; user-select: none; position: relative; }
+    thead th:hover { color: var(--text-2); }
+    thead th .sort-arrow { margin-left: 4px; font-size: 0.55rem; opacity: 0.5; }
+    thead th.sort-active .sort-arrow { opacity: 1; color: var(--accent); }
+
+    /* --- RESPONSIVE --- */
+    @media (max-width: 768px) {
+        .wrap { padding: 0 16px; }
+        .header { padding: 32px 0 16px; }
+        .header h1 { font-size: 1.5rem; }
+        .stat .value { font-size: 1.4rem; }
+        .section { padding: 20px 16px 16px; }
+        table { font-size: 0.75rem; }
+        thead th { font-size: 0.55rem; }
+    }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <header class="header">
+            <h1>Zillow Seller-Side Leaderboard</h1>
+            <p class="sub">Southern Coastal Maine &middot; 10 Towns &middot; 2026-04-10 15:48 UTC</p>
+        </header>
+        <div class="stats">
+            <div class="stat">
+                <div class="label">Total Sales</div>
+                <div class="value">0</div>
+            </div>
+            <div class="stat">
+                <div class="label">Agents Tracked</div>
+                <div class="value">0</div>
+            </div>
+            <div class="stat">
+                <div class="label">Date Range</div>
+                <div class="value">N/A &mdash; N/A</div>
+            </div>
+        </div>
+        <main>
+            <section class="section">
+        <h2>Top Agents &mdash; All-Time</h2>
+        <div class="table-wrap">
+        <table>
+            <colgroup>
+                <col style="width:5%"><col style="width:20%"><col style="width:23%">
+                <col style="width:8%"><col style="width:12%"><col style="width:12%"><col style="width:20%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Agent</th>
+                <th>Office</th>
+                <th class="num">Sides</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg Price</th>
+                <th>Towns</th>
+            </tr></thead>
+            <tbody><tr><td colspan="7" class="no-data">No data available yet.</td></tr></tbody>
+        </table>
+        </div>
+    </section>
+<section class="section">
+        <h2>Top Agents &mdash; Last 365 Days</h2>
+        <div class="table-wrap">
+        <table>
+            <colgroup>
+                <col style="width:4%"><col style="width:19%"><col style="width:21%">
+                <col style="width:7%"><col style="width:11%"><col style="width:11%"><col style="width:27%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Agent</th>
+                <th>Office</th>
+                <th class="num">Sides</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg Price</th>
+                <th style="text-align:center">Trend</th>
+            </tr></thead>
+            <tbody><tr><td colspan="7" class="no-data">No data available yet.</td></tr></tbody>
+        </table>
+        </div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages &mdash; All-Time</h2>
+        <div class="table-wrap">
+        <table>
+            <colgroup>
+                <col style="width:4%"><col style="width:22%"><col style="width:7%">
+                <col style="width:12%"><col style="width:10%"><col style="width:18%"><col style="width:27%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Brokerage</th>
+                <th class="num">Sides</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg Price</th>
+                <th>Towns</th>
+                <th>Top Agents</th>
+            </tr></thead>
+            <tbody><tr><td colspan="7" class="no-data">No data available yet.</td></tr></tbody>
+        </table>
+        </div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages &mdash; Last 365 Days</h2>
+        <div class="table-wrap">
+        <table>
+            <colgroup>
+                <col style="width:4%"><col style="width:21%"><col style="width:7%">
+                <col style="width:12%"><col style="width:10%"><col style="width:18%"><col style="width:28%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Brokerage</th>
+                <th class="num">Sides</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg Price</th>
+                <th>Towns</th>
+                <th style="text-align:center">Trend</th>
+            </tr></thead>
+            <tbody><tr><td colspan="7" class="no-data">No data available yet.</td></tr></tbody>
+        </table>
+        </div>
+    </section>
+<section class="section">
+        <h2>Top Agents by Town</h2>
+        <div class="town-group">
+            <h3>Kittery</h3>
+            <div class="table-wrap">
+            <table>
+                <colgroup>
+                    <col style="width:5%"><col style="width:25%"><col style="width:30%">
+                    <col style="width:8%"><col style="width:16%"><col style="width:16%">
+                </colgroup>
+                <thead><tr>
+                    <th class="num">#</th>
+                    <th>Agent</th>
+                    <th>Office</th>
+                    <th class="num">Sides</th>
+                    <th class="num">Volume</th>
+                    <th class="num">Avg Price</th>
+                </tr></thead>
+                <tbody><tr><td colspan="6" class="no-data">No data available.</td></tr></tbody>
+            </table>
+            </div>
+        </div><div class="town-group">
+            <h3>York</h3>
+            <div class="table-wrap">
+            <table>
+                <colgroup>
+                    <col style="width:5%"><col style="width:25%"><col style="width:30%">
+                    <col style="width:8%"><col style="width:16%"><col style="width:16%">
+                </colgroup>
+                <thead><tr>
+                    <th class="num">#</th>
+                    <th>Agent</th>
+                    <th>Office</th>
+                    <th class="num">Sides</th>
+                    <th class="num">Volume</th>
+                    <th class="num">Avg Price</th>
+                </tr></thead>
+                <tbody><tr><td colspan="6" class="no-data">No data available.</td></tr></tbody>
+            </table>
+            </div>
+        </div><div class="town-group">
+            <h3>Ogunquit</h3>
+            <div class="table-wrap">
+            <table>
+                <colgroup>
+                    <col style="width:5%"><col style="width:25%"><col style="width:30%">
+                    <col style="width:8%"><col style="width:16%"><col style="width:16%">
+                </colgroup>
+                <thead><tr>
+                    <th class="num">#</th>
+                    <th>Agent</th>
+                    <th>Office</th>
+                    <th class="num">Sides</th>
+                    <th class="num">Volume</th>
+                    <th class="num">Avg Price</th>
+                </tr></thead>
+                <tbody><tr><td colspan="6" class="no-data">No data available.</td></tr></tbody>
+            </table>
+            </div>
+        </div><div class="town-group">
+            <h3>Wells</h3>
+            <div class="table-wrap">
+            <table>
+                <colgroup>
+                    <col style="width:5%"><col style="width:25%"><col style="width:30%">
+                    <col style="width:8%"><col style="width:16%"><col style="width:16%">
+                </colgroup>
+                <thead><tr>
+                    <th class="num">#</th>
+                    <th>Agent</th>
+                    <th>Office</th>
+                    <th class="num">Sides</th>
+                    <th class="num">Volume</th>
+                    <th class="num">Avg Price</th>
+                </tr></thead>
+                <tbody><tr><td colspan="6" class="no-data">No data available.</td></tr></tbody>
+            </table>
+            </div>
+        </div><div class="town-group">
+            <h3>Kennebunk</h3>
+            <div class="table-wrap">
+            <table>
+                <colgroup>
+                    <col style="width:5%"><col style="width:25%"><col style="width:30%">
+                    <col style="width:8%"><col style="width:16%"><col style="width:16%">
+                </colgroup>
+                <thead><tr>
+                    <th class="num">#</th>
+                    <th>Agent</th>
+                    <th>Office</th>
+                    <th class="num">Sides</th>
+                    <th class="num">Volume</th>
+                    <th class="num">Avg Price</th>
+                </tr></thead>
+                <tbody><tr><td colspan="6" class="no-data">No data available.</td></tr></tbody>
+            </table>
+            </div>
+        </div><div class="town-group">
+            <h3>Kennebunkport</h3>
+            <div class="table-wrap">
+            <table>
+                <colgroup>
+                    <col style="width:5%"><col style="width:25%"><col style="width:30%">
+                    <col style="width:8%"><col style="width:16%"><col style="width:16%">
+                </colgroup>
+                <thead><tr>
+                    <th class="num">#</th>
+                    <th>Agent</th>
+                    <th>Office</th>
+                    <th class="num">Sides</th>
+                    <th class="num">Volume</th>
+                    <th class="num">Avg Price</th>
+                </tr></thead>
+                <tbody><tr><td colspan="6" class="no-data">No data available.</td></tr></tbody>
+            </table>
+            </div>
+        </div><div class="town-group">
+            <h3>Biddeford</h3>
+            <div class="table-wrap">
+            <table>
+                <colgroup>
+                    <col style="width:5%"><col style="width:25%"><col style="width:30%">
+                    <col style="width:8%"><col style="width:16%"><col style="width:16%">
+                </colgroup>
+                <thead><tr>
+                    <th class="num">#</th>
+                    <th>Agent</th>
+                    <th>Office</th>
+                    <th class="num">Sides</th>
+                    <th class="num">Volume</th>
+                    <th class="num">Avg Price</th>
+                </tr></thead>
+                <tbody><tr><td colspan="6" class="no-data">No data available.</td></tr></tbody>
+            </table>
+            </div>
+        </div><div class="town-group">
+            <h3>Saco</h3>
+            <div class="table-wrap">
+            <table>
+                <colgroup>
+                    <col style="width:5%"><col style="width:25%"><col style="width:30%">
+                    <col style="width:8%"><col style="width:16%"><col style="width:16%">
+                </colgroup>
+                <thead><tr>
+                    <th class="num">#</th>
+                    <th>Agent</th>
+                    <th>Office</th>
+                    <th class="num">Sides</th>
+                    <th class="num">Volume</th>
+                    <th class="num">Avg Price</th>
+                </tr></thead>
+                <tbody><tr><td colspan="6" class="no-data">No data available.</td></tr></tbody>
+            </table>
+            </div>
+        </div><div class="town-group">
+            <h3>Old Orchard Beach</h3>
+            <div class="table-wrap">
+            <table>
+                <colgroup>
+                    <col style="width:5%"><col style="width:25%"><col style="width:30%">
+                    <col style="width:8%"><col style="width:16%"><col style="width:16%">
+                </colgroup>
+                <thead><tr>
+                    <th class="num">#</th>
+                    <th>Agent</th>
+                    <th>Office</th>
+                    <th class="num">Sides</th>
+                    <th class="num">Volume</th>
+                    <th class="num">Avg Price</th>
+                </tr></thead>
+                <tbody><tr><td colspan="6" class="no-data">No data available.</td></tr></tbody>
+            </table>
+            </div>
+        </div><div class="town-group">
+            <h3>Scarborough</h3>
+            <div class="table-wrap">
+            <table>
+                <colgroup>
+                    <col style="width:5%"><col style="width:25%"><col style="width:30%">
+                    <col style="width:8%"><col style="width:16%"><col style="width:16%">
+                </colgroup>
+                <thead><tr>
+                    <th class="num">#</th>
+                    <th>Agent</th>
+                    <th>Office</th>
+                    <th class="num">Sides</th>
+                    <th class="num">Volume</th>
+                    <th class="num">Avg Price</th>
+                </tr></thead>
+                <tbody><tr><td colspan="6" class="no-data">No data available.</td></tr></tbody>
+            </table>
+            </div>
+        </div>
+    </section>
+        </main>
+        <footer class="footer">
+            Generated 2026-04-10 15:48 UTC &middot; Data source: Zillow &middot; gw-re-agent-scraper
+        </footer>
+    </div>
+<script>
+(function() {
+  function parseVal(text) {
+    var s = text.trim();
+    if (!s || s === 'N/A' || s === '—') return -Infinity;
+    // Currency: $1.3M -> 1300000, $807K -> 807000, $450,000 -> 450000
+    if (s.charAt(0) === '$') {
+      s = s.substring(1).replace(/,/g, '');
+      if (s.indexOf('M') !== -1) return parseFloat(s) * 1000000;
+      if (s.indexOf('K') !== -1) return parseFloat(s) * 1000;
+      return parseFloat(s) || 0;
+    }
+    // Plain number (sides, rank)
+    var n = parseFloat(s.replace(/,/g, ''));
+    if (!isNaN(n)) return n;
+    // Text — sort alphabetically
+    return s.toLowerCase();
+  }
+
+  document.querySelectorAll('thead th').forEach(function(th) {
+    // Add sort arrow span
+    var arrow = document.createElement('span');
+    arrow.className = 'sort-arrow';
+    arrow.textContent = '↕';
+    th.appendChild(arrow);
+
+    th.addEventListener('click', function() {
+      var table = th.closest('table');
+      var tbody = table.querySelector('tbody');
+      var rows = Array.from(tbody.querySelectorAll('tr'));
+      var idx = Array.from(th.parentNode.children).indexOf(th);
+      var asc = th.dataset.sortDir !== 'asc';
+      th.dataset.sortDir = asc ? 'asc' : 'desc';
+
+      // Clear other headers in this table
+      th.parentNode.querySelectorAll('th').forEach(function(h) {
+        h.classList.remove('sort-active');
+        var a = h.querySelector('.sort-arrow');
+        if (a) a.textContent = '↕';
+      });
+      th.classList.add('sort-active');
+      arrow.textContent = asc ? '▲' : '▼';
+
+      rows.sort(function(a, b) {
+        var va = parseVal(a.children[idx] ? a.children[idx].textContent : '');
+        var vb = parseVal(b.children[idx] ? b.children[idx].textContent : '');
+        if (typeof va === 'string' && typeof vb === 'string') {
+          return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+        }
+        return asc ? va - vb : vb - va;
+      });
+
+      rows.forEach(function(row) { tbody.appendChild(row); });
+    });
+  });
+})();
+</script>
+</body>
+</html>
