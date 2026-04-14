@@ -43,6 +43,7 @@ def query_directory_top_agents(
         SELECT
             p.profile_url, p.profile_name, p.office_name,
             p.profile_type, p.sales_last_12_months, p.price_range,
+            p.total_sold_zillow, p.avg_price_3yr, p.for_sale_count,
             SUM(pt.local_sales_count) AS total_local_sales,
             GROUP_CONCAT(DISTINCT pt.town) AS towns
         FROM zillow_profiles p
@@ -378,10 +379,13 @@ def _build_brokerages_section(brokerages: list[dict], title: str = 'Top Brokerag
 
 
 def build_zillow_search_index(conn: sqlite3.Connection) -> list[dict]:
-    """Build a search index of all Zillow profiles with per-town data."""
+    """Build a search index of all Zillow profiles with per-town and enrichment data."""
     rows = conn.execute('''
         SELECT p.profile_url, p.profile_name, p.office_name,
                p.profile_type, p.sales_last_12_months, p.price_range,
+               p.total_sold_zillow, p.avg_price_3yr,
+               p.price_range_min, p.price_range_max,
+               p.for_sale_count, p.sold_rows_scraped, p.enrichment_status,
                pt.town, pt.local_sales_count
         FROM zillow_profiles p
         JOIN zillow_profile_towns pt ON p.profile_url = pt.profile_url
@@ -401,10 +405,35 @@ def build_zillow_search_index(conn: sqlite3.Connection) -> list[dict]:
                 'profile_url': url,
                 'total_local_sales': 0,
                 'towns': {},
+                'career_sales': r['total_sold_zillow'],
+                'avg_price': r['avg_price_3yr'],
+                'for_sale': r['for_sale_count'],
+                'enriched': r['enrichment_status'] == 'success',
+                'sold_rows': [],
             }
         p = profiles[url]
         count = r['local_sales_count'] or 0
         p['towns'][r['town']] = count
         p['total_local_sales'] += count
+
+    # Add sold transactions for enriched profiles
+    sold_rows = conn.execute('''
+        SELECT profile_url, sold_date, closing_price, represented,
+               city_state, address, beds, baths
+        FROM zillow_sold_transactions
+        ORDER BY profile_url, rowid
+    ''').fetchall()
+    for s in sold_rows:
+        url = s['profile_url']
+        if url in profiles:
+            profiles[url]['sold_rows'].append({
+                'date': s['sold_date'],
+                'price': s['closing_price'],
+                'side': s['represented'],
+                'city': s['city_state'],
+                'addr': s['address'],
+                'bd': s['beds'],
+                'ba': s['baths'],
+            })
 
     return sorted(profiles.values(), key=lambda x: x['total_local_sales'], reverse=True)

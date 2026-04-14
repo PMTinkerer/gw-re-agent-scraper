@@ -372,13 +372,30 @@ def _search_js() -> str:
 
         const zd = g.data.zillow;
         if (zd) {
-            html += '<div class="source-label">Zillow &mdash; Directory Data</div>';
+            html += '<div class="source-label">Zillow &mdash; Agent Profile</div>';
             html += '<div class="stat-row">';
-            html += stat("Local Sales", zd.total_local_sales);
+            html += stat("Career Sales", zd.career_sales || zd.total_local_sales);
             html += stat("12-Mo Sales", zd.sales_12mo || "N/A");
+            html += stat("Avg Price (3yr)", zd.avg_price ? fmtCur(zd.avg_price) : "N/A");
+            html += stat("For Sale", zd.for_sale != null ? zd.for_sale : "N/A");
             html += stat("Type", zd.type || "N/A");
-            html += stat("Price Range", zd.price_range || "N/A");
             html += '</div>';
+
+            // Buyer/Seller breakdown from sold rows
+            if (zd.sold_rows && zd.sold_rows.length) {
+                const buyer = zd.sold_rows.filter(r => r.side === "Buyer").length;
+                const seller = zd.sold_rows.filter(r => r.side === "Seller").length;
+                const both = zd.sold_rows.filter(r => r.side === "Buyer and Seller").length;
+                if (buyer + seller + both > 0) {
+                    html += '<div class="stat-row">';
+                    html += stat("Seller Sides", seller);
+                    html += stat("Buyer Sides", buyer);
+                    if (both) html += stat("Both Sides", both);
+                    html += '</div>';
+                }
+            }
+
+            // Per-town breakdown
             if (zd.towns && Object.keys(zd.towns).length) {
                 html += '<table><thead><tr><th>Town</th><th class="num">Local Sales</th></tr></thead><tbody>';
                 Object.entries(zd.towns).sort((a,b) => b[1] - a[1]).forEach(([t,c]) => {
@@ -386,6 +403,22 @@ def _search_js() -> str:
                 });
                 html += '</tbody></table>';
             }
+
+            // Recent transactions
+            if (zd.sold_rows && zd.sold_rows.length) {
+                html += '<div class="source-label" style="margin-top:16px;">Recent Transactions</div>';
+                html += '<table><thead><tr><th>When</th><th class="num">Price</th><th>Side</th><th>Location</th></tr></thead><tbody>';
+                zd.sold_rows.forEach(r => {
+                    html += '<tr><td>' + esc(r.date || "") + '</td><td class="num">' + fmtCur(r.price) +
+                        '</td><td>' + esc(r.side || "") + '</td><td>' + esc(r.city || "") + '</td></tr>';
+                });
+                html += '</tbody></table>';
+                if (zd.career_sales && zd.career_sales > zd.sold_rows.length) {
+                    html += '<p class="no-data" style="margin-top:6px;">' +
+                        (zd.career_sales - zd.sold_rows.length) + ' older transactions not shown</p>';
+                }
+            }
+
             if (zd.profile_url) {
                 html += '<p style="margin-top:10px;font-size:0.75rem;"><a href="' + esc(zd.profile_url) +
                     '" target="_blank" style="color:var(--accent);">View on Zillow &rarr;</a></p>';
