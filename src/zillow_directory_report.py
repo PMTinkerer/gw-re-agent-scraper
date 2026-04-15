@@ -76,7 +76,8 @@ def query_directory_brokerage_leaderboard(
             p.office_name AS brokerage,
             COUNT(DISTINCT p.profile_url) AS agent_count,
             SUM(pt.local_sales_count) AS agent_sales,
-            SUM(COALESCE(p.sales_last_12_months, 0)) AS agent_12mo_sales
+            SUM(COALESCE(p.sales_last_12_months, 0)) AS agent_12mo_sales,
+            AVG(CASE WHEN p.avg_price_3yr > 0 THEN p.avg_price_3yr END) AS avg_agent_price
         FROM zillow_profiles p
         JOIN zillow_profile_towns pt ON p.profile_url = pt.profile_url
         WHERE p.profile_type IN ('individual', 'team')
@@ -110,6 +111,7 @@ def _merge_brokerage_data(agent_rows, direct_rows, limit: int) -> list[dict]:
             'agent_count': r['agent_count'],
             'agent_sales': r['agent_sales'],
             'agent_12mo_sales': r['agent_12mo_sales'],
+            'avg_price': int(r['avg_agent_price']) if r['avg_agent_price'] else None,
             'direct_sales': None,
             'sales_12mo': None,
         }
@@ -124,6 +126,7 @@ def _merge_brokerage_data(agent_rows, direct_rows, limit: int) -> list[dict]:
                 'agent_count': 0,
                 'agent_sales': 0,
                 'agent_12mo_sales': 0,
+                'avg_price': None,
                 'direct_sales': r['direct_sales'],
                 'sales_12mo': r['sales_12mo'],
             }
@@ -132,6 +135,8 @@ def _merge_brokerage_data(agent_rows, direct_rows, limit: int) -> list[dict]:
         b['total_sales'] = b['direct_sales'] if b['direct_sales'] is not None else (b['agent_sales'] or 0)
         if b['sales_12mo'] is None:
             b['sales_12mo'] = b.get('agent_12mo_sales') or 0
+        avg = b.get('avg_price') or 0
+        b['est_volume'] = b['total_sales'] * avg if avg else None
 
     ranked = sorted(brokerages.values(), key=lambda x: x['total_sales'], reverse=True)
     return ranked[:limit]
@@ -252,6 +257,20 @@ def _e(text) -> str:
     return escape(str(text))
 
 
+def _fc(amount) -> str:
+    """Format currency for display."""
+    if not amount or amount == 0:
+        return 'N/A'
+    amount = int(amount)
+    if amount >= 1_000_000_000:
+        return f'${amount / 1_000_000_000:.1f}B'
+    if amount >= 1_000_000:
+        return f'${amount / 1_000_000:.1f}M'
+    if amount >= 1_000:
+        return f'${amount / 1_000:.0f}K'
+    return f'${amount:,}'
+
+
 def generate_directory_dashboard(
     conn: sqlite3.Connection,
     output_path: str | None = None,
@@ -322,27 +341,33 @@ def _build_agents_section(agents: list[dict], title: str) -> str:
         cls = ' class="rank-1"' if i == 1 else ''
         ptype = a.get('profile_type', '')
         type_badge = 'TEAM' if ptype == 'team' else ''
+        avg = a.get('avg_price_3yr') or 0
+        sales = a.get('total_local_sales', 0)
+        est_vol = _fc(sales * avg) if avg else 'N/A'
         rows += f'''<tr{cls}>
             <td class="num">{i}</td>
             <td class="agent-name">{_e(a.get("profile_name"))}</td>
             <td class="office">{_e(a.get("office_name"))}</td>
             <td class="num">{type_badge}</td>
-            <td class="num">{a["total_local_sales"]:,}</td>
+            <td class="num">{sales:,}</td>
+            <td class="num">{_fc(avg)}</td>
+            <td class="num vol">{est_vol}</td>
             <td class="num">{a.get("sales_last_12_months") or "N/A"}</td>
-            <td class="towns">{_e(a.get("towns"))}</td>
         </tr>'''
 
     return f'''<section class="section">
         <h2>{_e(title)}</h2>
         <div class="table-wrap"><table>
             <colgroup>
-                <col style="width:5%"><col style="width:20%"><col style="width:22%">
-                <col style="width:8%"><col style="width:12%"><col style="width:10%"><col style="width:23%">
+                <col style="width:4%"><col style="width:17%"><col style="width:18%">
+                <col style="width:6%"><col style="width:10%"><col style="width:10%">
+                <col style="width:12%"><col style="width:8%">
             </colgroup>
             <thead><tr>
                 <th class="num">#</th><th>Agent</th><th>Office</th>
-                <th class="num">Type</th><th class="num">Local Sales</th>
-                <th class="num">12-Mo</th><th>Towns</th>
+                <th class="num">Type</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
             </tr></thead>
             <tbody>{rows}</tbody>
         </table></div>
@@ -358,6 +383,8 @@ def _build_brokerages_section(brokerages: list[dict], title: str = 'Top Brokerag
             <td class="office">{_e(b.get("brokerage"))}</td>
             <td class="num">{b["agent_count"]}</td>
             <td class="num">{b["total_sales"]:,}</td>
+            <td class="num">{_fc(b.get("avg_price"))}</td>
+            <td class="num vol">{_fc(b.get("est_volume"))}</td>
             <td class="num">{b.get("sales_12mo") or "N/A"}</td>
         </tr>'''
 
@@ -365,13 +392,15 @@ def _build_brokerages_section(brokerages: list[dict], title: str = 'Top Brokerag
         <h2>{_e(title)}</h2>
         <div class="table-wrap"><table>
             <colgroup>
-                <col style="width:5%"><col style="width:35%">
-                <col style="width:15%"><col style="width:20%"><col style="width:20%">
+                <col style="width:4%"><col style="width:28%">
+                <col style="width:10%"><col style="width:12%"><col style="width:12%">
+                <col style="width:14%"><col style="width:10%">
             </colgroup>
             <thead><tr>
                 <th class="num">#</th><th>Brokerage</th>
-                <th class="num">Agents</th><th class="num">Total Sales</th>
-                <th class="num">12-Mo Sales</th>
+                <th class="num">Agents</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
             </tr></thead>
             <tbody>{rows}</tbody>
         </table></div>
