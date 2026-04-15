@@ -71,6 +71,7 @@ def _build_html(redfin_json: str, zillow_json: str) -> str:
         <div class="logo">Southern Coastal <span>Maine</span></div>
         <button class="tab active" data-tab="redfin">Redfin</button>
         <button class="tab" data-tab="zillow">Zillow</button>
+        <button class="tab" data-tab="master">All Agents</button>
         <div class="search-wrap">
             <input type="text" id="agent-search" placeholder="Search any agent or office..." autocomplete="off">
             <div id="search-results" class="search-results hidden"></div>
@@ -79,6 +80,29 @@ def _build_html(redfin_json: str, zillow_json: str) -> str:
     <div class="tab-content">
         <iframe id="redfin" class="active" src="redfin.html"></iframe>
         <iframe id="zillow" src="zillow.html"></iframe>
+        <div id="master" class="master-tab">
+            <div class="master-filters">
+                <select id="filter-town"><option value="">All Towns</option></select>
+                <select id="filter-type"><option value="">All Types</option><option value="individual">Individual</option><option value="team">Team</option></select>
+                <input type="text" id="filter-name" placeholder="Filter by name or office...">
+                <span id="master-count" class="master-count"></span>
+            </div>
+            <div class="table-wrap"><table id="master-table">
+                <thead><tr>
+                    <th class="num">#</th>
+                    <th>Agent</th>
+                    <th>Office</th>
+                    <th class="num">Type</th>
+                    <th class="num">Career Sales</th>
+                    <th class="num">12-Mo</th>
+                    <th class="num">Avg Price</th>
+                    <th class="num">Est. Volume</th>
+                    <th class="num">For Sale</th>
+                    <th>Towns</th>
+                </tr></thead>
+                <tbody id="master-body"></tbody>
+            </table></div>
+        </div>
     </div>
     <div id="agent-detail" class="agent-detail hidden"></div>
     <script id="redfin-index" type="application/json">{redfin_json}</script>
@@ -261,6 +285,45 @@ def _css() -> str:
     }
     .close-btn:hover { color: var(--text-1); }
     .no-data { color: var(--text-3); font-size: 0.8rem; font-style: italic; }
+    .master-tab {
+        display: none; position: absolute; inset: 0;
+        overflow-y: auto; padding: 20px 32px;
+        background: var(--bg-base);
+    }
+    .master-tab.active { display: block; }
+    .master-filters {
+        display: flex; gap: 10px; align-items: center;
+        margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .master-filters select, .master-filters input {
+        padding: 8px 12px; border-radius: var(--radius);
+        border: 1px solid rgba(255,255,255,0.08);
+        background: var(--bg-elevated); color: var(--text-1);
+        font-family: var(--font); font-size: 0.82rem;
+    }
+    .master-filters select { min-width: 140px; }
+    .master-filters input { min-width: 220px; }
+    .master-count {
+        font-size: 0.75rem; color: var(--text-3);
+        font-family: var(--mono); margin-left: auto;
+    }
+    #master-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+    #master-table th {
+        position: sticky; top: 0; background: var(--bg-surface);
+        padding: 8px 10px; text-align: left; color: var(--text-2);
+        font-weight: 500; font-family: var(--mono); font-size: 0.72rem;
+        border-bottom: 1px solid rgba(255,255,255,0.08); cursor: pointer;
+        user-select: none;
+    }
+    #master-table th:hover { color: var(--text-1); }
+    #master-table td {
+        padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.03);
+        font-family: var(--mono);
+    }
+    #master-table td.num { text-align: right; }
+    #master-table tr:hover { background: var(--bg-hover); cursor: pointer; }
+    #master-table .sort-arrow { margin-left: 4px; font-size: 0.65rem; color: var(--text-3); }
+    #master-table th.sort-active .sort-arrow { color: var(--accent); }
     '''
 
 
@@ -444,4 +507,141 @@ def _search_js() -> str:
         return "$" + n.toLocaleString();
     }
     function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+    // === MASTER TABLE ===
+    const masterBody = document.getElementById("master-body");
+    const filterTown = document.getElementById("filter-town");
+    const filterType = document.getElementById("filter-type");
+    const filterName = document.getElementById("filter-name");
+    const masterCount = document.getElementById("master-count");
+
+    // Build master dataset from Zillow (richer data)
+    const masterData = zillow.map((a, i) => ({
+        name: a.name || "",
+        office: a.office || "",
+        type: a.type || "",
+        career: a.career_sales || a.total_local_sales || 0,
+        mo12: a.sales_12mo || 0,
+        avg: a.avg_price || 0,
+        vol: (a.career_sales || a.total_local_sales || 0) * (a.avg_price || 0),
+        forSale: a.for_sale,
+        towns: a.towns ? Object.keys(a.towns).join(", ") : "",
+        townList: a.towns ? Object.keys(a.towns) : [],
+        _orig: a,
+    }));
+
+    // Populate town filter
+    const allTowns = new Set();
+    masterData.forEach(a => a.townList.forEach(t => allTowns.add(t)));
+    [...allTowns].sort().forEach(t => {
+        const opt = document.createElement("option");
+        opt.value = t; opt.textContent = t;
+        filterTown.appendChild(opt);
+    });
+
+    function renderMaster() {
+        const townVal = filterTown.value.toLowerCase();
+        const typeVal = filterType.value.toLowerCase();
+        const nameVal = filterName.value.toLowerCase().trim();
+
+        let filtered = masterData.filter(a => {
+            if (townVal && !a.townList.some(t => t.toLowerCase() === townVal)) return false;
+            if (typeVal && a.type.toLowerCase() !== typeVal) return false;
+            if (nameVal && !a.name.toLowerCase().includes(nameVal) && !a.office.toLowerCase().includes(nameVal)) return false;
+            return true;
+        });
+
+        // Apply current sort
+        if (masterSort.col >= 0) {
+            filtered.sort((a, b) => {
+                const va = masterSortVal(a, masterSort.col);
+                const vb = masterSortVal(b, masterSort.col);
+                if (typeof va === "string" && typeof vb === "string")
+                    return masterSort.asc ? va.localeCompare(vb) : vb.localeCompare(va);
+                return masterSort.asc ? va - vb : vb - va;
+            });
+        }
+
+        let html = "";
+        filtered.forEach((a, i) => {
+            html += '<tr data-idx="' + i + '">' +
+                '<td class="num">' + (i+1) + '</td>' +
+                '<td>' + esc(a.name) + '</td>' +
+                '<td>' + esc(a.office) + '</td>' +
+                '<td class="num">' + (a.type === "team" ? "TEAM" : "") + '</td>' +
+                '<td class="num">' + (a.career ? a.career.toLocaleString() : "N/A") + '</td>' +
+                '<td class="num">' + (a.mo12 || "N/A") + '</td>' +
+                '<td class="num">' + fmtCur(a.avg) + '</td>' +
+                '<td class="num">' + fmtCur(a.vol) + '</td>' +
+                '<td class="num">' + (a.forSale != null ? a.forSale : "N/A") + '</td>' +
+                '<td>' + esc(a.towns) + '</td>' +
+                '</tr>';
+        });
+        masterBody.innerHTML = html;
+        masterCount.textContent = filtered.length + " of " + masterData.length + " agents";
+
+        // Click row to show detail
+        masterBody.querySelectorAll("tr").forEach(tr => {
+            tr.addEventListener("click", () => {
+                const idx = parseInt(tr.dataset.idx);
+                const a = filtered[idx];
+                if (a && a._orig) {
+                    showDetail({name: a.name, office: a.office, sources: ["zillow"], data: {zillow: a._orig}});
+                }
+            });
+        });
+    }
+
+    const masterSort = {col: 4, asc: false}; // Default: career sales desc
+    function masterSortVal(a, col) {
+        switch(col) {
+            case 1: return a.name.toLowerCase();
+            case 2: return a.office.toLowerCase();
+            case 3: return a.type;
+            case 4: return a.career || 0;
+            case 5: return a.mo12 || 0;
+            case 6: return a.avg || 0;
+            case 7: return a.vol || 0;
+            case 8: return a.forSale != null ? a.forSale : -1;
+            case 9: return a.towns.toLowerCase();
+            default: return 0;
+        }
+    }
+
+    // Sort headers
+    document.querySelectorAll("#master-table thead th").forEach((th, idx) => {
+        const arrow = document.createElement("span");
+        arrow.className = "sort-arrow";
+        arrow.textContent = idx === 4 ? "\u25BC" : "\u2195";
+        th.appendChild(arrow);
+        if (idx === 4) th.classList.add("sort-active");
+
+        th.addEventListener("click", () => {
+            const asc = masterSort.col === idx ? !masterSort.asc : false;
+            masterSort.col = idx; masterSort.asc = asc;
+            document.querySelectorAll("#master-table thead th").forEach(h => {
+                h.classList.remove("sort-active");
+                h.querySelector(".sort-arrow").textContent = "\u2195";
+            });
+            th.classList.add("sort-active");
+            arrow.textContent = asc ? "\u25B2" : "\u25BC";
+            renderMaster();
+        });
+    });
+
+    filterTown.addEventListener("change", renderMaster);
+    filterType.addEventListener("change", renderMaster);
+    let nameTimer;
+    filterName.addEventListener("input", () => { clearTimeout(nameTimer); nameTimer = setTimeout(renderMaster, 200); });
+
+    // Initial render when tab is first shown
+    let masterRendered = false;
+    document.querySelectorAll(".tab").forEach(btn => {
+        btn.addEventListener("click", () => {
+            if (btn.dataset.tab === "master" && !masterRendered) {
+                renderMaster();
+                masterRendered = true;
+            }
+        });
+    });
     '''
