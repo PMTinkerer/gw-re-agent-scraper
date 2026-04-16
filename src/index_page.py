@@ -93,11 +93,12 @@ def _build_html(redfin_json: str, zillow_json: str) -> str:
                     <th>Agent</th>
                     <th>Office</th>
                     <th class="num">Type</th>
-                    <th class="num">Career Sales</th>
+                    <th class="num">Local Sales</th>
+                    <th class="num">Career Total</th>
+                    <th class="num">Local %</th>
                     <th class="num">12-Mo</th>
                     <th class="num">Avg Price</th>
-                    <th class="num">Est. Volume</th>
-                    <th class="num">For Sale</th>
+                    <th class="num">Local Volume</th>
                     <th>Towns</th>
                 </tr></thead>
                 <tbody id="master-body"></tbody>
@@ -516,19 +517,26 @@ def _search_js() -> str:
     const masterCount = document.getElementById("master-count");
 
     // Build master dataset from Zillow (richer data)
-    const masterData = zillow.map((a, i) => ({
-        name: a.name || "",
-        office: a.office || "",
-        type: a.type || "",
-        career: a.career_sales || a.total_local_sales || 0,
-        mo12: a.sales_12mo || 0,
-        avg: a.avg_price || 0,
-        vol: (a.career_sales || a.total_local_sales || 0) * (a.avg_price || 0),
-        forSale: a.for_sale,
-        towns: a.towns ? Object.keys(a.towns).join(", ") : "",
-        townList: a.towns ? Object.keys(a.towns) : [],
-        _orig: a,
-    }));
+    const masterData = zillow.map((a, i) => {
+        const local = a.total_local_sales || 0;
+        const career = a.career_sales || local;
+        const avg = a.avg_price || 0;
+        const pct = career > 0 ? Math.round(local / career * 100) : 0;
+        return {
+            name: a.name || "",
+            office: a.office || "",
+            type: a.type || "",
+            local: local,
+            career: career,
+            pct: pct,
+            mo12: a.sales_12mo || 0,
+            avg: avg,
+            localVol: local * avg,
+            towns: a.towns ? Object.keys(a.towns).join(", ") : "",
+            townList: a.towns ? Object.keys(a.towns) : [],
+            _orig: a,
+        };
+    });
 
     // Populate town filter
     const allTowns = new Set();
@@ -569,11 +577,12 @@ def _search_js() -> str:
                 '<td>' + esc(a.name) + '</td>' +
                 '<td>' + esc(a.office) + '</td>' +
                 '<td class="num">' + (a.type === "team" ? "TEAM" : "") + '</td>' +
+                '<td class="num">' + (a.local ? a.local.toLocaleString() : "0") + '</td>' +
                 '<td class="num">' + (a.career ? a.career.toLocaleString() : "N/A") + '</td>' +
+                '<td class="num">' + (a.pct > 0 ? a.pct + '%' : 'N/A') + '</td>' +
                 '<td class="num">' + (a.mo12 || "N/A") + '</td>' +
                 '<td class="num">' + fmtCur(a.avg) + '</td>' +
-                '<td class="num">' + fmtCur(a.vol) + '</td>' +
-                '<td class="num">' + (a.forSale != null ? a.forSale : "N/A") + '</td>' +
+                '<td class="num">' + fmtCur(a.localVol) + '</td>' +
                 '<td>' + esc(a.towns) + '</td>' +
                 '</tr>';
         });
@@ -592,18 +601,19 @@ def _search_js() -> str:
         });
     }
 
-    const masterSort = {col: 4, asc: false}; // Default: career sales desc
+    const masterSort = {col: 4, asc: false}; // Default: local sales desc
     function masterSortVal(a, col) {
         switch(col) {
             case 1: return a.name.toLowerCase();
             case 2: return a.office.toLowerCase();
             case 3: return a.type;
-            case 4: return a.career || 0;
-            case 5: return a.mo12 || 0;
-            case 6: return a.avg || 0;
-            case 7: return a.vol || 0;
-            case 8: return a.forSale != null ? a.forSale : -1;
-            case 9: return a.towns.toLowerCase();
+            case 4: return a.local || 0;
+            case 5: return a.career || 0;
+            case 6: return a.pct || 0;
+            case 7: return a.mo12 || 0;
+            case 8: return a.avg || 0;
+            case 9: return a.localVol || 0;
+            case 10: return a.towns.toLowerCase();
             default: return 0;
         }
     }
