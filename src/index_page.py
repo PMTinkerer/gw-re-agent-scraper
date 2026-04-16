@@ -10,6 +10,7 @@ import json
 import logging
 import os
 
+from .maine_report import build_maine_search_index
 from .report import build_agent_search_index
 from .zillow_directory_report import build_zillow_search_index
 
@@ -23,6 +24,7 @@ _DEFAULT_OUTPUT = os.path.join(
 def generate_index_html(
     redfin_conn=None,
     zillow_conn=None,
+    maine_conn=None,
     output_path: str | None = None,
 ) -> str:
     """Generate index.html with tab navigation and agent search."""
@@ -31,17 +33,19 @@ def generate_index_html(
 
     redfin_index = build_agent_search_index(redfin_conn) if redfin_conn else []
     zillow_index = build_zillow_search_index(zillow_conn) if zillow_conn else []
+    maine_index = build_maine_search_index(maine_conn) if maine_conn else []
 
     redfin_json = json.dumps(redfin_index, separators=(',', ':'))
     zillow_json = json.dumps(zillow_index, separators=(',', ':'))
+    maine_json = json.dumps(maine_index, separators=(',', ':'))
 
-    html = _build_html(redfin_json, zillow_json)
+    html = _build_html(redfin_json, zillow_json, maine_json)
 
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(html)
     logger.info(
-        'Index page written to %s (%d Redfin, %d Zillow agents)',
-        output_path, len(redfin_index), len(zillow_index),
+        'Index page written to %s (%d Redfin, %d Zillow, %d Maine agents)',
+        output_path, len(redfin_index), len(zillow_index), len(maine_index),
     )
     return output_path
 
@@ -55,7 +59,7 @@ def _fmt_currency(amount: int | float) -> str:
     return f'${amount:,}'
 
 
-def _build_html(redfin_json: str, zillow_json: str) -> str:
+def _build_html(redfin_json: str, zillow_json: str, maine_json: str) -> str:
     return f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -71,6 +75,7 @@ def _build_html(redfin_json: str, zillow_json: str) -> str:
         <div class="logo">Southern Coastal <span>Maine</span></div>
         <button class="tab active" data-tab="redfin">Redfin</button>
         <button class="tab" data-tab="zillow">Zillow</button>
+        <button class="tab" data-tab="maine">Maine MLS</button>
         <button class="tab" data-tab="master">All Agents</button>
         <div class="search-wrap">
             <input type="text" id="agent-search" placeholder="Search any agent or office..." autocomplete="off">
@@ -80,6 +85,7 @@ def _build_html(redfin_json: str, zillow_json: str) -> str:
     <div class="tab-content">
         <iframe id="redfin" class="active" src="redfin.html"></iframe>
         <iframe id="zillow" src="zillow.html"></iframe>
+        <iframe id="maine" src="maine.html"></iframe>
         <div id="master" class="master-tab">
             <div class="master-filters">
                 <select id="filter-town"><option value="">All Towns</option></select>
@@ -108,6 +114,7 @@ def _build_html(redfin_json: str, zillow_json: str) -> str:
     <div id="agent-detail" class="agent-detail hidden"></div>
     <script id="redfin-index" type="application/json">{redfin_json}</script>
     <script id="zillow-index" type="application/json">{zillow_json}</script>
+    <script id="maine-index" type="application/json">{maine_json}</script>
     <script>{_search_js()}</script>
 </body>
 </html>'''
@@ -223,6 +230,7 @@ def _css() -> str:
     }
     .sr-badge.redfin { background: hsla(0,60%,50%,0.2); color: hsl(0,70%,65%); }
     .sr-badge.zillow { background: hsla(210,60%,50%,0.2); color: hsl(210,70%,65%); }
+    .sr-badge.maine { background: hsla(140,60%,45%,0.2); color: hsl(140,70%,65%); }
     .tab-content { flex: 1; position: relative; }
     .tab-content iframe {
         position: absolute; inset: 0; width: 100%; height: 100%;
@@ -332,6 +340,7 @@ def _search_js() -> str:
     return '''
     const redfin = JSON.parse(document.getElementById("redfin-index").textContent);
     const zillow = JSON.parse(document.getElementById("zillow-index").textContent);
+    const maine = JSON.parse(document.getElementById("maine-index").textContent);
     const input = document.getElementById("agent-search");
     const results = document.getElementById("search-results");
     const detail = document.getElementById("agent-detail");
@@ -369,6 +378,10 @@ def _search_js() -> str:
         zillow.forEach(a => {
             if ((a.name && a.name.toLowerCase().includes(ql)) || (a.office && a.office.toLowerCase().includes(ql)))
                 matches.push({...a, _src: "zillow"});
+        });
+        maine.forEach(a => {
+            if ((a.name && a.name.toLowerCase().includes(ql)) || (a.office && a.office.toLowerCase().includes(ql)))
+                matches.push({...a, _src: "maine"});
         });
 
         if (!matches.length) {
@@ -489,7 +502,23 @@ def _search_js() -> str:
             }
         }
 
-        if (!rd && !zd) html += '<p class="no-data">No data found for this agent.</p>';
+        const md = g.data.maine;
+        if (md) {
+            html += '<div class="source-label">Maine MLS &mdash; Closed Transactions</div>';
+            html += '<div class="stat-row">';
+            html += stat("Total Sides", md.total_sides);
+            html += stat("Listing Sides", md.listing_sides);
+            html += stat("Buyer Sides", md.buyer_sides);
+            html += stat("Total Volume", fmtCur(md.volume));
+            html += stat("Most Recent", md.most_recent || "N/A");
+            html += '</div>';
+            if (md.towns && md.towns.length) {
+                html += '<div class="office-line" style="margin-top:10px;">Towns: ' +
+                    esc(md.towns.join(", ")) + '</div>';
+            }
+        }
+
+        if (!rd && !zd && !md) html += '<p class="no-data">No data found for this agent.</p>';
         html += '</div>';
         detail.innerHTML = html;
         detail.classList.remove("hidden");

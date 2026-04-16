@@ -104,10 +104,11 @@ python -m src.zillow_main --enrich-profiles --enrich-batch 50                   
 python -m src.zillow_main --directory-report                                            # Regenerate from existing data
 
 # --- Maine Listings Pipeline (Firecrawl — PRIMARY GOING FORWARD) ---
-python -m src.maine_main --discover --max-pages 90                                      # Full discovery (all towns)
-python -m src.maine_main --enrich --batch-size 50                                       # Detail page enrichment
-python -m src.maine_main --discover --recent-only --enrich --batch-size 50              # Weekly incremental
-python -m src.maine_main --report                                                       # Print DB stats
+python -m src.maine_main --discover --max-pages 90 --workers 3                          # Full discovery (all towns, 3 concurrent)
+python -m src.maine_main --enrich --batch-size 200 --workers 25                         # Full enrichment (25 concurrent Firecrawl workers)
+python -m src.maine_main --discover --recent-only --enrich --batch-size 200 --workers 10  # Weekly incremental
+python -m src.maine_main --report                                                       # Generate md + HTML dashboard
+python -m src.maine_main --update-index                                                 # Regenerate tabbed index.html with all 3 sources
 
 # --- Tests ---
 python -m pytest tests/ -v                                 # All tests
@@ -153,22 +154,26 @@ gw-re-agent-scraper/
 │   ├── zillow.py                     # Playwright Zillow scraper (blocked, fallback)
 │   ├── zillow_state.py               # Zillow discovery state machine
 │   ├── maine_main.py                 # Maine Listings CLI orchestrator
-│   ├── maine_firecrawl.py            # Maine Listings search + detail page scraping
+│   ├── maine_firecrawl.py            # Maine Listings search + detail page scraping (concurrent via ThreadPoolExecutor)
 │   ├── maine_parser.py               # Search card regex + detail NUXT JS extraction
 │   ├── maine_database.py             # Maine Listings SQLite schema
+│   ├── maine_report.py               # Maine markdown leaderboard + agent search index
+│   ├── maine_dashboard.py            # Maine HTML dashboard (combined/listing/buyer/brokerage tables)
 │   └── maine_state.py                # Maine Listings state machine
 ├── tests/                            # 128+ unit tests
 ├── data/
 │   ├── agent_data.db                 # Redfin transactions (2,398)
 │   ├── zillow_agent_data.db          # Zillow profiles (740) + sold transactions (3,290)
 │   ├── maine_listings.db             # Maine Listings transactions (10,587 discovered)
-│   ├── index.html                    # Tabbed dashboard wrapper (Redfin | Zillow | All Agents)
+│   ├── index.html                    # Tabbed dashboard wrapper (Redfin | Zillow | Maine MLS | All Agents)
 │   ├── dashboard.html                # Redfin HTML dashboard
 │   ├── zillow_directory_dashboard.html  # Zillow HTML dashboard
+│   ├── maine_dashboard.html          # Maine MLS HTML dashboard
 │   └── *.md                          # Markdown leaderboards
 ├── .github/workflows/
 │   ├── scrape_agents.yml             # Redfin enrichment (4x/day)
-│   └── zillow_leaderboard.yml        # Zillow Firecrawl (manual dispatch)
+│   ├── zillow_leaderboard.yml        # Zillow Firecrawl (manual dispatch)
+│   └── maine_listings.yml            # Maine MLS Firecrawl (weekly cron + manual)
 ├── CLAUDE.md, AGENTS.md, README.md
 ├── requirements.txt
 └── .gitignore
