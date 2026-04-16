@@ -5,12 +5,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What This Project Does
 Scrapes publicly visible sold property data from Redfin for 10 southern coastal Maine towns, then enriches each transaction with listing agent and brokerage data by visiting individual Redfin property pages via Playwright. The primary deliverables are `data/dashboard.html` (HTML leaderboard with trend badges, hosted on GitHub Pages) and `data/agent_leaderboard.md` (markdown version). Runs on GitHub Actions free tier with resumable chunk-based processing.
 
-## Current State (as of 2026-04-07)
-- **Redfin pipeline**: 2,311 SFH/Condo transactions in SQLite, ~85% enriched with agent data via Playwright + IPRoyal proxy
-- **Zillow pipeline (NEW)**: 740 unique agents (125 teams, 615 individuals) across all 10 towns, scraped via Firecrawl API (bypasses PerimeterX). Two-leaderboard dashboard: Brokerages + Agents
-- **HTML dashboards** — Redfin at `data/dashboard.html`, Zillow at `data/zillow_directory_dashboard.html`, both auto-deployed to GitHub Pages
+## Current State (as of 2026-04-16)
+- **Redfin pipeline**: 2,398 SFH/Condo transactions, ~85% enriched with agent data (listing agent only). County-query date chunking added for York/Wells/Ogunquit.
+- **Zillow pipeline**: 740 directory profiles + 683/740 enriched with career stats, avg price, and 5 most recent sold transactions. Buyer/seller split visible.
+- **Maine Listings pipeline (NEW — primary source going forward)**: 10,587 closed transactions discovered from mainelistings.com (MREIS MLS public portal). Captures BOTH listing agent AND buyer's agent on every transaction — data no other source provides. Phase 2 enrichment (detail page scraping) pending Firecrawl Standard plan upgrade.
+- **Tabbed dashboard** at `data/index.html` with Redfin, Zillow, and "All Agents" tabs — sortable, filterable, with Local Sales / Career Total / Local % / Est. Volume columns
+- **Agent search** across 834 Redfin + 685 Zillow agents with detail cards
 - **GitHub Pages live** at `https://pmtinkerer.github.io/gw-re-agent-scraper/`
-- **128 unit tests passing**
 - **Public repo on GitHub**
 
 ## Service Territory (10 Towns)
@@ -51,15 +52,26 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 - ~250 Firecrawl credits per full run (~30 min), requires `FIRECRAWL_API_KEY` env var
 - CLI: `python -m src.zillow_main --discover --use-firecrawl --max-pages 25 --directory-report`
 
-### Future: Zillow Profile Enrichment (PLANNED — NOT YET BUILT)
-- Scrape individual agent profile pages via Firecrawl to get:
-  - **Buyer vs seller representation** from sold rows ("Represented: Buyer|Seller")
-  - **Active listings count** from "For Sale (N)" section
-  - **Total career sales** and **average price**
-  - **Team member links** for team profiles
-- ~740 credits for all agents (1 credit per profile page)
-- Sold section is paginated (5 rows per page, click-to-paginate) — first page only via basic scrape, full pagination would require Firecrawl `instruct` mode
-- Zillow caps directory pagination at 25 pages (~375 visible cards), even when "1,161 agents found" — agents beyond page 25 are inaccessible
+### Phase 4: Zillow Profile Enrichment (BUILT — 683/740 ENRICHED)
+- Scrape individual agent profile pages via Firecrawl for career stats + recent sold data
+- Extracts from `__NEXT_DATA__` + Apollo cache on profile pages: total career sales, 12-month count, 3-year avg price, price range, for-sale count, 5 most recent sold transactions (date, price, address, buyer/seller side, beds/baths)
+- Cost: ~740 credits for full enrichment (1 per agent)
+- Sold pagination: Zillow's sold table uses JS click pagination; React re-renders too fast for Firecrawl actions to capture. Only page 1 (5 most recent) reliably captured. Rest marked as "N older transactions not shown"
+- CLI: `python -m src.zillow_main --enrich-profiles --enrich-batch 50`
+- Data stored in `zillow_sold_transactions` table + enrichment columns on `zillow_profiles`
+
+### Phase 5: Maine Listings (MREIS MLS) (BUILT — PHASE 1 COMPLETE, PHASE 2 PENDING UPGRADE)
+- **This is the primary transaction source going forward.** Redfin misses buyer agents; Zillow paginates to only 5 sold rows. MaineListings.com (the Maine MLS public portal) provides BOTH listing and buyer agents on every closed transaction.
+- Architecture: Two-phase scraping
+  - **Phase 1 (discovery — DONE)**: Scrape `/listings?city={town}&mls_status=Closed&page={N}` search pages. Extract listing URL, price, address, beds/baths/sqft, listing office. 10,587 closed listings discovered across all 10 towns (~600 Firecrawl credits).
+  - **Phase 2 (enrichment — PENDING)**: Visit each detail page, extract data from embedded NUXT JavaScript blob. Fields: MLS#, listing_agent + MLS ID + email, buyer_agent + MLS ID + email, listing_office, buyer_office, close_date, sale_price, list_price, property_type, days_on_market.
+- Full enrichment cost: ~10,587 credits (needs Standard plan at $99/mo for one-time backfill)
+- Weekly incremental (`--recent-only`): ~50-100 credits/week (fits Hobby plan)
+- Key technical detail: Detail page has TWO `list_agent` objects in NUXT — first is `co_list_agent` (usually null), second has real data. Parser finds the one where `list_agent_email` is a quoted string, not minified `a`.
+- Separate DB: `data/maine_listings.db`, state: `data/maine_scrape_state.json`
+- Modules: `src/maine_database.py`, `src/maine_state.py`, `src/maine_parser.py`, `src/maine_firecrawl.py`, `src/maine_main.py`
+- CLI: `python -m src.maine_main --discover --max-pages 90` then `python -m src.maine_main --enrich --batch-size 50`
+- Weekly: `python -m src.maine_main --discover --recent-only --enrich --batch-size 50`
 
 ## Key Decisions
 - **Redfin CSV** for property data (reliable, structured, no browser needed)
@@ -88,8 +100,14 @@ python -m src.main --merge-agents                         # Fuzzy agent merge
 
 # --- Zillow Pipeline (Firecrawl) ---
 python -m src.zillow_main --discover --use-firecrawl --max-pages 25 --directory-report  # Full scrape
-python -m src.zillow_main --discover --use-firecrawl --max-pages 2 --towns "York, Kittery" --directory-report  # Quick test
-python -m src.zillow_main --directory-report               # Regenerate from existing data
+python -m src.zillow_main --enrich-profiles --enrich-batch 50                           # Profile enrichment
+python -m src.zillow_main --directory-report                                            # Regenerate from existing data
+
+# --- Maine Listings Pipeline (Firecrawl — PRIMARY GOING FORWARD) ---
+python -m src.maine_main --discover --max-pages 90                                      # Full discovery (all towns)
+python -m src.maine_main --enrich --batch-size 50                                       # Detail page enrichment
+python -m src.maine_main --discover --recent-only --enrich --batch-size 50              # Weekly incremental
+python -m src.maine_main --report                                                       # Print DB stats
 
 # --- Tests ---
 python -m pytest tests/ -v                                 # All tests
@@ -98,7 +116,8 @@ python -m pytest tests/test_zillow_firecrawl.py -v         # Zillow Firecrawl te
 # --- Database Checks ---
 sqlite3 data/agent_data.db "SELECT city, COUNT(*) FROM transactions GROUP BY city ORDER BY COUNT(*) DESC;"
 sqlite3 data/zillow_agent_data.db "SELECT profile_type, COUNT(*) FROM zillow_profiles GROUP BY profile_type;"
-sqlite3 data/zillow_agent_data.db "SELECT town, COUNT(*) FROM zillow_profile_towns GROUP BY town ORDER BY COUNT(*) DESC;"
+sqlite3 data/maine_listings.db "SELECT city, COUNT(*) FROM maine_transactions GROUP BY city ORDER BY COUNT(*) DESC;"
+sqlite3 data/maine_listings.db "SELECT COUNT(*) total, SUM(CASE WHEN enrichment_status='success' THEN 1 ELSE 0 END) enriched FROM maine_transactions;"
 ```
 
 ## Known Constraints
@@ -120,27 +139,36 @@ Cape Neddick → York, Moody → Wells, Ocean Park → Old Orchard Beach, Cape P
 ```
 gw-re-agent-scraper/
 ├── src/
-│   ├── main.py                  # Redfin CLI orchestrator
-│   ├── scraper.py               # Redfin CSV + Playwright enrichment
-│   ├── database.py              # SQLite schema, upsert, normalization (Redfin + Zillow)
-│   ├── report.py                # Redfin leaderboard markdown generator
-│   ├── dashboard.py             # Redfin HTML dashboard generator
-│   ├── state.py                 # Redfin chunk-based state machine
-│   ├── zillow_main.py           # Zillow CLI orchestrator
-│   ├── zillow_firecrawl.py      # Firecrawl-based Zillow directory scraping
-│   ├── zillow_directory_report.py # Zillow two-leaderboard report + dashboard
-│   ├── zillow.py                # Playwright-based Zillow scraper (blocked, kept as fallback)
-│   └── zillow_state.py          # Zillow discovery state machine
-├── tests/                       # 128 unit tests
+│   ├── main.py                       # Redfin CLI orchestrator
+│   ├── scraper.py                    # Redfin CSV + Playwright enrichment
+│   ├── database.py                   # SQLite schema (Redfin + Zillow)
+│   ├── report.py                     # Redfin leaderboard markdown
+│   ├── dashboard.py                  # Redfin HTML dashboard
+│   ├── state.py                      # Redfin chunk-based state machine
+│   ├── index_page.py                 # Tabbed index.html + agent search index
+│   ├── zillow_main.py                # Zillow CLI orchestrator
+│   ├── zillow_firecrawl.py           # Firecrawl Zillow directory scraping
+│   ├── zillow_profile_scraper.py     # Zillow profile enrichment (career stats + sold rows)
+│   ├── zillow_directory_report.py    # Zillow two-leaderboard report + dashboard
+│   ├── zillow.py                     # Playwright Zillow scraper (blocked, fallback)
+│   ├── zillow_state.py               # Zillow discovery state machine
+│   ├── maine_main.py                 # Maine Listings CLI orchestrator
+│   ├── maine_firecrawl.py            # Maine Listings search + detail page scraping
+│   ├── maine_parser.py               # Search card regex + detail NUXT JS extraction
+│   ├── maine_database.py             # Maine Listings SQLite schema
+│   └── maine_state.py                # Maine Listings state machine
+├── tests/                            # 128+ unit tests
 ├── data/
-│   ├── agent_data.db            # Redfin transactions (2,311 SFH/Condo)
-│   ├── zillow_agent_data.db     # Zillow profiles (740 agents, 125 teams)
-│   ├── dashboard.html           # Redfin HTML dashboard
+│   ├── agent_data.db                 # Redfin transactions (2,398)
+│   ├── zillow_agent_data.db          # Zillow profiles (740) + sold transactions (3,290)
+│   ├── maine_listings.db             # Maine Listings transactions (10,587 discovered)
+│   ├── index.html                    # Tabbed dashboard wrapper (Redfin | Zillow | All Agents)
+│   ├── dashboard.html                # Redfin HTML dashboard
 │   ├── zillow_directory_dashboard.html  # Zillow HTML dashboard
-│   └── zillow_agent_leaderboard.md      # Zillow markdown report
+│   └── *.md                          # Markdown leaderboards
 ├── .github/workflows/
-│   ├── scrape_agents.yml        # Redfin enrichment (4x/day)
-│   └── zillow_leaderboard.yml   # Zillow Firecrawl discovery (manual dispatch)
+│   ├── scrape_agents.yml             # Redfin enrichment (4x/day)
+│   └── zillow_leaderboard.yml        # Zillow Firecrawl (manual dispatch)
 ├── CLAUDE.md, AGENTS.md, README.md
 ├── requirements.txt
 └── .gitignore

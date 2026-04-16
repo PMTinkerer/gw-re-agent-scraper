@@ -1,27 +1,28 @@
 # AGENTS.md — gw-re-agent-scraper
 
-## Current Status
-**Phase: Redfin Enrichment (running) + Zillow Firecrawl Directory (live) + Dashboard Live**
+## Current Status (2026-04-16)
+**Phase: Maine Listings (MLS) Phase 2 Enrichment pending Firecrawl plan upgrade**
 
-### Redfin Pipeline
-2,311 SFH/Condo transactions across all 10 towns (March 2023–March 2026). Playwright enrichment running via GitHub Actions with IPRoyal proxy. ~85% enriched.
+### Pipelines Summary
+| Source | Status | Records |
+|--------|--------|---------|
+| Redfin (Playwright) | ✅ Running 4x/day | 2,398 txns, ~85% enriched (listing agent only) |
+| Zillow Firecrawl Directory | ✅ Complete | 740 agents, 125 teams |
+| Zillow Profile Enrichment | ✅ Complete | 683/740 agents enriched (career stats + 5 recent sold) |
+| **Maine Listings Phase 1 (discovery)** | ✅ Complete | **10,587 closed listings across 10 towns** |
+| **Maine Listings Phase 2 (enrichment)** | ⏳ Pending upgrade | 0 enriched so far — needs 10,587 credits |
 
-### Zillow Firecrawl Pipeline (NEW — April 7, 2026)
-**740 unique agents** (125 teams, 615 individuals) across all 10 towns. Scraped via Firecrawl API which bypasses Zillow's PerimeterX anti-bot system. Two-leaderboard dashboard: Brokerages (grouped by office_name) + Agents (individuals + teams).
+### Maine Listings Pipeline (Primary source going forward)
+MaineListings.com is the Maine MLS public portal. Captures BOTH listing agent AND buyer agent on every closed transaction — data no other source provides. 10+ years of historical data available.
 
-- Full coverage: all 25 pages per town (~250 Firecrawl credits per run)
-- Office branches kept separate (e.g., "Coldwell Banker Yorke Realty" ≠ "Coldwell Banker Realty")
-- Top brokerages by agent count: Portside Real Estate Group (47), Keller Williams Realty (37), Coldwell Banker Realty (35)
-- Zillow caps directory pagination at 25 pages even when "1,161 agents found" — agents beyond page 25 are inaccessible
-- Agents with 0 sales in a town are filtered out (not useful for rankings)
+- Phase 1 (search page discovery): Complete. 10,587 listings discovered from mainelistings.com across all 10 towns.
+- Phase 2 (detail page enrichment): Extracts listing_agent, buyer_agent, offices, MLS#, close_date, sale_price from embedded NUXT JavaScript data. Currently serial with 6s delay (~18 hours total). Need concurrent refactor to run in ~1 hour with 25 workers.
+- Cost to complete Phase 2: ~10,587 credits. User is upgrading Firecrawl to Standard plan ($99/mo, 100K credits, 50 concurrent) for one-time backfill, then downgrade to Hobby for weekly incremental (~50-100 credits/week).
 
-### Future: Zillow Profile Enrichment (PLANNED)
-- Scrape individual profile pages via Firecrawl (~740 credits) to get:
-  - **Buyer vs seller representation** from sold rows
-  - **Active listings count** from "For Sale (N)" section
-  - **Total career sales** and **average price**
-  - **Team member links** for decomposing team sales
-- Not yet built — deferred to avoid exhausting monthly Firecrawl credits
+### Firecrawl Credit Usage
+- Hobby plan (3K/mo): ~890 used on Zillow enrichment + ~600 on Maine discovery = 1,490
+- Standard plan needed for Maine Phase 2 backfill
+- Weekly incremental post-backfill: fits Hobby tier easily
 
 ## Zillow Implementation Status
 - Firecrawl-based directory scraping live and tested:
@@ -93,11 +94,11 @@
 - **Need a different Zillow-capable proxy or compliant data source** — current blocker appears to be IP/session reputation, not DOM parsing or Playwright setup.
 
 ## Next Steps (Priority Order)
-1. **Zillow profile enrichment** — scrape agent profile pages via Firecrawl for buyer/seller splits, active listings, career stats (~740 credits, deferred to next billing cycle)
-2. **Merge Zillow branch to main** — push `zillow-actions-smoke-20260406` branch, open PR, deploy
-3. **Let Redfin enrichment complete** — running automatically 4x/day via GitHub Actions
-4. **Review fuzzy agent merge results** after enrichment is mostly complete
-5. **Schedule recurring Zillow Firecrawl runs** via GitHub Actions workflow_dispatch (monthly refresh)
+1. **[IMMEDIATE] Maine Listings Phase 2 enrichment with concurrent workers** — User is upgrading Firecrawl to Standard ($99/mo) for one month. Need to refactor `src/maine_firecrawl.py::enrich_listings` to use `ThreadPoolExecutor` with 20-25 concurrent workers + circuit breaker. Then enrich all 10,587 listings (~1 hour at 25 concurrent). See handoff prompt below.
+2. **Build maine_report.py** — leaderboards for listing agents, buyer agents, brokerages using the MLS transaction data.
+3. **Integrate Maine data into index.html** — add "Maine MLS" tab, update agent search index with Maine transaction detail.
+4. **Schedule weekly incremental** — GitHub Actions workflow for `--discover --recent-only --enrich` (~50-100 credits/week, fits Hobby tier).
+5. **Deprecate Redfin Playwright enrichment** — once Maine Listings covers all transactions with better data, stop Redfin enrichment to save proxy costs.
 
 ## Session Log
 - 2026-03-21 (session 1): Initial build from spec. All modules, GitHub Actions workflow, unit tests, and docs created.
@@ -111,3 +112,6 @@
 - 2026-04-06 (session 9): Reviewed project and planned Zillow V1 as a parallel dataset rather than a Redfin replacement. Implemented separate Zillow DB/state/artifacts, buyer/seller role-aware reporting, Zillow workflow, dashboard support, and Zillow test coverage. Local Zillow suites passed, but live local smoke tests showed Zillow serving PerimeterX captcha pages.
 - 2026-04-07 (session 10): Hardened Zillow scraper with retries, warmup fallback, proxy/session telemetry, and GitHub Actions smoke-only mode. Ran multiple GitHub Actions validations on temp branch `zillow-actions-smoke-20260406`. Confirmed repo `PROXY_URL` secret is blocked by Zillow: latest smoke run observed egress IP `96.191.2.240` and both `requests` and Playwright got captcha HTTP `403` on Zillow professionals root, York, and Kittery. Added `data/zillow_proxy_diagnostics.md` and fail-fast smoke-check workflow to validate replacement proxies quickly.
 - 2026-04-07 (session 11): Replaced blocked Playwright approach with Firecrawl API for Zillow. Smoke-tested Firecrawl against Zillow — bypassed PerimeterX completely. Built `zillow_firecrawl.py` (directory scraping + markdown parsing), `zillow_directory_report.py` (two-leaderboard report + dashboard), 39 new tests. Ran full 10-town scrape: 740 agents, 125 teams, ~250 credits. Fixed name/office parsing (bold markers as delimiter, strip rating bleed), added brokerage classification. Code review: fixed eval injection in workflow, added pip-audit, fixed or-chain bug, removed dead code. Buyer/seller split deferred to profile enrichment (next billing cycle). Key learnings: (a) Firecrawl SDK uses `client.scrape()` not `client.scrape_url()`, returns objects not dicts; (b) Zillow caps directory at 25 pages regardless of total count; (c) office branches must stay separate (competing entities within same chain); (d) brokerage profiles on Zillow have no structural difference from individual agents — classification by missing office_name works for unit tests but real data rarely has null office.
+- 2026-04-07 (session 12): Built tabbed dashboard (`data/index.html`) wrapping Redfin + Zillow dashboards. Added agent search across 834 Redfin + 685 Zillow agents with detail cards. Added date-range chunking for county Redfin queries (York/Wells/Ogunquit went from 99/73/18 → 129/114/22 transactions, +87 total). Added Avg Price + Est. Volume columns to leaderboards.
+- 2026-04-10 to 2026-04-15 (sessions 13-16): Zillow profile enrichment. Discovered Firecrawl `interact`/`browser` modes can't access Zillow (PerimeterX blocks all browser modes except `scrape()`). Sold row pagination inside profile pages not reliably capturable via Firecrawl actions (React re-renders too fast). Settled on page-1-only enrichment: 5 most recent sold transactions + career stats from NUXT/Apollo cache. Ran enrichment on 683/740 agents across ~2 days (~1,400 credits). Added enrichment data to dashboard: career sales, 12-mo, avg price, buyer/seller split from 5-row sample, recent transactions table with "N older transactions not shown" flag. Changed master leaderboard to rank by Local Sales (in our 10 towns) instead of career total; added Local % column (% of career in our territory).
+- 2026-04-15 (session 17): Built Maine Listings (MREIS MLS) scraper. MaineListings.com is the Maine MLS public portal — shows BOTH listing agent AND buyer agent on every closed transaction via embedded NUXT JavaScript data. Built full pipeline: `maine_database.py`, `maine_state.py`, `maine_parser.py`, `maine_firecrawl.py`, `maine_main.py`. Tested on Kittery (5/5 success, both agents captured). Ran Phase 1 discovery: 10,587 closed listings across all 10 towns (~600 credits). Phase 2 enrichment deferred pending plan upgrade (10,587 credits needed, $99/mo Standard plan recommended for one-time backfill). Key technical insight: detail pages have TWO `list_agent` objects in NUXT — first is `co_list_agent` (usually null `a`), second has real data. Parser finds the one where `list_agent_email` is a quoted string.
