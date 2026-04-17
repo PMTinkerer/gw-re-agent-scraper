@@ -152,6 +152,24 @@ DETAIL_EXTRACT_JS = '''(function(){
 })()'''
 
 
+_UNICODE_ESCAPE_RE = re.compile(r'\\u([0-9a-fA-F]{4})')
+
+
+def _decode_escapes(value):
+    """Decode JSON-style \\uXXXX escapes left over from the NUXT blob regex.
+
+    The detail-page NUXT data embeds strings with escape sequences like
+    "\\u002F" (forward slash) because Vue double-encodes the payload. Our
+    JS regex captures the raw bytes, so we have to decode here.
+    """
+    if not isinstance(value, str):
+        return value
+    return _UNICODE_ESCAPE_RE.sub(
+        lambda m: chr(int(m.group(1), 16)),
+        value,
+    )
+
+
 def parse_detail_response(js_return: dict | str) -> dict | None:
     """Parse the JS extraction result from a detail page."""
     import json
@@ -161,7 +179,7 @@ def parse_detail_response(js_return: dict | str) -> dict | None:
     except (json.JSONDecodeError, TypeError):
         return None
 
-    if isinstance(data, dict) and data.get('error'):
+    if not isinstance(data, dict) or data.get('error'):
         return None
 
-    return data if isinstance(data, dict) else None
+    return {k: _decode_escapes(v) for k, v in data.items()}

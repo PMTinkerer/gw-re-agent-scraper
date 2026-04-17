@@ -11,6 +11,20 @@ build/
 *.db-shm
 *.db-wal
 
+# SQLite corruption recovery files and manual backups
+*.db.corrupt
+*.db.corrupt-shm
+*.db.corrupt-wal
+*_backup_*.db
+
+# Local tool directories
+.claude/
+.firecrawl/
+
+# Runtime logs (regenerated each run)
+data/maine_discovery_log.txt
+data/maine_enrichment_log.txt
+
 # OS files
 .DS_Store
 

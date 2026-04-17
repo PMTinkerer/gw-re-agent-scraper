@@ -10,6 +10,7 @@ import json
 import logging
 import os
 
+from .maine_report import build_maine_search_index
 from .report import build_agent_search_index
 from .zillow_directory_report import build_zillow_search_index
 
@@ -23,6 +24,7 @@ _DEFAULT_OUTPUT = os.path.join(
 def generate_index_html(
     redfin_conn=None,
     zillow_conn=None,
+    maine_conn=None,
     output_path: str | None = None,
 ) -> str:
     """Generate index.html with tab navigation and agent search."""
@@ -31,17 +33,31 @@ def generate_index_html(
 
     redfin_index = build_agent_search_index(redfin_conn) if redfin_conn else []
     zillow_index = build_zillow_search_index(zillow_conn) if zillow_conn else []
+    maine_index = build_maine_search_index(maine_conn) if maine_conn else []
+
+    # KPI rollups for the Leaderboard tab.
+    agent_kpis: list = []
+    brokerage_kpis: list = []
+    if maine_conn is not None:
+        from .maine_kpis import query_agent_kpis, query_brokerage_kpis
+        agent_kpis = query_agent_kpis(maine_conn)
+        brokerage_kpis = query_brokerage_kpis(maine_conn)
 
     redfin_json = json.dumps(redfin_index, separators=(',', ':'))
     zillow_json = json.dumps(zillow_index, separators=(',', ':'))
+    maine_json = json.dumps(maine_index, separators=(',', ':'))
+    agent_json = json.dumps(agent_kpis, separators=(',', ':'), default=str)
+    brokerage_json = json.dumps(brokerage_kpis, separators=(',', ':'), default=str)
 
-    html = _build_html(redfin_json, zillow_json)
+    html = _build_html(redfin_json, zillow_json, maine_json, agent_json, brokerage_json)
 
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(html)
     logger.info(
-        'Index page written to %s (%d Redfin, %d Zillow agents)',
-        output_path, len(redfin_index), len(zillow_index),
+        'Index page written to %s (%d Redfin, %d Zillow, %d Maine; '
+        '%d agent KPIs, %d brokerage KPIs)',
+        output_path, len(redfin_index), len(zillow_index), len(maine_index),
+        len(agent_kpis), len(brokerage_kpis),
     )
     return output_path
 
@@ -55,7 +71,13 @@ def _fmt_currency(amount: int | float) -> str:
     return f'${amount:,}'
 
 
-def _build_html(redfin_json: str, zillow_json: str) -> str:
+def _build_html(
+    redfin_json: str,
+    zillow_json: str,
+    maine_json: str,
+    agent_json: str,
+    brokerage_json: str,
+) -> str:
     return f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -69,38 +91,37 @@ def _build_html(redfin_json: str, zillow_json: str) -> str:
 <body>
     <nav class="tab-bar">
         <div class="logo">Southern Coastal <span>Maine</span></div>
-        <button class="tab active" data-tab="redfin">Redfin</button>
-        <button class="tab" data-tab="zillow">Zillow</button>
-        <button class="tab" data-tab="master">All Agents</button>
+        <button class="tab active" data-tab="maine">Maine MLS</button>
+        <button class="tab" data-tab="master">Leaderboard</button>
+        <button class="tab" data-tab="zillow">Zillow <span class="archived-pill">archive</span></button>
+        <button class="tab" data-tab="redfin">Redfin <span class="archived-pill">archive</span></button>
         <div class="search-wrap">
             <input type="text" id="agent-search" placeholder="Search any agent or office..." autocomplete="off">
             <div id="search-results" class="search-results hidden"></div>
         </div>
     </nav>
     <div class="tab-content">
-        <iframe id="redfin" class="active" src="redfin.html"></iframe>
+        <iframe id="maine" class="active" src="maine.html"></iframe>
         <iframe id="zillow" src="zillow.html"></iframe>
+        <iframe id="redfin" src="redfin.html"></iframe>
         <div id="master" class="master-tab">
             <div class="master-filters">
+                <div class="entity-toggle">
+                    <button class="pill active" data-entity="agent">Agents</button>
+                    <button class="pill" data-entity="brokerage">Brokerages</button>
+                </div>
                 <select id="filter-town"><option value="">All Towns</option></select>
-                <select id="filter-type"><option value="">All Types</option><option value="individual">Individual</option><option value="team">Team</option></select>
+                <select id="filter-period">
+                    <option value="current_12mo_volume" selected>12mo</option>
+                    <option value="three_yr_volume">3yr</option>
+                    <option value="all_time_volume">All-Time</option>
+                </select>
                 <input type="text" id="filter-name" placeholder="Filter by name or office...">
                 <span id="master-count" class="master-count"></span>
             </div>
+            <div id="movers-banner" class="movers-banner"></div>
             <div class="table-wrap"><table id="master-table">
-                <thead><tr>
-                    <th class="num">#</th>
-                    <th>Agent</th>
-                    <th>Office</th>
-                    <th class="num">Type</th>
-                    <th class="num">Local Sales</th>
-                    <th class="num">Career Total</th>
-                    <th class="num">Local %</th>
-                    <th class="num">12-Mo</th>
-                    <th class="num">Avg Price</th>
-                    <th class="num">Local Volume</th>
-                    <th>Towns</th>
-                </tr></thead>
+                <thead><tr id="master-head"></tr></thead>
                 <tbody id="master-body"></tbody>
             </table></div>
         </div>
@@ -108,7 +129,11 @@ def _build_html(redfin_json: str, zillow_json: str) -> str:
     <div id="agent-detail" class="agent-detail hidden"></div>
     <script id="redfin-index" type="application/json">{redfin_json}</script>
     <script id="zillow-index" type="application/json">{zillow_json}</script>
+    <script id="maine-index" type="application/json">{maine_json}</script>
+    <script id="agent-kpis" type="application/json">{agent_json}</script>
+    <script id="brokerage-kpis" type="application/json">{brokerage_json}</script>
     <script>{_search_js()}</script>
+    <script>{_leaderboard_js()}</script>
 </body>
 </html>'''
 
@@ -223,6 +248,20 @@ def _css() -> str:
     }
     .sr-badge.redfin { background: hsla(0,60%,50%,0.2); color: hsl(0,70%,65%); }
     .sr-badge.zillow { background: hsla(210,60%,50%,0.2); color: hsl(210,70%,65%); }
+    .sr-badge.maine { background: hsla(140,60%,45%,0.2); color: hsl(140,70%,65%); }
+    .archived-pill {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 0.55rem;
+        font-family: var(--mono);
+        background: rgba(255,255,255,0.06);
+        color: var(--text-3);
+        vertical-align: middle;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
     .tab-content { flex: 1; position: relative; }
     .tab-content iframe {
         position: absolute; inset: 0; width: 100%; height: 100%;
@@ -296,6 +335,26 @@ def _css() -> str:
         display: flex; gap: 10px; align-items: center;
         margin-bottom: 16px; flex-wrap: wrap;
     }
+    .entity-toggle { display: inline-flex; background: var(--bg-elevated); border-radius: 20px; padding: 2px; margin-right: 12px; }
+    .entity-toggle .pill { padding: 4px 12px; font-size: 0.75rem; font-family: var(--mono);
+        background: transparent; border: none; color: var(--text-2); cursor: pointer; border-radius: 18px; }
+    .entity-toggle .pill.active { background: var(--accent); color: #1a1a1a; font-weight: 600; }
+    .movers-banner { margin: 12px 0; padding: 12px; background: var(--bg-surface); border-radius: 10px; }
+    .movers-banner.hidden { display: none; }
+    .movers-banner h3 { font-size: 0.78rem; margin-bottom: 8px; color: var(--text-2); letter-spacing: 0.04em; }
+    .movers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .movers-col-title { font-size: 0.7rem; text-transform: uppercase; color: var(--text-3); margin-bottom: 6px; }
+    .mover-card { padding: 8px 10px; background: var(--bg-elevated); border-radius: 6px; margin-bottom: 4px;
+        display: grid; grid-template-columns: 40px 1fr; gap: 2px 8px; font-size: 0.75rem; cursor: pointer; }
+    .mover-card:hover { background: var(--bg-hover); }
+    .mover-card .mover-delta { grid-row: span 2; align-self: center; font-family: var(--mono); font-weight: 600; text-align: center; }
+    .mover-card .mover-name { font-weight: 600; }
+    .mover-card .mover-office { font-size: 0.7rem; color: var(--text-2); }
+    .mover-card .mover-line { grid-column: 1 / -1; font-size: 0.68rem; color: var(--text-3); font-family: var(--mono); }
+    .delta-up { color: hsl(140, 60%, 60%); }
+    .delta-down { color: hsl(0, 60%, 62%); }
+    .delta-new { color: var(--accent); }
+    .delta-flat { color: var(--text-3); }
     .master-filters select, .master-filters input {
         padding: 8px 12px; border-radius: var(--radius);
         border: 1px solid rgba(255,255,255,0.08);
@@ -328,10 +387,292 @@ def _css() -> str:
     '''
 
 
+def _leaderboard_js() -> str:
+    """JS for the redesigned Leaderboard tab (Maine KPI-driven).
+
+    Consumes #agent-kpis and #brokerage-kpis JSON, renders the master table,
+    movers banner, and handles Agent/Brokerage toggle + Town filter +
+    Period selector + in-table search.
+    """
+    return r'''
+    (function(){
+        const agentRows = JSON.parse(document.getElementById("agent-kpis").textContent);
+        const brokerageRows = JSON.parse(document.getElementById("brokerage-kpis").textContent);
+        const head = document.getElementById("master-head");
+        const body = document.getElementById("master-body");
+        const count = document.getElementById("master-count");
+        const filterTown = document.getElementById("filter-town");
+        const filterPeriod = document.getElementById("filter-period");
+        const filterName = document.getElementById("filter-name");
+        const moversBanner = document.getElementById("movers-banner");
+
+        let entity = "agent";  // "agent" or "brokerage"
+        let sort = {col: "current_12mo_volume", asc: false};
+
+        // Column defs per entity
+        const COLS = {
+            agent: [
+                {key: null,                  label: "#",           num: true,  sortable: false},
+                {key: "name",                label: "Agent",       num: false, sortable: true},
+                {key: "office",              label: "Office",      num: false, sortable: true},
+                {key: "_delta",              label: "12mo \u0394", num: true,  sortable: true},
+                {key: "current_12mo_volume", label: "12mo Vol",    num: true,  sortable: true, fmt: "cur"},
+                {key: "current_12mo_sides",  label: "12mo Sides",  num: true,  sortable: true},
+                {key: "three_yr_volume",     label: "3yr Vol",     num: true,  sortable: true, fmt: "cur"},
+                {key: "all_time_volume",     label: "All-Time Vol", num: true, sortable: true, fmt: "cur"},
+                {key: "all_time_sides",      label: "All-Time",    num: true,  sortable: true},
+                {key: "_lb",                 label: "L / B",       num: true,  sortable: false},
+                {key: "_avg3",               label: "Avg (3yr)",   num: true,  sortable: true, fmt: "cur"},
+                {key: "most_recent",         label: "Most Recent", num: true,  sortable: true},
+            ],
+            brokerage: [
+                {key: null,                  label: "#",           num: true,  sortable: false},
+                {key: "name",                label: "Brokerage",   num: false, sortable: true},
+                {key: "agent_count",         label: "Agents",      num: true,  sortable: true},
+                {key: "_delta",              label: "12mo \u0394", num: true,  sortable: true},
+                {key: "current_12mo_volume", label: "12mo Vol",    num: true,  sortable: true, fmt: "cur"},
+                {key: "current_12mo_sides",  label: "12mo Sides",  num: true,  sortable: true},
+                {key: "three_yr_volume",     label: "3yr Vol",     num: true,  sortable: true, fmt: "cur"},
+                {key: "all_time_volume",     label: "All-Time Vol", num: true, sortable: true, fmt: "cur"},
+                {key: "all_time_sides",      label: "All-Time",    num: true,  sortable: true},
+                {key: "_lb",                 label: "L / B",       num: true,  sortable: false},
+                {key: "_avg3",               label: "Avg (3yr)",   num: true,  sortable: true, fmt: "cur"},
+                {key: "most_recent",         label: "Most Recent", num: true,  sortable: true},
+            ],
+        };
+
+        // Populate town filter from agent rows' primary_towns
+        const towns = new Set();
+        agentRows.forEach(r => {
+            if (r.primary_towns) r.primary_towns.split(",").forEach(t => towns.add(t.trim()));
+        });
+        [...towns].filter(Boolean).sort().forEach(t => {
+            const opt = document.createElement("option");
+            opt.value = t; opt.textContent = t;
+            filterTown.appendChild(opt);
+        });
+
+        function fmtCur(n) {
+            n = Math.round(n || 0);
+            if (n >= 1e6) return "$" + (n/1e6).toFixed(1) + "M";
+            if (n >= 1e3) return "$" + Math.round(n/1e3) + "K";
+            if (n === 0) return "\u2014";
+            return "$" + n.toLocaleString();
+        }
+        function esc(s) { const d = document.createElement("div"); d.textContent = s == null ? "" : s; return d.innerHTML; }
+
+        function enrichRow(r) {
+            const threeSides = r.three_yr_sides || 0;
+            const threeVol = r.three_yr_volume || 0;
+            return Object.assign({}, r, {
+                _avg3: threeSides > 0 ? threeVol / threeSides : 0,
+                _lb: (r.listing_sides || 0) + " : " + (r.buyer_sides || 0),
+            });
+        }
+
+        function computeMovers(rows) {
+            // Rank by current 12mo sides
+            const currentSorted = [...rows].sort((a,b) => (b.current_12mo_sides||0) - (a.current_12mo_sides||0));
+            const currentRank = {}; currentSorted.forEach((r,i) => currentRank[r.name] = i+1);
+
+            const prior = rows.filter(r => (r.prior_12mo_sides||0) > 0);
+            const priorSorted = [...prior].sort((a,b) => (b.prior_12mo_sides||0) - (a.prior_12mo_sides||0));
+            const priorRank = {}; priorSorted.forEach((r,i) => priorRank[r.name] = i+1);
+
+            const deltas = {};
+            const risers = [], fallers = [], news = [];
+            rows.forEach(r => {
+                if ((r.current_12mo_sides||0) < 5) return;
+                const pr = priorRank[r.name];
+                if (pr == null) { deltas[r.name] = null; news.push(r); return; }
+                const d = pr - currentRank[r.name];
+                deltas[r.name] = d;
+                if (d > 0) risers.push({...r, delta: d});
+                else if (d < 0) fallers.push({...r, delta: d});
+            });
+            news.sort((a,b) => (b.current_12mo_volume||0) - (a.current_12mo_volume||0));
+            risers.sort((a,b) => b.delta - a.delta);
+            fallers.sort((a,b) => a.delta - b.delta);
+            return {
+                deltas,
+                risers: [...news.map(r => ({...r, delta: null})), ...risers].slice(0, 5),
+                fallers: fallers.slice(0, 5),
+                qualifying: rows.filter(r => (r.current_12mo_sides||0) >= 5).length,
+            };
+        }
+
+        function fmtDelta(d) {
+            if (d == null) return '<span class="delta-new">NEW</span>';
+            if (d > 0)   return '<span class="delta-up">\u25b2' + d + '</span>';
+            if (d < 0)   return '<span class="delta-down">\u25bc' + Math.abs(d) + '</span>';
+            return '<span class="delta-flat">\u2014</span>';
+        }
+
+        function renderMovers(movers) {
+            if (movers.qualifying < 10) {
+                moversBanner.classList.add("hidden");
+                return;
+            }
+            moversBanner.classList.remove("hidden");
+            function card(m, dir) {
+                const pct = (m.prior_12mo_volume > 0)
+                    ? Math.round((m.current_12mo_volume - m.prior_12mo_volume) / m.prior_12mo_volume * 100)
+                    : null;
+                const pctStr = pct == null ? "" : (pct > 0 ? "+" + pct + "%" : pct + "%");
+                return '<div class="mover-card" data-name="' + esc(m.name) + '">' +
+                    '<span class="mover-delta">' + fmtDelta(m.delta) + '</span>' +
+                    '<span class="mover-name">' + esc(m.name) + '</span>' +
+                    '<span class="mover-office">' + esc(m.office || "") + '</span>' +
+                    '<span class="mover-line">12mo: ' + fmtCur(m.current_12mo_volume) +
+                    ' (vs ' + fmtCur(m.prior_12mo_volume) + ')  ' + pctStr + '</span>' +
+                    '</div>';
+            }
+            moversBanner.innerHTML =
+                '<h3>\ud83d\udd25 Biggest Movers \u2014 12mo vs prior 12mo</h3>' +
+                '<div class="movers-grid">' +
+                '<div><div class="movers-col-title">\u25b2 Risers</div>' +
+                (movers.risers.map(m => card(m, "up")).join("") || '<p class="no-data">No qualifying risers.</p>') +
+                '</div>' +
+                '<div><div class="movers-col-title">\u25bc Fallers</div>' +
+                (movers.fallers.map(m => card(m, "down")).join("") || '<p class="no-data">No qualifying fallers.</p>') +
+                '</div></div>';
+        }
+
+        function renderHead() {
+            const cols = COLS[entity];
+            head.innerHTML = cols.map((c, idx) => {
+                const cls = (c.num ? "num " : "") + (c.sortable ? "sortable " : "") + (sort.col === c.key ? "sort-active" : "");
+                const arrow = sort.col === c.key ? (sort.asc ? "\u25b2" : "\u25bc") : (c.sortable ? "\u2195" : "");
+                return '<th class="' + cls.trim() + '" data-col="' + (c.key || "") + '">' +
+                    esc(c.label) + ' <span class="sort-arrow">' + arrow + '</span></th>';
+            }).join("");
+            head.querySelectorAll("th.sortable").forEach(th => {
+                th.addEventListener("click", () => {
+                    const k = th.dataset.col;
+                    sort = {col: k, asc: sort.col === k ? !sort.asc : false};
+                    render();
+                });
+            });
+        }
+
+        function render() {
+            const raw = entity === "agent" ? agentRows : brokerageRows;
+            let rows = raw.map(enrichRow);
+
+            // Town filter
+            const townVal = filterTown.value.toLowerCase();
+            if (townVal) rows = rows.filter(r => (r.primary_towns||"").toLowerCase().includes(townVal));
+
+            // Name/office filter
+            const nameVal = filterName.value.toLowerCase().trim();
+            if (nameVal) rows = rows.filter(r =>
+                (r.name||"").toLowerCase().includes(nameVal) ||
+                (r.office||"").toLowerCase().includes(nameVal));
+
+            // Compute movers on filtered set
+            const movers = computeMovers(rows);
+            renderMovers(movers);
+
+            // Attach delta to rows
+            rows = rows.map(r => ({...r, _delta: movers.deltas[r.name]}));
+
+            // Sort
+            const col = sort.col;
+            if (col) {
+                rows.sort((a, b) => {
+                    const va = a[col], vb = b[col];
+                    if (va == null && vb == null) return 0;
+                    if (va == null) return 1;
+                    if (vb == null) return -1;
+                    if (typeof va === "string") return sort.asc ? va.localeCompare(vb) : vb.localeCompare(va);
+                    return sort.asc ? va - vb : vb - va;
+                });
+            }
+
+            // Town filter triggers top-50 cap
+            if (townVal) rows = rows.slice(0, 50);
+
+            // Render body
+            const cols = COLS[entity];
+            body.innerHTML = rows.map((r, i) => {
+                const cells = cols.map(c => {
+                    let v;
+                    if (c.key === null) v = i + 1;
+                    else if (c.key === "_delta") v = fmtDelta(r._delta);
+                    else if (c.key === "_lb") v = r._lb;
+                    else if (c.key === "_avg3") v = fmtCur(r._avg3);
+                    else if (c.fmt === "cur") v = fmtCur(r[c.key]);
+                    else if (c.key === "office") v = esc(r.office || "");
+                    else if (c.key === "name") v = esc(r.name || "");
+                    else if (c.key === "most_recent") v = esc(r.most_recent || "");
+                    else v = r[c.key] != null ? r[c.key].toLocaleString() : "\u2014";
+                    return '<td class="' + (c.num ? "num" : "") + '">' + v + '</td>';
+                }).join("");
+                return '<tr data-name="' + esc(r.name) + '">' + cells + '</tr>';
+            }).join("");
+            count.textContent = rows.length + (townVal ? " (top 50 of " + townVal + ")" : " of " + raw.length);
+
+            // Row click -> existing detail modal (reuses showDetail from search JS)
+            body.querySelectorAll("tr").forEach(tr => {
+                tr.addEventListener("click", () => {
+                    if (typeof window.__showDetailByName === "function") {
+                        window.__showDetailByName(tr.dataset.name);
+                    }
+                });
+            });
+        }
+
+        // Wire up filters
+        document.querySelectorAll(".entity-toggle .pill").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".entity-toggle .pill").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                entity = btn.dataset.entity;
+                renderHead();
+                render();
+            });
+        });
+        filterTown.addEventListener("change", render);
+        filterPeriod.addEventListener("change", () => {
+            sort = {col: filterPeriod.value, asc: false};
+            render();
+        });
+        let t; filterName.addEventListener("input", () => { clearTimeout(t); t = setTimeout(render, 180); });
+
+        // Mover card clicks
+        document.addEventListener("click", e => {
+            const card = e.target.closest(".mover-card");
+            if (!card) return;
+            const name = card.dataset.name;
+            if (typeof window.__showDetailByName === "function") window.__showDetailByName(name);
+        });
+
+        // Lazy render when tab first opens
+        let rendered = false;
+        document.querySelectorAll(".tab").forEach(btn => {
+            btn.addEventListener("click", () => {
+                if (btn.dataset.tab === "master" && !rendered) {
+                    renderHead();
+                    render();
+                    rendered = true;
+                }
+            });
+        });
+        // If the master tab is the default, render now.
+        if (document.querySelector('.tab.active').dataset.tab === "master") {
+            renderHead();
+            render();
+            rendered = true;
+        }
+    })();
+    '''
+
+
 def _search_js() -> str:
     return '''
     const redfin = JSON.parse(document.getElementById("redfin-index").textContent);
     const zillow = JSON.parse(document.getElementById("zillow-index").textContent);
+    const maine = JSON.parse(document.getElementById("maine-index").textContent);
     const input = document.getElementById("agent-search");
     const results = document.getElementById("search-results");
     const detail = document.getElementById("agent-detail");
@@ -370,6 +711,10 @@ def _search_js() -> str:
             if ((a.name && a.name.toLowerCase().includes(ql)) || (a.office && a.office.toLowerCase().includes(ql)))
                 matches.push({...a, _src: "zillow"});
         });
+        maine.forEach(a => {
+            if ((a.name && a.name.toLowerCase().includes(ql)) || (a.office && a.office.toLowerCase().includes(ql)))
+                matches.push({...a, _src: "maine"});
+        });
 
         if (!matches.length) {
             results.innerHTML = '<div class="sr-item"><span class="sr-name no-data">No results</span></div>';
@@ -407,6 +752,21 @@ def _search_js() -> str:
             });
         });
     }
+
+    window.__showDetailByName = function(name) {
+        const ql = (name || "").toLowerCase();
+        const matches = [];
+        [redfin, zillow, maine].forEach((arr, idx) => {
+            const src = ["redfin","zillow","maine"][idx];
+            arr.forEach(a => {
+                if ((a.name || "").toLowerCase() === ql) matches.push({...a, _src: src});
+            });
+        });
+        if (!matches.length) return;
+        const g = {name: matches[0].name, office: matches[0].office, sources: [], data: {}};
+        matches.forEach(m => { g.sources.push(m._src); g.data[m._src] = m; if (m.office) g.office = m.office; });
+        showDetail(g);
+    };
 
     function showDetail(g) {
         results.classList.add("hidden");
@@ -489,7 +849,28 @@ def _search_js() -> str:
             }
         }
 
-        if (!rd && !zd) html += '<p class="no-data">No data found for this agent.</p>';
+        const md = g.data.maine;
+        if (md) {
+            html += '<div class="source-label">Maine MLS &mdash; Closed Transactions</div>';
+            html += '<div class="stat-row">';
+            html += stat("Last 12mo",   md.current_12mo_sides + " sides");
+            html += stat("12mo Vol",    fmtCur(md.current_12mo_volume));
+            html += stat("Prior 12mo",  md.prior_12mo_sides + " sides");
+            html += stat("Prior Vol",   fmtCur(md.prior_12mo_volume));
+            html += stat("3yr",         md.three_yr_sides + " sides");
+            html += stat("3yr Vol",     fmtCur(md.three_yr_volume));
+            html += stat("All-Time",    md.all_time_sides + " sides");
+            html += stat("All-Time Vol", fmtCur(md.all_time_volume));
+            html += stat("L / B",        (md.listing_sides||0) + " / " + (md.buyer_sides||0));
+            html += stat("Most Recent", md.most_recent || "N/A");
+            html += '</div>';
+            if (md.towns && md.towns.length) {
+                html += '<div class="office-line" style="margin-top:10px;">Towns: ' +
+                    esc((md.towns || []).filter(Boolean).join(", ")) + '</div>';
+            }
+        }
+
+        if (!rd && !zd && !md) html += '<p class="no-data">No data found for this agent.</p>';
         html += '</div>';
         detail.innerHTML = html;
         detail.classList.remove("hidden");
@@ -508,150 +889,4 @@ def _search_js() -> str:
         return "$" + n.toLocaleString();
     }
     function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
-
-    // === MASTER TABLE ===
-    const masterBody = document.getElementById("master-body");
-    const filterTown = document.getElementById("filter-town");
-    const filterType = document.getElementById("filter-type");
-    const filterName = document.getElementById("filter-name");
-    const masterCount = document.getElementById("master-count");
-
-    // Build master dataset from Zillow (richer data)
-    const masterData = zillow.map((a, i) => {
-        const local = a.total_local_sales || 0;
-        const career = a.career_sales || local;
-        const avg = a.avg_price || 0;
-        const pct = career > 0 ? Math.round(local / career * 100) : 0;
-        return {
-            name: a.name || "",
-            office: a.office || "",
-            type: a.type || "",
-            local: local,
-            career: career,
-            pct: pct,
-            mo12: a.sales_12mo || 0,
-            avg: avg,
-            localVol: local * avg,
-            towns: a.towns ? Object.keys(a.towns).join(", ") : "",
-            townList: a.towns ? Object.keys(a.towns) : [],
-            _orig: a,
-        };
-    });
-
-    // Populate town filter
-    const allTowns = new Set();
-    masterData.forEach(a => a.townList.forEach(t => allTowns.add(t)));
-    [...allTowns].sort().forEach(t => {
-        const opt = document.createElement("option");
-        opt.value = t; opt.textContent = t;
-        filterTown.appendChild(opt);
-    });
-
-    function renderMaster() {
-        const townVal = filterTown.value.toLowerCase();
-        const typeVal = filterType.value.toLowerCase();
-        const nameVal = filterName.value.toLowerCase().trim();
-
-        let filtered = masterData.filter(a => {
-            if (townVal && !a.townList.some(t => t.toLowerCase() === townVal)) return false;
-            if (typeVal && a.type.toLowerCase() !== typeVal) return false;
-            if (nameVal && !a.name.toLowerCase().includes(nameVal) && !a.office.toLowerCase().includes(nameVal)) return false;
-            return true;
-        });
-
-        // Apply current sort
-        if (masterSort.col >= 0) {
-            filtered.sort((a, b) => {
-                const va = masterSortVal(a, masterSort.col);
-                const vb = masterSortVal(b, masterSort.col);
-                if (typeof va === "string" && typeof vb === "string")
-                    return masterSort.asc ? va.localeCompare(vb) : vb.localeCompare(va);
-                return masterSort.asc ? va - vb : vb - va;
-            });
-        }
-
-        let html = "";
-        filtered.forEach((a, i) => {
-            html += '<tr data-idx="' + i + '">' +
-                '<td class="num">' + (i+1) + '</td>' +
-                '<td>' + esc(a.name) + '</td>' +
-                '<td>' + esc(a.office) + '</td>' +
-                '<td class="num">' + (a.type === "team" ? "TEAM" : "") + '</td>' +
-                '<td class="num">' + (a.local ? a.local.toLocaleString() : "0") + '</td>' +
-                '<td class="num">' + (a.career ? a.career.toLocaleString() : "N/A") + '</td>' +
-                '<td class="num">' + (a.pct > 0 ? a.pct + '%' : 'N/A') + '</td>' +
-                '<td class="num">' + (a.mo12 || "N/A") + '</td>' +
-                '<td class="num">' + fmtCur(a.avg) + '</td>' +
-                '<td class="num">' + fmtCur(a.localVol) + '</td>' +
-                '<td>' + esc(a.towns) + '</td>' +
-                '</tr>';
-        });
-        masterBody.innerHTML = html;
-        masterCount.textContent = filtered.length + " of " + masterData.length + " agents";
-
-        // Click row to show detail
-        masterBody.querySelectorAll("tr").forEach(tr => {
-            tr.addEventListener("click", () => {
-                const idx = parseInt(tr.dataset.idx);
-                const a = filtered[idx];
-                if (a && a._orig) {
-                    showDetail({name: a.name, office: a.office, sources: ["zillow"], data: {zillow: a._orig}});
-                }
-            });
-        });
-    }
-
-    const masterSort = {col: 4, asc: false}; // Default: local sales desc
-    function masterSortVal(a, col) {
-        switch(col) {
-            case 1: return a.name.toLowerCase();
-            case 2: return a.office.toLowerCase();
-            case 3: return a.type;
-            case 4: return a.local || 0;
-            case 5: return a.career || 0;
-            case 6: return a.pct || 0;
-            case 7: return a.mo12 || 0;
-            case 8: return a.avg || 0;
-            case 9: return a.localVol || 0;
-            case 10: return a.towns.toLowerCase();
-            default: return 0;
-        }
-    }
-
-    // Sort headers
-    document.querySelectorAll("#master-table thead th").forEach((th, idx) => {
-        const arrow = document.createElement("span");
-        arrow.className = "sort-arrow";
-        arrow.textContent = idx === 4 ? "\u25BC" : "\u2195";
-        th.appendChild(arrow);
-        if (idx === 4) th.classList.add("sort-active");
-
-        th.addEventListener("click", () => {
-            const asc = masterSort.col === idx ? !masterSort.asc : false;
-            masterSort.col = idx; masterSort.asc = asc;
-            document.querySelectorAll("#master-table thead th").forEach(h => {
-                h.classList.remove("sort-active");
-                h.querySelector(".sort-arrow").textContent = "\u2195";
-            });
-            th.classList.add("sort-active");
-            arrow.textContent = asc ? "\u25B2" : "\u25BC";
-            renderMaster();
-        });
-    });
-
-    filterTown.addEventListener("change", renderMaster);
-    filterType.addEventListener("change", renderMaster);
-    let nameTimer;
-    filterName.addEventListener("input", () => { clearTimeout(nameTimer); nameTimer = setTimeout(renderMaster, 200); });
-
-    // Initial render when tab is first shown
-    let masterRendered = false;
-    document.querySelectorAll(".tab").forEach(btn => {
-        btn.addEventListener("click", () => {
-            if (btn.dataset.tab === "master" && !masterRendered) {
-                renderMaster();
-                masterRendered = true;
-            }
-        });
-    });
     '''

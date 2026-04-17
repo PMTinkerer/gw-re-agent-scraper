@@ -1,125 +1,124 @@
 # gw-re-agent-scraper
 
-Identifies the top real estate listing agents in southern coastal Maine using publicly visible sold property data from Redfin.
+Identifies the top real estate agents and brokerages across 10 southern coastal Maine towns using publicly visible MLS data.
 
 ## What it does
 
-1. **Collects sold property data** from Redfin's CSV endpoint (address, price, MLS#, sold date, beds, baths, sqft)
-2. **Enriches with agent data** by visiting individual Redfin property pages via Playwright to extract listing agent name and brokerage
-3. **Normalizes agent names** and fuzzy-merges near-duplicates
-4. **Generates a ranked leaderboard** — HTML dashboard with trend badges + markdown report
-5. **Includes a parallel Zillow pipeline** for seller-side and buyer-side represented sales, published separately from the Redfin dashboard
+1. **Collects closed MLS transactions** from MaineListings.com (the Maine MLS public consumer portal operated by the Maine Association of REALTORS). Both the listing agent AND the buyer's agent on every transaction, going back to 2011.
+2. **Builds KPI rollups per agent and per brokerage** across four rolling windows: last-12 months, prior-12 months, last-3 years, all-time.
+3. **Computes year-over-year leaderboard movement** — who moved up, who fell, who's NEW.
+4. **Renders an interactive dashboard** with an Agent / Brokerage toggle, a Town filter, an in-table search, a Biggest Movers banner, and a sortable 12-column leaderboard.
+5. **Exports a static HTML dashboard + markdown leaderboard** (`data/maine_dashboard.html`, `data/maine_leaderboard.md`) for sharing.
+6. **Retains Redfin and Zillow pipelines** as archived sources for cross-reference, but Maine MLS is the primary source of truth.
 
 ## Live dashboard
 
-**https://pmtinkerer.github.io/gw-re-agent-scraper/** — auto-updates after every CI run.
+**https://pmtinkerer.github.io/gw-re-agent-scraper/** — auto-deploys on push to `main`, and weekly via scheduled GitHub Actions.
 
-## Current status
+## Current status (2026-04-17)
 
-- 2,311 SFH/Condo transactions across 10 towns (March 2023–March 2026)
-- 1,762 transactions enriched with agent data (76%), ~526 pending (~7 automated runs to complete)
-- Property type filter active — only Single Family Residential + Condo/Co-op
-- Office name normalization — 15 variant spellings merged to canonical names
-- HTML dashboard with 6 sections: all-time + rolling agents, all-time + rolling brokerages (with trends + towns), per-town breakdowns
-- Zillow pipeline scaffolded with separate DB/state, seller-side public dashboard, buyer-side internal report, and team-gap report
-- 125 unit tests passing
-- Public repo on GitHub with automated 4x/day enrichment via residential proxy
+- **16,024 closed MLS transactions** enriched across 10 towns (99.97% enrichment success)
+- **2,253 unique listing agents** + **2,634 unique buyer agents** = **3,165 distinct people in the search index**
+- **444 unique brokerages** (kept at branch level — "Coldwell Banker Yorke Realty" ≠ "Coldwell Banker Realty")
+- **15-year history** (2011-02 → 2026-04)
+- **232 unit tests passing**
+- **Weekly GitHub Actions workflow** (Monday 6:30am ET) keeps the data fresh at ~50-100 Firecrawl credits/week
+- **Pushover + Resend alerting** for run failures
+- Redfin pipeline archived (strictly a subset of MLS data — 4x/day cron disabled)
+- Zillow pipeline archived (agent profiles kept for photo/bio/reviews reference — manual dispatch only)
 
 ## Setup
 
 ```bash
 pip install -r requirements.txt
-playwright install chromium
+# no browser install required — Firecrawl handles rendering server-side
+
+# Secrets (local dev)
+export FIRECRAWL_API_KEY=fc-...    # required for scraping
+# optional alerting (reads from ~/.env shared secrets file):
+# PUSHOVER_API_TOKEN, PUSHOVER_USER_KEY, RESEND_API_KEY
 ```
 
 ## Local usage
 
 ```bash
-# Discover Redfin region IDs (already cached in scrape_state.json)
-python -m src.main --discover-regions
+# Full Phase 1 discovery across all 10 towns (one-time, ~600 credits)
+python -m src.maine_main --discover --max-pages 90 --workers 3
 
-# Run Redfin CSV collection (3 chunks at a time)
-python -m src.main --mode initial --max-chunks 3 --source redfin
+# Full Phase 2 enrichment (one-time backfill, ~16K credits on Firecrawl Standard)
+python -m src.maine_main --enrich --batch-size 16500 --workers 25
 
-# Enrich agent data from Redfin property pages (80 URLs per batch)
-python -m src.main --enrich --batch-size 80
+# Weekly incremental (discover new closings + enrich them, ~50-100 credits)
+python -m src.maine_main --discover --recent-only --enrich --batch-size 200 --workers 10
 
-# Regenerate leaderboard + HTML dashboard from existing data
-python -m src.main --report-only
+# Regenerate markdown + HTML dashboard from existing DB
+python -m src.maine_main --report
 
-# Zillow: discover town-directory profiles, scrape pending profiles, and regenerate Zillow outputs
-python -m src.zillow_main --discover --scrape-profiles --batch-size 20
-
-# Zillow: regenerate seller dashboard + internal buyer/team-gap reports from existing Zillow data
-python -m src.zillow_main --report-only
-
-# Purge non-residential records (land, multi-family, mobile)
-python -m src.main --purge-non-residential
-
-# Run fuzzy agent name merge
-python -m src.main --merge-agents
-
-# Reset all progress
-python -m src.main --reset-state
+# Regenerate the tabbed index.html that wraps all three sources
+python -m src.maine_main --update-index
 
 # Run tests
 python -m pytest tests/
 ```
 
-## GitHub Actions
+## Dashboard tour
 
-The scraper runs automatically on GitHub Actions:
-- **During initial collection:** 4x/day (every 6 hours)
-- **After collection is complete:** Auto-detects and switches to 1x/day at midnight UTC
-- **Agent enrichment** runs automatically after CSV scraping, processing 80 URLs per run
-- **Dashboard auto-deployed** to GitHub Pages after every run
+The site has four tabs:
 
-Manual trigger available via Actions tab → "Scrape RE Agent Data" → "Run workflow" (supports `enrich_batch_size` input).
+1. **Maine MLS** (default) — standalone `maine_dashboard.html` with top-50 agents + brokerages, per-town breakdowns, and a Biggest Movers banner.
+2. **Leaderboard** — the interactive workhorse. 12 columns per row (12mo Δ, 12mo Vol, 12mo Sides, 3yr Vol, All-Time Vol, All-Time Sides, L/B, Avg 3yr, Most Recent, Primary Towns). Agent/Brokerage toggle, town filter (caps to top 50), period selector, in-table search. Biggest Movers banner above the table.
+3. **Zillow** (archive) — previous agent directory data; useful for bios/photos/reviews.
+4. **Redfin** (archive) — previous transaction data; strictly a subset of MLS.
 
-Zillow runs separately via the manual **Zillow Leaderboard** workflow. It publishes:
-- `data/zillow_dashboard.html` → GitHub Pages at `/zillow/`
-- `data/zillow_agent_leaderboard.md` → seller-side internal markdown artifact
-- `data/zillow_buyer_leaderboard.md` → buyer-side internal markdown artifact
-- `data/zillow_team_gap.md` → unresolved team-only sales gap report
-
-## Reading the leaderboard
-
-The HTML dashboard (`data/dashboard.html`, hosted on GitHub Pages) and markdown report (`data/agent_leaderboard.md`) contain:
-1. **Top 30 Listing Agents — All-Time** — ranked by total listing volume
-2. **Top 30 Listing Agents — Last 365 Days** — rolling rankings with trend badges showing who's heating up vs cooling off
-3. **Top 20 Brokerages — All-Time** — ranked by total volume with operating towns and top agents
-4. **Top 20 Brokerages — Last 365 Days** — rolling rankings with trend badges and operating towns
-5. **Top 5 Agents per Town** — local leaders in each of the 10 towns
-
-Known brokerage-named agents (e.g., "Anchor Real Estate", "Anne Erwin Real Estate") are excluded from agent rankings but included in brokerage rankings. Office name variants are normalized to canonical spellings (e.g., "KW Coastal..." → "Keller Williams Coastal...").
-
-## Zillow leaderboard
-
-The Zillow pipeline is intentionally parallel to Redfin:
-- Separate DB: `data/zillow_agent_data.db`
-- Separate state: `data/zillow_scrape_state.json`
-- Separate public page: `https://pmtinkerer.github.io/gw-re-agent-scraper/zillow/`
-- Seller-side public output only in v1; buyer-side observations are stored and reported internally
-- Team-only sales are logged to a gap report so undercount from team-brand attribution can be measured after each run
+Global search bar (top-right) returns matches across all three sources with colored badges; clicking an agent opens a detail modal with every period split.
 
 ## Data sources
 
-- **Redfin CSV endpoint** — property data (address, price, beds, baths, MLS#, sold date)
-- **Redfin property pages via Playwright** — listing agent name and brokerage (extracted from individual sold listing pages)
-
-Uses only publicly visible data. No MLS access or real estate license required.
+- **MaineListings.com (MREIS)** — Maine MLS public consumer portal, operated by the Maine Association of REALTORS. Data flows from here to Zillow, Realtor.com, Homes.com (not the other way around). Scraped via Firecrawl.
+- Uses only publicly visible data. No MLS membership required. Runs weekly to keep strain on the source minimal.
 
 ## Towns covered
 
 Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old Orchard Beach, Scarborough — all in Maine.
 
-## Architecture notes
+## Architecture highlights
 
-- **Redfin CSV no longer includes agent columns** (as of 2026) — agent data must be extracted from individual property pages via Playwright
-- **Two Redfin DOM structures** for agent data: `.agent-card-wrapper` (Redfin-agent listings) and `.listing-agent-item` (non-Redfin agents) — both handled automatically
-- **Fresh browser context per page** with randomized user-agent/viewport — Redfin CloudFront blocks repeated requests from same session
-- **10-20 second delay** between enrichment page visits — lower causes CDN 403 blocks
-- Three towns (York, Ogunquit, Wells) are classified as "minorcivildivision" on Redfin, not "city" — CSV API queries use York County with city filtering
-- Agent name normalization uses `rapidfuzz` (>90% similarity + same office = merge)
-- Chunk-based resumable processing for GitHub Actions free tier (45-min timeout, 2000 min/month)
-- Enrichment tracked per-URL via `enrichment_status` column (NULL → success/no_agent/error) with up to 3 retry attempts
+- **Concurrent Firecrawl enrichment** — ThreadPoolExecutor with circuit breaker (aborts at 5 consecutive or 20 total failures). 25 workers completes ~16K listings in ~3 hours.
+- **Thread-safe SQLite writes** — WAL mode + shared `db_lock` + retry on lock contention.
+- **Period-based KPI queries** — a UNION of listing-side and buyer-side rows aggregated in one pass, with `CASE WHEN close_date >= ? THEN ... END` per period.
+- **Pure-Python rank mover computation** — `compute_rank_movers()` in `src/maine_kpis.py` diffs current-12mo rank vs prior-12mo rank. NEW entities (no prior activity) are placed in risers with delta=None.
+- **Escape-decoding at parse time** — the MaineListings NUXT blob embeds `\u002F` style escapes (Vue double-encodes); decoded in Python after regex extraction.
+- **Automatic DB backup** before every mutating run (keeps last 3 timestamped copies).
+- **Exclusion list** for known placeholders ("NON-MREIS AGENT", brokerage-as-agent names) applied at query time so they never rank.
+
+## Supply chain security
+
+All dependencies pinned to exact versions. GitHub Actions pinned to full SHAs. Dependabot + pip-audit enabled. See [SECURITY.md](SECURITY.md).
+
+## Repository layout
+
+```
+src/                           # Python pipeline
+  maine_main.py                # CLI orchestrator (discover / enrich / report / update-index)
+  maine_firecrawl.py           # Concurrent Firecrawl scraping (search + detail pages)
+  maine_parser.py              # Search card regex + NUXT blob extraction
+  maine_database.py            # SQLite schema + upsert/enrich helpers
+  maine_state.py               # Per-town discovery state tracking
+  maine_kpis.py                # Period queries + rank movers (leaderboard data layer)
+  maine_report.py              # Markdown leaderboard + unified agent search index
+  maine_dashboard.py           # Standalone HTML dashboard
+  maine_notifier.py            # Pushover + Resend alerts
+  index_page.py                # Tabbed wrapper + interactive Leaderboard tab
+  # Archived (kept for reference):
+  scraper.py / main.py / report.py / dashboard.py   (Redfin)
+  zillow_*.py                                       (Zillow)
+tests/                         # 232 pytest tests
+data/                          # SQLite DBs + generated dashboards (committed)
+.github/workflows/
+  maine_listings.yml           # Weekly cron + manual dispatch (primary)
+  zillow_leaderboard.yml       # Manual dispatch only (archived)
+  scrape_agents.yml            # Manual dispatch only (archived)
+docs/superpowers/
+  specs/                       # Design specs
+  plans/                       # Implementation plans
+```

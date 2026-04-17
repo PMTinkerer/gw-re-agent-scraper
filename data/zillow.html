@@ -1,0 +1,2894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zillow Leaderboard &mdash; Southern Coastal Maine</title>
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+        --bg-base: hsl(220, 15%, 8%);
+        --bg-surface: hsl(220, 13%, 11%);
+        --bg-elevated: hsl(220, 12%, 14%);
+        --bg-hover: hsl(220, 11%, 17%);
+        --text-1: rgba(255,255,255,0.90);
+        --text-2: rgba(255,255,255,0.55);
+        --text-3: rgba(255,255,255,0.32);
+        --accent: hsl(42, 78%, 60%);
+        --accent-dim: hsla(42, 78%, 60%, 0.80);
+        --trend-up: hsl(152, 55%, 45%);
+        --trend-down: hsl(0, 60%, 52%);
+        --trend-flat: rgba(255,255,255,0.30);
+        --trend-new: hsl(200, 75%, 52%);
+        --shadow: hsla(220, 40%, 4%, 0.55);
+        --rule: rgba(255,255,255,0.06);
+        --radius: 10px;
+        --font: 'DM Sans', sans-serif;
+        --mono: 'JetBrains Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+        font-family: var(--font);
+        background: var(--bg-base);
+        color: var(--text-1);
+        line-height: 1.5;
+        min-height: 100dvh;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(ellipse at 8% -5%, hsla(42,70%,55%,0.045) 0%, transparent 55%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    body::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        opacity: 0.018;
+        pointer-events: none;
+        z-index: 1;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        background-repeat: repeat;
+        background-size: 256px 256px;
+    }
+
+    .wrap {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 32px;
+        position: relative;
+        z-index: 2;
+    }
+
+    /* --- HEADER --- */
+    .header {
+        padding: 56px 0 20px;
+    }
+    .header h1 {
+        font-size: 2.1rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1.15;
+        color: var(--text-1);
+        text-wrap: balance;
+    }
+    .header .sub {
+        font-size: 0.78rem;
+        color: var(--text-3);
+        margin-top: 6px;
+        font-family: var(--mono);
+        letter-spacing: 0.01em;
+    }
+
+    /* --- STAT CARDS --- */
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin: 28px 0 48px;
+    }
+    .stat {
+        background: var(--bg-surface);
+        border-radius: var(--radius);
+        padding: 22px 26px;
+        transition: transform 180ms ease-out, box-shadow 180ms ease-out;
+        animation: fadeUp 450ms ease-out both;
+    }
+    .stat:nth-child(1) { animation-delay: 0ms; }
+    .stat:nth-child(2) { animation-delay: 70ms; }
+    .stat:nth-child(3) { animation-delay: 140ms; }
+    .stat:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px var(--shadow);
+    }
+    .stat .label {
+        font-family: var(--mono);
+        font-size: 0.62rem;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-3);
+        margin-bottom: 8px;
+    }
+    .stat .value {
+        font-size: 1.85rem;
+        font-weight: 700;
+        color: var(--accent);
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    /* --- SECTIONS --- */
+    .section {
+        background: var(--bg-surface);
+        border-radius: var(--radius);
+        padding: 28px 32px 24px;
+        margin-bottom: 24px;
+        animation: fadeUp 450ms ease-out both;
+    }
+    .section:nth-of-type(1) { animation-delay: 200ms; }
+    .section:nth-of-type(2) { animation-delay: 280ms; }
+    .section:nth-of-type(3) { animation-delay: 360ms; }
+    .section:nth-of-type(4) { animation-delay: 440ms; }
+    .section:nth-of-type(5) { animation-delay: 520ms; }
+    .section:nth-of-type(6) { animation-delay: 600ms; }
+
+    .section h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--text-1);
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--rule);
+        margin-bottom: 4px;
+    }
+
+    /* --- TOWN SUB-SECTIONS --- */
+    .town-group h3 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-2);
+        margin: 24px 0 4px;
+        padding-left: 2px;
+    }
+
+    /* --- TABLES --- */
+    .table-wrap { overflow-x: auto; }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+        table-layout: fixed;
+    }
+    thead th {
+        font-family: var(--mono);
+        font-size: 0.6rem;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-3);
+        text-align: left;
+        padding: 14px 12px 10px;
+        border-bottom: 1px solid var(--rule);
+        position: sticky;
+        top: 0;
+        background: var(--bg-surface);
+    }
+    thead th.num { text-align: right; }
+
+    tbody td {
+        padding: 10px 12px;
+        color: var(--text-2);
+        border: none;
+        transition: background 120ms ease-out, color 120ms ease-out;
+        vertical-align: middle;
+    }
+    tbody tr:nth-child(odd) td { background: transparent; }
+    tbody tr:nth-child(even) td { background: var(--bg-elevated); }
+    tbody tr:hover td { background: var(--bg-hover); }
+
+    td.num {
+        text-align: right;
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+        font-size: 0.8rem;
+    }
+    td.vol {
+        color: var(--accent-dim);
+        font-weight: 500;
+    }
+    td.agent-name, td.office, td.top-agents {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    td.agent-name {
+        color: var(--text-1);
+        font-weight: 500;
+    }
+    td.office {
+        color: var(--text-2);
+    }
+    tr.rank-1 td.agent-name {
+        color: var(--accent);
+        font-weight: 600;
+    }
+    tr.rank-1 td:first-child {
+        border-left: 2px solid var(--accent);
+    }
+
+    td.towns {
+        font-size: 0.75rem;
+        color: var(--text-3);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    td.top-agents {
+        font-size: 0.78rem;
+        color: var(--text-2);
+    }
+
+    .no-data {
+        text-align: center;
+        color: var(--text-3);
+        font-style: italic;
+        padding: 32px 12px;
+    }
+
+    /* --- TREND BADGES --- */
+    .badge {
+        display: inline-block;
+        font-family: var(--mono);
+        font-size: 0.68rem;
+        font-weight: 500;
+        padding: 2px 8px;
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+    .badge-up {
+        color: var(--trend-up);
+        background: hsla(152, 55%, 45%, 0.12);
+    }
+    .badge-down {
+        color: var(--trend-down);
+        background: hsla(0, 60%, 52%, 0.12);
+    }
+    .badge-flat {
+        color: var(--trend-flat);
+        background: rgba(255,255,255,0.05);
+    }
+    .badge-new {
+        color: var(--trend-new);
+        background: hsla(200, 75%, 52%, 0.12);
+    }
+
+    /* --- FOOTER --- */
+    .footer {
+        text-align: center;
+        padding: 40px 0 48px;
+        font-size: 0.7rem;
+        color: var(--text-3);
+        font-family: var(--mono);
+    }
+
+    /* --- ANIMATION --- */
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* --- SORTABLE HEADERS --- */
+    thead th { cursor: pointer; user-select: none; position: relative; }
+    thead th:hover { color: var(--text-2); }
+    thead th .sort-arrow { margin-left: 4px; font-size: 0.55rem; opacity: 0.5; }
+    thead th.sort-active .sort-arrow { opacity: 1; color: var(--accent); }
+
+    /* --- RESPONSIVE --- */
+    @media (max-width: 768px) {
+        .wrap { padding: 0 16px; }
+        .header { padding: 32px 0 16px; }
+        .header h1 { font-size: 1.5rem; }
+        .stat .value { font-size: 1.4rem; }
+        .section { padding: 20px 16px 16px; }
+        table { font-size: 0.75rem; }
+        thead th { font-size: 0.55rem; }
+    }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <header class="header">
+            <h1>Zillow Leaderboard</h1>
+            <p class="sub">Southern Coastal Maine &middot; 10 Towns &middot; 2026-04-16 00:00 UTC</p>
+        </header>
+        <div class="stats">
+            <div class="stat"><div class="label">Brokerages</div><div class="value">0</div></div>
+            <div class="stat"><div class="label">Agents</div><div class="value">685</div></div>
+            <div class="stat"><div class="label">Teams</div><div class="value">114</div></div>
+            <div class="stat"><div class="label">Towns</div><div class="value">10</div></div>
+        </div>
+        <p class="sub" style="margin: 24px 0 8px; font-size: 0.75rem; color: var(--text-3);">
+            <strong>Local Sales</strong> = closed transactions in our 10 towns only.
+            <strong>12-Mo Sales</strong> = agent&rsquo;s total sales across all areas (not limited to our territory).
+        </p>
+        <main><section class="section">
+        <h2>Top Brokerages</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:28%">
+                <col style="width:10%"><col style="width:12%"><col style="width:12%">
+                <col style="width:14%"><col style="width:10%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Brokerage</th>
+                <th class="num">Agents</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="office">Keller Williams Realty</td>
+            <td class="num">32</td>
+            <td class="num">2,208</td>
+            <td class="num">$478K</td>
+            <td class="num vol">$1.1B</td>
+            <td class="num">2482</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="office">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">20</td>
+            <td class="num">2,196</td>
+            <td class="num">$574K</td>
+            <td class="num vol">$1.3B</td>
+            <td class="num">4506</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="office">Anne Erwin Sotheby&#x27;s International Realty</td>
+            <td class="num">7</td>
+            <td class="num">1,970</td>
+            <td class="num">$810K</td>
+            <td class="num vol">$1.6B</td>
+            <td class="num">378</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="office">Portside Real Estate Group</td>
+            <td class="num">41</td>
+            <td class="num">1,738</td>
+            <td class="num">$598K</td>
+            <td class="num vol">$1.0B</td>
+            <td class="num">2248</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="office">Coldwell Banker Realty</td>
+            <td class="num">32</td>
+            <td class="num">1,564</td>
+            <td class="num">$534K</td>
+            <td class="num vol">$835.4M</td>
+            <td class="num">1861</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="office">Signature Homes Real Estate Group</td>
+            <td class="num">4</td>
+            <td class="num">950</td>
+            <td class="num">$552K</td>
+            <td class="num vol">$524.4M</td>
+            <td class="num">928</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="office">Coldwell Banker Yorke Realty</td>
+            <td class="num">7</td>
+            <td class="num">806</td>
+            <td class="num">$602K</td>
+            <td class="num vol">$485.4M</td>
+            <td class="num">200</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="office">RE/MAX Shoreline</td>
+            <td class="num">14</td>
+            <td class="num">716</td>
+            <td class="num">$590K</td>
+            <td class="num vol">$422.7M</td>
+            <td class="num">332</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="office">OceanView Properties</td>
+            <td class="num">4</td>
+            <td class="num">699</td>
+            <td class="num">$971K</td>
+            <td class="num vol">$678.8M</td>
+            <td class="num">247</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="office">Moody Maxon Real Estate</td>
+            <td class="num">1</td>
+            <td class="num">689</td>
+            <td class="num">$325K</td>
+            <td class="num vol">$223.7M</td>
+            <td class="num">600</td>
+        </tr><tr>
+            <td class="num">11</td>
+            <td class="office">Team Syrene Real Estate ~ EXP</td>
+            <td class="num">1</td>
+            <td class="num">664</td>
+            <td class="num">$695K</td>
+            <td class="num vol">$461.3M</td>
+            <td class="num">210</td>
+        </tr><tr>
+            <td class="num">12</td>
+            <td class="office">Assist-2-Sell Home Team Advantage</td>
+            <td class="num">2</td>
+            <td class="num">657</td>
+            <td class="num">$521K</td>
+            <td class="num vol">$342.3M</td>
+            <td class="num">96</td>
+        </tr><tr>
+            <td class="num">13</td>
+            <td class="office">Top Homes Group Powered by Keller Williams Realty-207-415-8204</td>
+            <td class="num">1</td>
+            <td class="num">587</td>
+            <td class="num">$440K</td>
+            <td class="num vol">$258.5M</td>
+            <td class="num">384</td>
+        </tr><tr>
+            <td class="num">14</td>
+            <td class="office">The Real Estate Store</td>
+            <td class="num">2</td>
+            <td class="num">577</td>
+            <td class="num">$594K</td>
+            <td class="num vol">$342.7M</td>
+            <td class="num">108</td>
+        </tr><tr>
+            <td class="num">15</td>
+            <td class="office">RE/MAX Realty One</td>
+            <td class="num">16</td>
+            <td class="num">560</td>
+            <td class="num">$499K</td>
+            <td class="num vol">$279.5M</td>
+            <td class="num">424</td>
+        </tr><tr>
+            <td class="num">16</td>
+            <td class="office">Team Wunder, RE/MAX Realty One</td>
+            <td class="num">2</td>
+            <td class="num">559</td>
+            <td class="num">$862K</td>
+            <td class="num vol">$482.1M</td>
+            <td class="num">84</td>
+        </tr><tr>
+            <td class="num">17</td>
+            <td class="office">Pack Maynard &amp; Associates</td>
+            <td class="num">1</td>
+            <td class="num">545</td>
+            <td class="num">$1.5M</td>
+            <td class="num vol">$833.6M</td>
+            <td class="num">120</td>
+        </tr><tr>
+            <td class="num">18</td>
+            <td class="office">Aland Realty</td>
+            <td class="num">14</td>
+            <td class="num">500</td>
+            <td class="num">$712K</td>
+            <td class="num vol">$356.2M</td>
+            <td class="num">340</td>
+        </tr><tr>
+            <td class="num">19</td>
+            <td class="office">Maine Real Estate Co</td>
+            <td class="num">5</td>
+            <td class="num">483</td>
+            <td class="num">$623K</td>
+            <td class="num vol">$300.7M</td>
+            <td class="num">957</td>
+        </tr><tr>
+            <td class="num">20</td>
+            <td class="office">Coldwell Banker Residential Brokerage</td>
+            <td class="num">12</td>
+            <td class="num">445</td>
+            <td class="num">$505K</td>
+            <td class="num vol">$224.7M</td>
+            <td class="num">250</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — All Towns</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:17%"><col style="width:18%">
+                <col style="width:6%"><col style="width:10%"><col style="width:10%">
+                <col style="width:12%"><col style="width:8%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Agent</th><th>Office</th>
+                <th class="num">Type</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Anne Erwin Sotheby&#x27;s International Realty</td>
+            <td class="office">Anne Erwin Sotheby&#x27;s International Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">1,728</td>
+            <td class="num">$1.1M</td>
+            <td class="num vol">$1.9B</td>
+            <td class="num">92</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Troy Williams</td>
+            <td class="office">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">1,680</td>
+            <td class="num">$624K</td>
+            <td class="num vol">$1.0B</td>
+            <td class="num">205</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Carrie Scoville and Amy Foley</td>
+            <td class="office">Signature Homes Real Estate Group</td>
+            <td class="num"></td>
+            <td class="num">870</td>
+            <td class="num">$570K</td>
+            <td class="num vol">$495.6M</td>
+            <td class="num">104</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Pamela Moody-Maxon</td>
+            <td class="office">Moody Maxon Real Estate</td>
+            <td class="num"></td>
+            <td class="num">689</td>
+            <td class="num">$325K</td>
+            <td class="num vol">$223.7M</td>
+            <td class="num">75</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Janna Syrene</td>
+            <td class="office">Team Syrene Real Estate ~ EXP</td>
+            <td class="num">TEAM</td>
+            <td class="num">664</td>
+            <td class="num">$695K</td>
+            <td class="num vol">$461.3M</td>
+            <td class="num">35</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Rebecca Bassett</td>
+            <td class="office">Portside Real Estate Group</td>
+            <td class="num">TEAM</td>
+            <td class="num">624</td>
+            <td class="num">$818K</td>
+            <td class="num vol">$510.2M</td>
+            <td class="num">27</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Deja Lett</td>
+            <td class="office">Top Homes Group Powered by Keller Williams Realty-207-415-8204</td>
+            <td class="num">TEAM</td>
+            <td class="num">587</td>
+            <td class="num">$440K</td>
+            <td class="num vol">$258.5M</td>
+            <td class="num">48</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Nancy Z Moreshead</td>
+            <td class="office">The Real Estate Store</td>
+            <td class="num"></td>
+            <td class="num">560</td>
+            <td class="num">$596K</td>
+            <td class="num vol">$333.9M</td>
+            <td class="num">30</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Heidi Maynard Corey Tracy</td>
+            <td class="office">Pack Maynard &amp; Associates</td>
+            <td class="num"></td>
+            <td class="num">545</td>
+            <td class="num">$1.5M</td>
+            <td class="num vol">$833.6M</td>
+            <td class="num">30</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">OceanView Properties</td>
+            <td class="office">OceanView Properties</td>
+            <td class="num"></td>
+            <td class="num">513</td>
+            <td class="num">$904K</td>
+            <td class="num vol">$463.9M</td>
+            <td class="num">29</td>
+        </tr><tr>
+            <td class="num">11</td>
+            <td class="agent-name">Scott and Sunny Townsend</td>
+            <td class="office">Keller Williams Realty</td>
+            <td class="num"></td>
+            <td class="num">496</td>
+            <td class="num">$598K</td>
+            <td class="num vol">$296.8M</td>
+            <td class="num">109</td>
+        </tr><tr>
+            <td class="num">12</td>
+            <td class="agent-name">Don Wunder</td>
+            <td class="office">Team Wunder, RE/MAX Realty One</td>
+            <td class="num">TEAM</td>
+            <td class="num">455</td>
+            <td class="num">$884K</td>
+            <td class="num vol">$402.4M</td>
+            <td class="num">24</td>
+        </tr><tr>
+            <td class="num">13</td>
+            <td class="agent-name">Tim Madden</td>
+            <td class="office">Assist-2-Sell Home Team Advantage</td>
+            <td class="num"></td>
+            <td class="num">454</td>
+            <td class="num">$502K</td>
+            <td class="num vol">$228.1M</td>
+            <td class="num">12</td>
+        </tr><tr>
+            <td class="num">14</td>
+            <td class="agent-name">Adam Parent</td>
+            <td class="office">Maine Real Estate Co</td>
+            <td class="num"></td>
+            <td class="num">408</td>
+            <td class="num">$535K</td>
+            <td class="num vol">$218.4M</td>
+            <td class="num">115</td>
+        </tr><tr>
+            <td class="num">15</td>
+            <td class="agent-name">Christina Connell</td>
+            <td class="office">Berkshire Hathaway HomeServices Verani Realty</td>
+            <td class="num"></td>
+            <td class="num">392</td>
+            <td class="num">$546K</td>
+            <td class="num vol">$214.1M</td>
+            <td class="num">24</td>
+        </tr><tr>
+            <td class="num">16</td>
+            <td class="agent-name">Jeff Mateja</td>
+            <td class="office">Keller Williams Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">365</td>
+            <td class="num">$421K</td>
+            <td class="num vol">$153.5M</td>
+            <td class="num">113</td>
+        </tr><tr>
+            <td class="num">17</td>
+            <td class="agent-name">Kathleen Watts</td>
+            <td class="office">Coldwell Banker Yorke Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">365</td>
+            <td class="num">$592K</td>
+            <td class="num vol">$216.2M</td>
+            <td class="num">34</td>
+        </tr><tr>
+            <td class="num">18</td>
+            <td class="agent-name">Pamela Gray</td>
+            <td class="office">RE/MAX Shoreline</td>
+            <td class="num"></td>
+            <td class="num">365</td>
+            <td class="num">$515K</td>
+            <td class="num vol">$187.8M</td>
+            <td class="num">14</td>
+        </tr><tr>
+            <td class="num">19</td>
+            <td class="agent-name">Erickson Team</td>
+            <td class="office">Coldwell Banker Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">357</td>
+            <td class="num">$449K</td>
+            <td class="num vol">$160.4M</td>
+            <td class="num">41</td>
+        </tr><tr>
+            <td class="num">20</td>
+            <td class="agent-name">Jason Vennard</td>
+            <td class="office">Anchor Real Estate</td>
+            <td class="num"></td>
+            <td class="num">329</td>
+            <td class="num">$1.1M</td>
+            <td class="num vol">$361.6M</td>
+            <td class="num">N/A</td>
+        </tr><tr>
+            <td class="num">21</td>
+            <td class="agent-name">Bridgette Vermette</td>
+            <td class="office">Keller Williams Realty</td>
+            <td class="num"></td>
+            <td class="num">327</td>
+            <td class="num">$837K</td>
+            <td class="num vol">$273.7M</td>
+            <td class="num">1</td>
+        </tr><tr>
+            <td class="num">22</td>
+            <td class="agent-name">Jeffrey Jellison</td>
+            <td class="office">Century 21 Atlantic Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">300</td>
+            <td class="num">$779K</td>
+            <td class="num vol">$233.7M</td>
+            <td class="num">17</td>
+        </tr><tr>
+            <td class="num">23</td>
+            <td class="agent-name">Greg Gosselin</td>
+            <td class="office">Gosselin Realty Group</td>
+            <td class="num"></td>
+            <td class="num">279</td>
+            <td class="num">$626K</td>
+            <td class="num vol">$174.8M</td>
+            <td class="num">14</td>
+        </tr><tr>
+            <td class="num">24</td>
+            <td class="agent-name">Lori Barrett</td>
+            <td class="office">Coldwell Banker Yorke Realty</td>
+            <td class="num"></td>
+            <td class="num">267</td>
+            <td class="num">$602K</td>
+            <td class="num vol">$160.8M</td>
+            <td class="num">18</td>
+        </tr><tr>
+            <td class="num">25</td>
+            <td class="agent-name">Jennifer Walker</td>
+            <td class="office">207 Prime Properties</td>
+            <td class="num">TEAM</td>
+            <td class="num">253</td>
+            <td class="num">$578K</td>
+            <td class="num vol">$146.3M</td>
+            <td class="num">29</td>
+        </tr><tr>
+            <td class="num">26</td>
+            <td class="agent-name">Helen Curry</td>
+            <td class="office">Kennebunk Beach Realty</td>
+            <td class="num"></td>
+            <td class="num">244</td>
+            <td class="num">$850K</td>
+            <td class="num vol">$207.4M</td>
+            <td class="num">9</td>
+        </tr><tr>
+            <td class="num">27</td>
+            <td class="agent-name">Donna Roberts Christine Paul</td>
+            <td class="office">Your Real Estate Estate Co</td>
+            <td class="num">TEAM</td>
+            <td class="num">239</td>
+            <td class="num">$214K</td>
+            <td class="num vol">$51.1M</td>
+            <td class="num">47</td>
+        </tr><tr>
+            <td class="num">28</td>
+            <td class="agent-name">Gail Bergeron</td>
+            <td class="office">The Aland Realty Group</td>
+            <td class="num"></td>
+            <td class="num">227</td>
+            <td class="num">$689K</td>
+            <td class="num vol">$156.5M</td>
+            <td class="num">11</td>
+        </tr><tr>
+            <td class="num">29</td>
+            <td class="agent-name">Betsy Ames-Fitzgerald, CRS</td>
+            <td class="office">Coldwell Banker/Residential Brokerage</td>
+            <td class="num"></td>
+            <td class="num">220</td>
+            <td class="num">N/A</td>
+            <td class="num vol">N/A</td>
+            <td class="num">N/A</td>
+        </tr><tr>
+            <td class="num">30</td>
+            <td class="agent-name">Julie Grady</td>
+            <td class="office">Lighthouse Real Estate Group</td>
+            <td class="num"></td>
+            <td class="num">217</td>
+            <td class="num">$774K</td>
+            <td class="num vol">$168.0M</td>
+            <td class="num">18</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — Kittery</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:28%">
+                <col style="width:10%"><col style="width:12%"><col style="width:12%">
+                <col style="width:14%"><col style="width:10%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Brokerage</th>
+                <th class="num">Agents</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="office">RE/MAX Shoreline</td>
+            <td class="num">6</td>
+            <td class="num">548</td>
+            <td class="num">$611K</td>
+            <td class="num vol">$334.7M</td>
+            <td class="num">40</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="office">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">13</td>
+            <td class="num">402</td>
+            <td class="num">$614K</td>
+            <td class="num vol">$247.0M</td>
+            <td class="num">673</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="office">Anne Erwin Sotheby&#x27;s International Realty</td>
+            <td class="num">6</td>
+            <td class="num">281</td>
+            <td class="num">$807K</td>
+            <td class="num vol">$226.8M</td>
+            <td class="num">95</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="office">Keller Williams Coastal Realty</td>
+            <td class="num">14</td>
+            <td class="num">140</td>
+            <td class="num">$626K</td>
+            <td class="num vol">$87.6M</td>
+            <td class="num">282</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="office">Aland Realty</td>
+            <td class="num">8</td>
+            <td class="num">129</td>
+            <td class="num">$776K</td>
+            <td class="num vol">$100.1M</td>
+            <td class="num">120</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="office">Coldwell Banker Yorke Realty</td>
+            <td class="num">4</td>
+            <td class="num">126</td>
+            <td class="num">$595K</td>
+            <td class="num vol">$75.0M</td>
+            <td class="num">55</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="office">Aland Realty Group</td>
+            <td class="num">8</td>
+            <td class="num">57</td>
+            <td class="num">$620K</td>
+            <td class="num vol">$35.3M</td>
+            <td class="num">91</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="office">Red Post Realty</td>
+            <td class="num">6</td>
+            <td class="num">47</td>
+            <td class="num">$565K</td>
+            <td class="num vol">$26.6M</td>
+            <td class="num">288</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="office">The Aland Realty Group</td>
+            <td class="num">2</td>
+            <td class="num">46</td>
+            <td class="num">$1.3M</td>
+            <td class="num vol">$58.9M</td>
+            <td class="num">29</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="office">BH&amp;G/The Masiello Group</td>
+            <td class="num">1</td>
+            <td class="num">45</td>
+            <td class="num">$506K</td>
+            <td class="num vol">$22.8M</td>
+            <td class="num">21</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — Kittery</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:17%"><col style="width:18%">
+                <col style="width:6%"><col style="width:10%"><col style="width:10%">
+                <col style="width:12%"><col style="width:8%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Agent</th><th>Office</th>
+                <th class="num">Type</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Pamela Gray</td>
+            <td class="office">RE/MAX Shoreline</td>
+            <td class="num"></td>
+            <td class="num">340</td>
+            <td class="num">$515K</td>
+            <td class="num vol">$175.0M</td>
+            <td class="num">14</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Anne Erwin Sotheby&#x27;s International Realty</td>
+            <td class="office">Anne Erwin Sotheby&#x27;s International Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">245</td>
+            <td class="num">$1.1M</td>
+            <td class="num vol">$271.2M</td>
+            <td class="num">92</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Troy Williams</td>
+            <td class="office">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">201</td>
+            <td class="num">$624K</td>
+            <td class="num vol">$125.4M</td>
+            <td class="num">205</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Marcel Bartley</td>
+            <td class="office">RE/MAX Shoreline</td>
+            <td class="num"></td>
+            <td class="num">144</td>
+            <td class="num">$586K</td>
+            <td class="num vol">$84.4M</td>
+            <td class="num">1</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Ali Goodwin</td>
+            <td class="office">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">87</td>
+            <td class="num">$553K</td>
+            <td class="num vol">$48.1M</td>
+            <td class="num">46</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Kathleen Watts</td>
+            <td class="office">Coldwell Banker Yorke Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">77</td>
+            <td class="num">$592K</td>
+            <td class="num vol">$45.6M</td>
+            <td class="num">34</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Liz Levey-Pruyn</td>
+            <td class="office">Aland Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">57</td>
+            <td class="num">$1.1M</td>
+            <td class="num vol">$63.2M</td>
+            <td class="num">46</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Justin Kelcourse</td>
+            <td class="office">Keller Williams Coastal Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">53</td>
+            <td class="num">$504K</td>
+            <td class="num vol">$26.7M</td>
+            <td class="num">19</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Priscilla Ford</td>
+            <td class="office">Aland Realty</td>
+            <td class="num"></td>
+            <td class="num">52</td>
+            <td class="num">$610K</td>
+            <td class="num vol">$31.7M</td>
+            <td class="num">17</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Lori Barrett</td>
+            <td class="office">Coldwell Banker Yorke Realty</td>
+            <td class="num"></td>
+            <td class="num">45</td>
+            <td class="num">$602K</td>
+            <td class="num vol">$27.1M</td>
+            <td class="num">18</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — York</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:28%">
+                <col style="width:10%"><col style="width:12%"><col style="width:12%">
+                <col style="width:14%"><col style="width:10%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Brokerage</th>
+                <th class="num">Agents</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="office">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">16</td>
+            <td class="num">1,321</td>
+            <td class="num">$554K</td>
+            <td class="num vol">$731.5M</td>
+            <td class="num">674</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="office">Anne Erwin Sotheby&#x27;s International Realty</td>
+            <td class="num">7</td>
+            <td class="num">1,025</td>
+            <td class="num">$807K</td>
+            <td class="num vol">$827.3M</td>
+            <td class="num">95</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="office">Coldwell Banker Yorke Realty</td>
+            <td class="num">7</td>
+            <td class="num">589</td>
+            <td class="num">$671K</td>
+            <td class="num vol">$395.5M</td>
+            <td class="num">72</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="office">Century 21 Atlantic Realty</td>
+            <td class="num">2</td>
+            <td class="num">315</td>
+            <td class="num">$1.0M</td>
+            <td class="num vol">$329.0M</td>
+            <td class="num">17</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="office">Aland Realty Group</td>
+            <td class="num">4</td>
+            <td class="num">161</td>
+            <td class="num">$667K</td>
+            <td class="num vol">$107.3M</td>
+            <td class="num">44</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="office">Aland Realty</td>
+            <td class="num">12</td>
+            <td class="num">157</td>
+            <td class="num">$764K</td>
+            <td class="num vol">$119.9M</td>
+            <td class="num">145</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="office">Team Wunder, RE/MAX Realty One</td>
+            <td class="num">2</td>
+            <td class="num">149</td>
+            <td class="num">$857K</td>
+            <td class="num vol">$127.7M</td>
+            <td class="num">30</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="office">Gosselin Realty Group</td>
+            <td class="num">1</td>
+            <td class="num">136</td>
+            <td class="num">$626K</td>
+            <td class="num vol">$85.2M</td>
+            <td class="num">14</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="office">BH&amp;G The Masiello Group</td>
+            <td class="num">2</td>
+            <td class="num">113</td>
+            <td class="num">$287K</td>
+            <td class="num vol">$32.5M</td>
+            <td class="num">6</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="office">Team Syrene Real Estate ~ EXP</td>
+            <td class="num">1</td>
+            <td class="num">112</td>
+            <td class="num">$695K</td>
+            <td class="num vol">$77.8M</td>
+            <td class="num">35</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — York</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:17%"><col style="width:18%">
+                <col style="width:6%"><col style="width:10%"><col style="width:10%">
+                <col style="width:12%"><col style="width:8%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Agent</th><th>Office</th>
+                <th class="num">Type</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Troy Williams</td>
+            <td class="office">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">1,124</td>
+            <td class="num">$624K</td>
+            <td class="num vol">$701.3M</td>
+            <td class="num">205</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Anne Erwin Sotheby&#x27;s International Realty</td>
+            <td class="office">Anne Erwin Sotheby&#x27;s International Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">898</td>
+            <td class="num">$1.1M</td>
+            <td class="num vol">$994.0M</td>
+            <td class="num">92</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Jeffrey Jellison</td>
+            <td class="office">Century 21 Atlantic Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">300</td>
+            <td class="num">$779K</td>
+            <td class="num vol">$233.7M</td>
+            <td class="num">17</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Kathleen Watts</td>
+            <td class="office">Coldwell Banker Yorke Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">279</td>
+            <td class="num">$592K</td>
+            <td class="num vol">$165.3M</td>
+            <td class="num">34</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Lori Barrett</td>
+            <td class="office">Coldwell Banker Yorke Realty</td>
+            <td class="num"></td>
+            <td class="num">152</td>
+            <td class="num">$602K</td>
+            <td class="num vol">$91.5M</td>
+            <td class="num">18</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Greg Gosselin</td>
+            <td class="office">Gosselin Realty Group</td>
+            <td class="num"></td>
+            <td class="num">136</td>
+            <td class="num">$626K</td>
+            <td class="num vol">$85.2M</td>
+            <td class="num">14</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Margaret Mitchell</td>
+            <td class="office">Coldwell Banker Yorke Realty</td>
+            <td class="num"></td>
+            <td class="num">127</td>
+            <td class="num">$1.3M</td>
+            <td class="num vol">$161.7M</td>
+            <td class="num">15</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Janna Syrene</td>
+            <td class="office">Team Syrene Real Estate ~ EXP</td>
+            <td class="num">TEAM</td>
+            <td class="num">112</td>
+            <td class="num">$695K</td>
+            <td class="num vol">$77.8M</td>
+            <td class="num">35</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Cindy Donnell</td>
+            <td class="office">BH&amp;G/THE MASIELLO GROUP</td>
+            <td class="num"></td>
+            <td class="num">106</td>
+            <td class="num">$711K</td>
+            <td class="num vol">$75.4M</td>
+            <td class="num">N/A</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Cindy Greene</td>
+            <td class="office">BH&amp;G The Masiello Group</td>
+            <td class="num"></td>
+            <td class="num">106</td>
+            <td class="num">$287K</td>
+            <td class="num vol">$30.4M</td>
+            <td class="num">6</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — Ogunquit</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:28%">
+                <col style="width:10%"><col style="width:12%"><col style="width:12%">
+                <col style="width:14%"><col style="width:10%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Brokerage</th>
+                <th class="num">Agents</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="office">Team Wunder, RE/MAX Realty One</td>
+            <td class="num">2</td>
+            <td class="num">343</td>
+            <td class="num">$857K</td>
+            <td class="num vol">$293.9M</td>
+            <td class="num">30</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="office">Anne Erwin Sotheby&#x27;s International Realty</td>
+            <td class="num">2</td>
+            <td class="num">260</td>
+            <td class="num">$1.1M</td>
+            <td class="num vol">$287.8M</td>
+            <td class="num">92</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="office">RE/MAX Realty One</td>
+            <td class="num">7</td>
+            <td class="num">150</td>
+            <td class="num">$545K</td>
+            <td class="num vol">$81.7M</td>
+            <td class="num">36</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="office">The Aland Realty Group</td>
+            <td class="num">2</td>
+            <td class="num">110</td>
+            <td class="num">$1.0M</td>
+            <td class="num vol">$115.0M</td>
+            <td class="num">35</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="office">207 Prime Properties</td>
+            <td class="num">1</td>
+            <td class="num">59</td>
+            <td class="num">$578K</td>
+            <td class="num vol">$34.1M</td>
+            <td class="num">29</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="office">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">4</td>
+            <td class="num">54</td>
+            <td class="num">$655K</td>
+            <td class="num vol">$35.4M</td>
+            <td class="num">456</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="office">Team Syrene Real Estate ~ EXP</td>
+            <td class="num">1</td>
+            <td class="num">15</td>
+            <td class="num">$695K</td>
+            <td class="num vol">$10.4M</td>
+            <td class="num">35</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="office">Coldwell Banker Y-Gull &amp; Associates</td>
+            <td class="num">1</td>
+            <td class="num">14</td>
+            <td class="num">$900K</td>
+            <td class="num vol">$12.6M</td>
+            <td class="num">8</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="office">KELLER WILLIAMS COASTAL LAKES &amp; MOUNTAINS REALTY</td>
+            <td class="num">1</td>
+            <td class="num">13</td>
+            <td class="num">$604K</td>
+            <td class="num vol">$7.9M</td>
+            <td class="num">7</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="office">Abigail Douris Real Estate</td>
+            <td class="num">1</td>
+            <td class="num">12</td>
+            <td class="num">$878K</td>
+            <td class="num vol">$10.5M</td>
+            <td class="num">10</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — Ogunquit</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:17%"><col style="width:18%">
+                <col style="width:6%"><col style="width:10%"><col style="width:10%">
+                <col style="width:12%"><col style="width:8%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Agent</th><th>Office</th>
+                <th class="num">Type</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Don Wunder</td>
+            <td class="office">Team Wunder, RE/MAX Realty One</td>
+            <td class="num">TEAM</td>
+            <td class="num">296</td>
+            <td class="num">$884K</td>
+            <td class="num vol">$261.8M</td>
+            <td class="num">24</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Anne Erwin Sotheby&#x27;s International Realty</td>
+            <td class="office">Anne Erwin Sotheby&#x27;s International Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">253</td>
+            <td class="num">$1.1M</td>
+            <td class="num vol">$280.0M</td>
+            <td class="num">92</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Carolyn Weller</td>
+            <td class="office">RE/MAX Realty One</td>
+            <td class="num"></td>
+            <td class="num">92</td>
+            <td class="num">$705K</td>
+            <td class="num vol">$64.9M</td>
+            <td class="num">15</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Gail Bergeron</td>
+            <td class="office">The Aland Realty Group</td>
+            <td class="num"></td>
+            <td class="num">73</td>
+            <td class="num">$689K</td>
+            <td class="num vol">$50.3M</td>
+            <td class="num">11</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Jennifer Walker</td>
+            <td class="office">207 Prime Properties</td>
+            <td class="num">TEAM</td>
+            <td class="num">59</td>
+            <td class="num">$578K</td>
+            <td class="num vol">$34.1M</td>
+            <td class="num">29</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Robert Coles</td>
+            <td class="office">Team Wunder, RE/MAX Realty One</td>
+            <td class="num">TEAM</td>
+            <td class="num">47</td>
+            <td class="num">$829K</td>
+            <td class="num vol">$39.0M</td>
+            <td class="num">6</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Troy Williams</td>
+            <td class="office">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">39</td>
+            <td class="num">$624K</td>
+            <td class="num vol">$24.3M</td>
+            <td class="num">205</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Christopher Erikson</td>
+            <td class="office">The Aland Realty Group</td>
+            <td class="num"></td>
+            <td class="num">37</td>
+            <td class="num">$1.4M</td>
+            <td class="num vol">$51.9M</td>
+            <td class="num">24</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Kyle Mango</td>
+            <td class="office">RE/MAX Realty One</td>
+            <td class="num"></td>
+            <td class="num">19</td>
+            <td class="num">$425K</td>
+            <td class="num vol">$8.1M</td>
+            <td class="num">3</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Janna Syrene</td>
+            <td class="office">Team Syrene Real Estate ~ EXP</td>
+            <td class="num">TEAM</td>
+            <td class="num">15</td>
+            <td class="num">$695K</td>
+            <td class="num vol">$10.4M</td>
+            <td class="num">35</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — Wells</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:28%">
+                <col style="width:10%"><col style="width:12%"><col style="width:12%">
+                <col style="width:14%"><col style="width:10%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Brokerage</th>
+                <th class="num">Agents</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="office">Moody Maxon Real Estate</td>
+            <td class="num">1</td>
+            <td class="num">619</td>
+            <td class="num">$325K</td>
+            <td class="num vol">$200.9M</td>
+            <td class="num">75</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="office">Team Syrene Real Estate ~ EXP</td>
+            <td class="num">1</td>
+            <td class="num">446</td>
+            <td class="num">$695K</td>
+            <td class="num vol">$309.8M</td>
+            <td class="num">35</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="office">Coldwell Banker Realty</td>
+            <td class="num">15</td>
+            <td class="num">419</td>
+            <td class="num">$517K</td>
+            <td class="num vol">$216.7M</td>
+            <td class="num">261</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="office">Anne Erwin Sotheby&#x27;s International Realty</td>
+            <td class="num">5</td>
+            <td class="num">387</td>
+            <td class="num">$814K</td>
+            <td class="num vol">$314.9M</td>
+            <td class="num">94</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="office">Anchor Real Estate</td>
+            <td class="num">1</td>
+            <td class="num">312</td>
+            <td class="num">$1.1M</td>
+            <td class="num vol">$342.9M</td>
+            <td class="num">N/A</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="office">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">11</td>
+            <td class="num">281</td>
+            <td class="num">$542K</td>
+            <td class="num vol">$152.3M</td>
+            <td class="num">549</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="office">Portside Real Estate Group</td>
+            <td class="num">14</td>
+            <td class="num">262</td>
+            <td class="num">$567K</td>
+            <td class="num vol">$148.7M</td>
+            <td class="num">171</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="office">RE/MAX Realty One</td>
+            <td class="num">10</td>
+            <td class="num">252</td>
+            <td class="num">$468K</td>
+            <td class="num vol">$117.8M</td>
+            <td class="num">90</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="office">The Aland Realty Group</td>
+            <td class="num">4</td>
+            <td class="num">160</td>
+            <td class="num">$1.1M</td>
+            <td class="num vol">$173.3M</td>
+            <td class="num">40</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="office">Better Homes &amp; Gardens Real Estate</td>
+            <td class="num">1</td>
+            <td class="num">137</td>
+            <td class="num">$471K</td>
+            <td class="num vol">$64.6M</td>
+            <td class="num">21</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — Wells</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:17%"><col style="width:18%">
+                <col style="width:6%"><col style="width:10%"><col style="width:10%">
+                <col style="width:12%"><col style="width:8%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Agent</th><th>Office</th>
+                <th class="num">Type</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Pamela Moody-Maxon</td>
+            <td class="office">Moody Maxon Real Estate</td>
+            <td class="num"></td>
+            <td class="num">619</td>
+            <td class="num">$325K</td>
+            <td class="num vol">$200.9M</td>
+            <td class="num">75</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Janna Syrene</td>
+            <td class="office">Team Syrene Real Estate ~ EXP</td>
+            <td class="num">TEAM</td>
+            <td class="num">446</td>
+            <td class="num">$695K</td>
+            <td class="num vol">$309.8M</td>
+            <td class="num">35</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Anne Erwin Sotheby&#x27;s International Realty</td>
+            <td class="office">Anne Erwin Sotheby&#x27;s International Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">332</td>
+            <td class="num">$1.1M</td>
+            <td class="num vol">$367.5M</td>
+            <td class="num">92</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Jason Vennard</td>
+            <td class="office">Anchor Real Estate</td>
+            <td class="num"></td>
+            <td class="num">312</td>
+            <td class="num">$1.1M</td>
+            <td class="num vol">$342.9M</td>
+            <td class="num">N/A</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Troy Williams</td>
+            <td class="office">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">205</td>
+            <td class="num">$624K</td>
+            <td class="num vol">$127.9M</td>
+            <td class="num">205</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Steve Brunette</td>
+            <td class="office">Better Homes &amp; Gardens Real Estate</td>
+            <td class="num"></td>
+            <td class="num">137</td>
+            <td class="num">$471K</td>
+            <td class="num vol">$64.6M</td>
+            <td class="num">21</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Gail Bergeron</td>
+            <td class="office">The Aland Realty Group</td>
+            <td class="num"></td>
+            <td class="num">105</td>
+            <td class="num">$689K</td>
+            <td class="num vol">$72.4M</td>
+            <td class="num">11</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Deborah Bozworth</td>
+            <td class="office">Coldwell Banker Realty</td>
+            <td class="num"></td>
+            <td class="num">99</td>
+            <td class="num">$729K</td>
+            <td class="num vol">$72.2M</td>
+            <td class="num">1</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Jeff Rioux</td>
+            <td class="office">Portside Real Estate Group</td>
+            <td class="num"></td>
+            <td class="num">96</td>
+            <td class="num">$653K</td>
+            <td class="num vol">$62.7M</td>
+            <td class="num">17</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Jennifer Walker</td>
+            <td class="office">207 Prime Properties</td>
+            <td class="num">TEAM</td>
+            <td class="num">92</td>
+            <td class="num">$578K</td>
+            <td class="num vol">$53.2M</td>
+            <td class="num">29</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — Kennebunk</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:28%">
+                <col style="width:10%"><col style="width:12%"><col style="width:12%">
+                <col style="width:14%"><col style="width:10%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Brokerage</th>
+                <th class="num">Agents</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="office">Portside Real Estate Group</td>
+            <td class="num">16</td>
+            <td class="num">599</td>
+            <td class="num">$577K</td>
+            <td class="num vol">$345.6M</td>
+            <td class="num">211</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="office">Kennebunk Beach Realty</td>
+            <td class="num">3</td>
+            <td class="num">248</td>
+            <td class="num">$986K</td>
+            <td class="num vol">$244.6M</td>
+            <td class="num">11</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="office">Lighthouse Real Estate Group</td>
+            <td class="num">4</td>
+            <td class="num">240</td>
+            <td class="num">$889K</td>
+            <td class="num vol">$213.3M</td>
+            <td class="num">59</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="office">Pack Maynard &amp; Associates</td>
+            <td class="num">1</td>
+            <td class="num">218</td>
+            <td class="num">$1.5M</td>
+            <td class="num vol">$333.4M</td>
+            <td class="num">30</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="office">Kennebunk Beach Realty, Inc</td>
+            <td class="num">1</td>
+            <td class="num">172</td>
+            <td class="num">$688K</td>
+            <td class="num vol">$118.4M</td>
+            <td class="num">5</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="office">Keller Williams Realty</td>
+            <td class="num">13</td>
+            <td class="num">157</td>
+            <td class="num">$491K</td>
+            <td class="num vol">$77.1M</td>
+            <td class="num">353</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="office">Pack Maynard Real Estate</td>
+            <td class="num">2</td>
+            <td class="num">157</td>
+            <td class="num">$1.4M</td>
+            <td class="num vol">$217.3M</td>
+            <td class="num">15</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="office">AndrewsMilligan real estate company</td>
+            <td class="num">1</td>
+            <td class="num">148</td>
+            <td class="num">$539K</td>
+            <td class="num vol">$79.7M</td>
+            <td class="num">3</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="office">Aland Realty</td>
+            <td class="num">3</td>
+            <td class="num">129</td>
+            <td class="num">$617K</td>
+            <td class="num vol">$79.6M</td>
+            <td class="num">14</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="office">Berkshire Hathaway Home Services N E. Prime Properties</td>
+            <td class="num">1</td>
+            <td class="num">112</td>
+            <td class="num">$531K</td>
+            <td class="num vol">$59.5M</td>
+            <td class="num">5</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — Kennebunk</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:17%"><col style="width:18%">
+                <col style="width:6%"><col style="width:10%"><col style="width:10%">
+                <col style="width:12%"><col style="width:8%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Agent</th><th>Office</th>
+                <th class="num">Type</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Rebecca Bassett</td>
+            <td class="office">Portside Real Estate Group</td>
+            <td class="num">TEAM</td>
+            <td class="num">409</td>
+            <td class="num">$818K</td>
+            <td class="num vol">$334.4M</td>
+            <td class="num">27</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Heidi Maynard Corey Tracy</td>
+            <td class="office">Pack Maynard &amp; Associates</td>
+            <td class="num"></td>
+            <td class="num">218</td>
+            <td class="num">$1.5M</td>
+            <td class="num vol">$333.4M</td>
+            <td class="num">30</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Denise Hodsdon</td>
+            <td class="office">Kennebunk Beach Realty, Inc</td>
+            <td class="num">TEAM</td>
+            <td class="num">172</td>
+            <td class="num">$688K</td>
+            <td class="num vol">$118.4M</td>
+            <td class="num">5</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Helen Curry</td>
+            <td class="office">Kennebunk Beach Realty</td>
+            <td class="num"></td>
+            <td class="num">148</td>
+            <td class="num">$850K</td>
+            <td class="num vol">$125.8M</td>
+            <td class="num">9</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Judy Andrews</td>
+            <td class="office">AndrewsMilligan real estate company</td>
+            <td class="num"></td>
+            <td class="num">148</td>
+            <td class="num">$539K</td>
+            <td class="num vol">$79.7M</td>
+            <td class="num">3</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Julie Grady</td>
+            <td class="office">Lighthouse Real Estate Group</td>
+            <td class="num"></td>
+            <td class="num">131</td>
+            <td class="num">$774K</td>
+            <td class="num vol">$101.4M</td>
+            <td class="num">18</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Kathy Ostrander Roberts</td>
+            <td class="office">Aland Realty</td>
+            <td class="num"></td>
+            <td class="num">117</td>
+            <td class="num">$671K</td>
+            <td class="num vol">$78.5M</td>
+            <td class="num">4</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Hylah Riley</td>
+            <td class="office">Berkshire Hathaway Home Services N E. Prime Properties</td>
+            <td class="num"></td>
+            <td class="num">112</td>
+            <td class="num">$531K</td>
+            <td class="num vol">$59.5M</td>
+            <td class="num">5</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Betsy Ames-Fitzgerald, CRS</td>
+            <td class="office">Coldwell Banker/Residential Brokerage</td>
+            <td class="num"></td>
+            <td class="num">109</td>
+            <td class="num">N/A</td>
+            <td class="num vol">N/A</td>
+            <td class="num">N/A</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Keri Walker</td>
+            <td class="office">Pack Maynard &amp; Associates Real Estate</td>
+            <td class="num"></td>
+            <td class="num">90</td>
+            <td class="num">$474K</td>
+            <td class="num vol">$42.7M</td>
+            <td class="num">13</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — Kennebunkport</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:28%">
+                <col style="width:10%"><col style="width:12%"><col style="width:12%">
+                <col style="width:14%"><col style="width:10%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Brokerage</th>
+                <th class="num">Agents</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="office">Pack Maynard &amp; Associates</td>
+            <td class="num">1</td>
+            <td class="num">276</td>
+            <td class="num">$1.5M</td>
+            <td class="num vol">$422.2M</td>
+            <td class="num">30</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="office">Portside Real Estate Group</td>
+            <td class="num">7</td>
+            <td class="num">187</td>
+            <td class="num">$642K</td>
+            <td class="num vol">$120.1M</td>
+            <td class="num">84</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="office">Pack Maynard Real Estate</td>
+            <td class="num">2</td>
+            <td class="num">107</td>
+            <td class="num">$1.4M</td>
+            <td class="num vol">$148.1M</td>
+            <td class="num">15</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="office">OceanView Properties</td>
+            <td class="num">2</td>
+            <td class="num">99</td>
+            <td class="num">$904K</td>
+            <td class="num vol">$89.5M</td>
+            <td class="num">29</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="office">Kennebunk Beach Realty</td>
+            <td class="num">2</td>
+            <td class="num">74</td>
+            <td class="num">$822K</td>
+            <td class="num vol">$60.9M</td>
+            <td class="num">10</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="office">Lighthouse Real Estate Group</td>
+            <td class="num">4</td>
+            <td class="num">67</td>
+            <td class="num">$714K</td>
+            <td class="num vol">$47.8M</td>
+            <td class="num">58</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="office">Coldwell Banker/Residential Brokerage</td>
+            <td class="num">1</td>
+            <td class="num">34</td>
+            <td class="num">N/A</td>
+            <td class="num vol">N/A</td>
+            <td class="num">N/A</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="office">Aland Realty</td>
+            <td class="num">2</td>
+            <td class="num">32</td>
+            <td class="num">$635K</td>
+            <td class="num vol">$20.3M</td>
+            <td class="num">4</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="office">Keller Williams Realty</td>
+            <td class="num">9</td>
+            <td class="num">25</td>
+            <td class="num">$459K</td>
+            <td class="num vol">$11.5M</td>
+            <td class="num">256</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="office">Berkshire Hathaway Home Services N E. Prime Properties</td>
+            <td class="num">1</td>
+            <td class="num">19</td>
+            <td class="num">$531K</td>
+            <td class="num vol">$10.1M</td>
+            <td class="num">5</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — Kennebunkport</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:17%"><col style="width:18%">
+                <col style="width:6%"><col style="width:10%"><col style="width:10%">
+                <col style="width:12%"><col style="width:8%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Agent</th><th>Office</th>
+                <th class="num">Type</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Heidi Maynard Corey Tracy</td>
+            <td class="office">Pack Maynard &amp; Associates</td>
+            <td class="num"></td>
+            <td class="num">276</td>
+            <td class="num">$1.5M</td>
+            <td class="num vol">$422.2M</td>
+            <td class="num">30</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Rebecca Bassett</td>
+            <td class="office">Portside Real Estate Group</td>
+            <td class="num">TEAM</td>
+            <td class="num">123</td>
+            <td class="num">$818K</td>
+            <td class="num vol">$100.6M</td>
+            <td class="num">27</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">OceanView Properties</td>
+            <td class="office">OceanView Properties</td>
+            <td class="num"></td>
+            <td class="num">87</td>
+            <td class="num">$904K</td>
+            <td class="num vol">$78.7M</td>
+            <td class="num">29</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Helen Curry</td>
+            <td class="office">Kennebunk Beach Realty</td>
+            <td class="num"></td>
+            <td class="num">68</td>
+            <td class="num">$850K</td>
+            <td class="num vol">$57.8M</td>
+            <td class="num">9</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Bette Schofield</td>
+            <td class="office">Pack Maynard Real Estate</td>
+            <td class="num"></td>
+            <td class="num">64</td>
+            <td class="num">$1.2M</td>
+            <td class="num vol">$76.3M</td>
+            <td class="num">9</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Lise Dewar</td>
+            <td class="office">Pack Maynard Real Estate</td>
+            <td class="num"></td>
+            <td class="num">43</td>
+            <td class="num">$1.6M</td>
+            <td class="num vol">$67.8M</td>
+            <td class="num">6</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Julie Grady</td>
+            <td class="office">Lighthouse Real Estate Group</td>
+            <td class="num"></td>
+            <td class="num">43</td>
+            <td class="num">$774K</td>
+            <td class="num vol">$33.3M</td>
+            <td class="num">18</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Heather McInnis</td>
+            <td class="office">Portside Real Estate Group</td>
+            <td class="num"></td>
+            <td class="num">36</td>
+            <td class="num">$510K</td>
+            <td class="num vol">$18.4M</td>
+            <td class="num">1</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Betsy Ames-Fitzgerald, CRS</td>
+            <td class="office">Coldwell Banker/Residential Brokerage</td>
+            <td class="num"></td>
+            <td class="num">34</td>
+            <td class="num">N/A</td>
+            <td class="num vol">N/A</td>
+            <td class="num">N/A</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Kathy Ostrander Roberts</td>
+            <td class="office">Aland Realty</td>
+            <td class="num"></td>
+            <td class="num">31</td>
+            <td class="num">$671K</td>
+            <td class="num vol">$20.8M</td>
+            <td class="num">4</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — Biddeford</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:28%">
+                <col style="width:10%"><col style="width:12%"><col style="width:12%">
+                <col style="width:14%"><col style="width:10%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Brokerage</th>
+                <th class="num">Agents</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="office">OceanView Properties</td>
+            <td class="num">3</td>
+            <td class="num">454</td>
+            <td class="num">$1.2M</td>
+            <td class="num vol">$546.9M</td>
+            <td class="num">44</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="office">Coldwell Banker Realty</td>
+            <td class="num">16</td>
+            <td class="num">294</td>
+            <td class="num">$516K</td>
+            <td class="num vol">$151.8M</td>
+            <td class="num">294</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="office">Keller Williams Realty</td>
+            <td class="num">12</td>
+            <td class="num">175</td>
+            <td class="num">$459K</td>
+            <td class="num vol">$80.3M</td>
+            <td class="num">232</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="office">Assist-2-Sell Home Team Advantage</td>
+            <td class="num">2</td>
+            <td class="num">172</td>
+            <td class="num">$523K</td>
+            <td class="num vol">$90.0M</td>
+            <td class="num">21</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="office">Maine Real Estate Co</td>
+            <td class="num">4</td>
+            <td class="num">158</td>
+            <td class="num">$639K</td>
+            <td class="num vol">$100.9M</td>
+            <td class="num">144</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="office">Portside Real Estate Group</td>
+            <td class="num">21</td>
+            <td class="num">147</td>
+            <td class="num">$595K</td>
+            <td class="num vol">$87.4M</td>
+            <td class="num">375</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="office">Coldwell Banker Residential Brokerage</td>
+            <td class="num">6</td>
+            <td class="num">114</td>
+            <td class="num">$448K</td>
+            <td class="num vol">$51.1M</td>
+            <td class="num">47</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="office">Top Homes Group Powered by Keller Williams Realty-207-415-8204</td>
+            <td class="num">1</td>
+            <td class="num">104</td>
+            <td class="num">$440K</td>
+            <td class="num vol">$45.8M</td>
+            <td class="num">48</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="office">Berkshire Hathaway HomeServices Verani Realty</td>
+            <td class="num">1</td>
+            <td class="num">95</td>
+            <td class="num">$546K</td>
+            <td class="num vol">$51.9M</td>
+            <td class="num">24</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="office">Legacy Properties Sotheby&#x27;s International Realty</td>
+            <td class="num">1</td>
+            <td class="num">86</td>
+            <td class="num">$1.0M</td>
+            <td class="num vol">$89.2M</td>
+            <td class="num">2</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — Biddeford</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:17%"><col style="width:18%">
+                <col style="width:6%"><col style="width:10%"><col style="width:10%">
+                <col style="width:12%"><col style="width:8%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Agent</th><th>Office</th>
+                <th class="num">Type</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">OceanView Properties</td>
+            <td class="office">OceanView Properties</td>
+            <td class="num"></td>
+            <td class="num">280</td>
+            <td class="num">$904K</td>
+            <td class="num vol">$253.2M</td>
+            <td class="num">29</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Peter McPheeters</td>
+            <td class="office">OceanView Properties</td>
+            <td class="num"></td>
+            <td class="num">173</td>
+            <td class="num">$1.5M</td>
+            <td class="num vol">$260.3M</td>
+            <td class="num">15</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Tim Madden</td>
+            <td class="office">Assist-2-Sell Home Team Advantage</td>
+            <td class="num"></td>
+            <td class="num">137</td>
+            <td class="num">$502K</td>
+            <td class="num vol">$68.8M</td>
+            <td class="num">12</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Adam Parent</td>
+            <td class="office">Maine Real Estate Co</td>
+            <td class="num"></td>
+            <td class="num">117</td>
+            <td class="num">$535K</td>
+            <td class="num vol">$62.6M</td>
+            <td class="num">115</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Deja Lett</td>
+            <td class="office">Top Homes Group Powered by Keller Williams Realty-207-415-8204</td>
+            <td class="num">TEAM</td>
+            <td class="num">104</td>
+            <td class="num">$440K</td>
+            <td class="num vol">$45.8M</td>
+            <td class="num">48</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Christina Connell</td>
+            <td class="office">Berkshire Hathaway HomeServices Verani Realty</td>
+            <td class="num"></td>
+            <td class="num">95</td>
+            <td class="num">$546K</td>
+            <td class="num vol">$51.9M</td>
+            <td class="num">24</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Christina Stone</td>
+            <td class="office">Legacy Properties Sotheby&#x27;s International Realty</td>
+            <td class="num"></td>
+            <td class="num">86</td>
+            <td class="num">$1.0M</td>
+            <td class="num vol">$89.2M</td>
+            <td class="num">2</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Anne McPheeters</td>
+            <td class="office">OceanView Properties, Inc.</td>
+            <td class="num"></td>
+            <td class="num">77</td>
+            <td class="num">$992K</td>
+            <td class="num vol">$76.4M</td>
+            <td class="num">13</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Dan Letellier</td>
+            <td class="office">Coldwell Banker Realty</td>
+            <td class="num"></td>
+            <td class="num">62</td>
+            <td class="num">$474K</td>
+            <td class="num vol">$29.4M</td>
+            <td class="num">15</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Donna Roberts Christine Paul</td>
+            <td class="office">Your Real Estate Estate Co</td>
+            <td class="num">TEAM</td>
+            <td class="num">52</td>
+            <td class="num">$214K</td>
+            <td class="num vol">$11.1M</td>
+            <td class="num">47</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — Saco</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:28%">
+                <col style="width:10%"><col style="width:12%"><col style="width:12%">
+                <col style="width:14%"><col style="width:10%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Brokerage</th>
+                <th class="num">Agents</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="office">Assist-2-Sell Home Team Advantage</td>
+            <td class="num">2</td>
+            <td class="num">341</td>
+            <td class="num">$523K</td>
+            <td class="num vol">$178.5M</td>
+            <td class="num">21</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="office">Keller Williams Realty</td>
+            <td class="num">15</td>
+            <td class="num">339</td>
+            <td class="num">$465K</td>
+            <td class="num vol">$157.5M</td>
+            <td class="num">357</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="office">Coldwell Banker Realty</td>
+            <td class="num">16</td>
+            <td class="num">325</td>
+            <td class="num">$522K</td>
+            <td class="num vol">$169.5M</td>
+            <td class="num">292</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="office">Top Homes Group Powered by Keller Williams Realty-207-415-8204</td>
+            <td class="num">1</td>
+            <td class="num">239</td>
+            <td class="num">$440K</td>
+            <td class="num vol">$105.2M</td>
+            <td class="num">48</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="office">Portside Real Estate Group</td>
+            <td class="num">22</td>
+            <td class="num">200</td>
+            <td class="num">$591K</td>
+            <td class="num vol">$118.2M</td>
+            <td class="num">372</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="office">Coldwell Banker Residential Brokerage</td>
+            <td class="num">7</td>
+            <td class="num">188</td>
+            <td class="num">$552K</td>
+            <td class="num vol">$103.8M</td>
+            <td class="num">82</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="office">Maine Real Estate Co</td>
+            <td class="num">3</td>
+            <td class="num">157</td>
+            <td class="num">$580K</td>
+            <td class="num vol">$91.1M</td>
+            <td class="num">128</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="office">Berkshire Hathaway HomeServices Verani Realty</td>
+            <td class="num">1</td>
+            <td class="num">127</td>
+            <td class="num">$546K</td>
+            <td class="num vol">$69.4M</td>
+            <td class="num">24</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="office">Bean Group</td>
+            <td class="num">5</td>
+            <td class="num">112</td>
+            <td class="num">$375K</td>
+            <td class="num vol">$42.0M</td>
+            <td class="num">34</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="office">Your Real Estate Estate Co</td>
+            <td class="num">1</td>
+            <td class="num">105</td>
+            <td class="num">$214K</td>
+            <td class="num vol">$22.4M</td>
+            <td class="num">47</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — Saco</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:17%"><col style="width:18%">
+                <col style="width:6%"><col style="width:10%"><col style="width:10%">
+                <col style="width:12%"><col style="width:8%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Agent</th><th>Office</th>
+                <th class="num">Type</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Deja Lett</td>
+            <td class="office">Top Homes Group Powered by Keller Williams Realty-207-415-8204</td>
+            <td class="num">TEAM</td>
+            <td class="num">239</td>
+            <td class="num">$440K</td>
+            <td class="num vol">$105.2M</td>
+            <td class="num">48</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Tim Madden</td>
+            <td class="office">Assist-2-Sell Home Team Advantage</td>
+            <td class="num"></td>
+            <td class="num">193</td>
+            <td class="num">$502K</td>
+            <td class="num vol">$97.0M</td>
+            <td class="num">12</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Clifford Santamore</td>
+            <td class="office">Assist-2-Sell Home Team Advantage</td>
+            <td class="num"></td>
+            <td class="num">148</td>
+            <td class="num">$544K</td>
+            <td class="num vol">$80.5M</td>
+            <td class="num">9</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Adam Parent</td>
+            <td class="office">Maine Real Estate Co</td>
+            <td class="num"></td>
+            <td class="num">148</td>
+            <td class="num">$535K</td>
+            <td class="num vol">$79.2M</td>
+            <td class="num">115</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Christina Connell</td>
+            <td class="office">Berkshire Hathaway HomeServices Verani Realty</td>
+            <td class="num"></td>
+            <td class="num">127</td>
+            <td class="num">$546K</td>
+            <td class="num vol">$69.4M</td>
+            <td class="num">24</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Jeff Mateja</td>
+            <td class="office">Keller Williams Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">121</td>
+            <td class="num">$421K</td>
+            <td class="num vol">$50.9M</td>
+            <td class="num">113</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Erickson Team</td>
+            <td class="office">Coldwell Banker Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">109</td>
+            <td class="num">$449K</td>
+            <td class="num vol">$49.0M</td>
+            <td class="num">41</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Donna Roberts Christine Paul</td>
+            <td class="office">Your Real Estate Estate Co</td>
+            <td class="num">TEAM</td>
+            <td class="num">105</td>
+            <td class="num">$214K</td>
+            <td class="num vol">$22.4M</td>
+            <td class="num">47</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Peggy Mailman</td>
+            <td class="office">Coldwell Banker Residential Brokerage</td>
+            <td class="num"></td>
+            <td class="num">85</td>
+            <td class="num">$595K</td>
+            <td class="num vol">$50.6M</td>
+            <td class="num">12</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Team Scamman and Valentino</td>
+            <td class="office">Bean Group</td>
+            <td class="num">TEAM</td>
+            <td class="num">81</td>
+            <td class="num">$472K</td>
+            <td class="num vol">$38.3M</td>
+            <td class="num">14</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — Old Orchard Beach</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:28%">
+                <col style="width:10%"><col style="width:12%"><col style="width:12%">
+                <col style="width:14%"><col style="width:10%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Brokerage</th>
+                <th class="num">Agents</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="office">The Real Estate Store</td>
+            <td class="num">2</td>
+            <td class="num">536</td>
+            <td class="num">$594K</td>
+            <td class="num vol">$318.3M</td>
+            <td class="num">36</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="office">Coldwell Banker Realty</td>
+            <td class="num">15</td>
+            <td class="num">296</td>
+            <td class="num">$517K</td>
+            <td class="num vol">$153.1M</td>
+            <td class="num">212</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="office">Keller Williams Realty</td>
+            <td class="num">14</td>
+            <td class="num">282</td>
+            <td class="num">$486K</td>
+            <td class="num vol">$137.0M</td>
+            <td class="num">383</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="office">Top Homes Group Powered by Keller Williams Realty-207-415-8204</td>
+            <td class="num">1</td>
+            <td class="num">188</td>
+            <td class="num">$440K</td>
+            <td class="num vol">$82.8M</td>
+            <td class="num">48</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="office">Bean Group</td>
+            <td class="num">5</td>
+            <td class="num">153</td>
+            <td class="num">$385K</td>
+            <td class="num vol">$58.9M</td>
+            <td class="num">35</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="office">Berkshire Hathaway HomeServices Verani Realty</td>
+            <td class="num">1</td>
+            <td class="num">136</td>
+            <td class="num">$546K</td>
+            <td class="num vol">$74.3M</td>
+            <td class="num">24</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="office">Assist-2-Sell Home Team Advantage</td>
+            <td class="num">2</td>
+            <td class="num">107</td>
+            <td class="num">$523K</td>
+            <td class="num vol">$56.0M</td>
+            <td class="num">21</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="office">eXp Realty</td>
+            <td class="num">3</td>
+            <td class="num">101</td>
+            <td class="num">$484K</td>
+            <td class="num vol">$48.9M</td>
+            <td class="num">31</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="office">Coldwell Banker Residential Brokerage</td>
+            <td class="num">5</td>
+            <td class="num">78</td>
+            <td class="num">$464K</td>
+            <td class="num vol">$36.2M</td>
+            <td class="num">45</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="office">Portside Real Estate Group</td>
+            <td class="num">12</td>
+            <td class="num">77</td>
+            <td class="num">$533K</td>
+            <td class="num vol">$41.1M</td>
+            <td class="num">226</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — Old Orchard Beach</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:17%"><col style="width:18%">
+                <col style="width:6%"><col style="width:10%"><col style="width:10%">
+                <col style="width:12%"><col style="width:8%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Agent</th><th>Office</th>
+                <th class="num">Type</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Nancy Z Moreshead</td>
+            <td class="office">The Real Estate Store</td>
+            <td class="num"></td>
+            <td class="num">532</td>
+            <td class="num">$596K</td>
+            <td class="num vol">$317.2M</td>
+            <td class="num">30</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Deja Lett</td>
+            <td class="office">Top Homes Group Powered by Keller Williams Realty-207-415-8204</td>
+            <td class="num">TEAM</td>
+            <td class="num">188</td>
+            <td class="num">$440K</td>
+            <td class="num vol">$82.8M</td>
+            <td class="num">48</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Erickson Team</td>
+            <td class="office">Coldwell Banker Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">175</td>
+            <td class="num">$449K</td>
+            <td class="num vol">$78.6M</td>
+            <td class="num">41</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Christina Connell</td>
+            <td class="office">Berkshire Hathaway HomeServices Verani Realty</td>
+            <td class="num"></td>
+            <td class="num">136</td>
+            <td class="num">$546K</td>
+            <td class="num vol">$74.3M</td>
+            <td class="num">24</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Robert Magazu</td>
+            <td class="office">Bean Group</td>
+            <td class="num"></td>
+            <td class="num">102</td>
+            <td class="num">$343K</td>
+            <td class="num vol">$35.0M</td>
+            <td class="num">16</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Bridgette Vermette</td>
+            <td class="office">Keller Williams Realty</td>
+            <td class="num"></td>
+            <td class="num">93</td>
+            <td class="num">$837K</td>
+            <td class="num vol">$77.9M</td>
+            <td class="num">1</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Tim Madden</td>
+            <td class="office">Assist-2-Sell Home Team Advantage</td>
+            <td class="num"></td>
+            <td class="num">90</td>
+            <td class="num">$502K</td>
+            <td class="num vol">$45.2M</td>
+            <td class="num">12</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Jeff Mateja</td>
+            <td class="office">Keller Williams Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">69</td>
+            <td class="num">$421K</td>
+            <td class="num vol">$29.0M</td>
+            <td class="num">113</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Adam Parent</td>
+            <td class="office">Maine Real Estate Co</td>
+            <td class="num"></td>
+            <td class="num">59</td>
+            <td class="num">$535K</td>
+            <td class="num vol">$31.6M</td>
+            <td class="num">115</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Kim Tarbox</td>
+            <td class="office">Fiv Realty Maine</td>
+            <td class="num"></td>
+            <td class="num">46</td>
+            <td class="num">$466K</td>
+            <td class="num vol">$21.5M</td>
+            <td class="num">19</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — Scarborough</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:28%">
+                <col style="width:10%"><col style="width:12%"><col style="width:12%">
+                <col style="width:14%"><col style="width:10%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Brokerage</th>
+                <th class="num">Agents</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="office">Keller Williams Realty</td>
+            <td class="num">22</td>
+            <td class="num">1,149</td>
+            <td class="num">$527K</td>
+            <td class="num vol">$605.2M</td>
+            <td class="num">602</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="office">Signature Homes Real Estate Group</td>
+            <td class="num">4</td>
+            <td class="num">759</td>
+            <td class="num">$535K</td>
+            <td class="num vol">$406.4M</td>
+            <td class="num">161</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="office">Portside Real Estate Group</td>
+            <td class="num">28</td>
+            <td class="num">217</td>
+            <td class="num">$641K</td>
+            <td class="num vol">$139.1M</td>
+            <td class="num">632</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="office">RE/MAX By The Bay</td>
+            <td class="num">1</td>
+            <td class="num">169</td>
+            <td class="num">$1.1M</td>
+            <td class="num vol">$189.6M</td>
+            <td class="num">169</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="office">Maine Life Real Estate Co., brokered by eXp Realty</td>
+            <td class="num">1</td>
+            <td class="num">121</td>
+            <td class="num">$476K</td>
+            <td class="num vol">$57.6M</td>
+            <td class="num">8</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="office">Maine Home Connection</td>
+            <td class="num">2</td>
+            <td class="num">97</td>
+            <td class="num">$619K</td>
+            <td class="num vol">$60.0M</td>
+            <td class="num">6</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="office">Coldwell Banker Realty</td>
+            <td class="num">6</td>
+            <td class="num">85</td>
+            <td class="num">$474K</td>
+            <td class="num vol">$40.3M</td>
+            <td class="num">184</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="office">Duston Leddy Real Estate</td>
+            <td class="num">1</td>
+            <td class="num">85</td>
+            <td class="num">$546K</td>
+            <td class="num vol">$46.4M</td>
+            <td class="num">65</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="office">Cottage &amp; Co Real Estate</td>
+            <td class="num">5</td>
+            <td class="num">81</td>
+            <td class="num">$580K</td>
+            <td class="num vol">$47.0M</td>
+            <td class="num">99</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="office">King + Miller Real Estate</td>
+            <td class="num">2</td>
+            <td class="num">69</td>
+            <td class="num">$524K</td>
+            <td class="num vol">$36.1M</td>
+            <td class="num">84</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — Scarborough</h2>
+        <div class="table-wrap"><table>
+            <colgroup>
+                <col style="width:4%"><col style="width:17%"><col style="width:18%">
+                <col style="width:6%"><col style="width:10%"><col style="width:10%">
+                <col style="width:12%"><col style="width:8%">
+            </colgroup>
+            <thead><tr>
+                <th class="num">#</th><th>Agent</th><th>Office</th>
+                <th class="num">Type</th><th class="num">Sales</th>
+                <th class="num">Avg Price</th><th class="num">Est. Volume</th>
+                <th class="num">12-Mo</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Carrie Scoville and Amy Foley</td>
+            <td class="office">Signature Homes Real Estate Group</td>
+            <td class="num"></td>
+            <td class="num">699</td>
+            <td class="num">$570K</td>
+            <td class="num vol">$398.2M</td>
+            <td class="num">104</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Scott and Sunny Townsend</td>
+            <td class="office">Keller Williams Realty</td>
+            <td class="num"></td>
+            <td class="num">496</td>
+            <td class="num">$598K</td>
+            <td class="num vol">$296.8M</td>
+            <td class="num">109</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Bridgette Vermette</td>
+            <td class="office">Keller Williams Realty</td>
+            <td class="num"></td>
+            <td class="num">222</td>
+            <td class="num">$837K</td>
+            <td class="num vol">$185.8M</td>
+            <td class="num">1</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">David Banks</td>
+            <td class="office">RE/MAX By The Bay</td>
+            <td class="num"></td>
+            <td class="num">169</td>
+            <td class="num">$1.1M</td>
+            <td class="num vol">$189.6M</td>
+            <td class="num">169</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Rob Edgerley</td>
+            <td class="office">Maine Life Real Estate Co., brokered by eXp Realty</td>
+            <td class="num"></td>
+            <td class="num">121</td>
+            <td class="num">$476K</td>
+            <td class="num vol">$57.6M</td>
+            <td class="num">8</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Jeff Mateja</td>
+            <td class="office">Keller Williams Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">119</td>
+            <td class="num">$421K</td>
+            <td class="num vol">$50.1M</td>
+            <td class="num">113</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">James Connolly</td>
+            <td class="office">Maine Home Connection</td>
+            <td class="num"></td>
+            <td class="num">88</td>
+            <td class="num">$618K</td>
+            <td class="num vol">$54.4M</td>
+            <td class="num">N/A</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">April Cohen</td>
+            <td class="office">Duston Leddy Real Estate</td>
+            <td class="num">TEAM</td>
+            <td class="num">85</td>
+            <td class="num">$546K</td>
+            <td class="num vol">$46.4M</td>
+            <td class="num">65</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">L&#x27;Heureux Real Estate Group</td>
+            <td class="office">Keller Williams Realty</td>
+            <td class="num">TEAM</td>
+            <td class="num">69</td>
+            <td class="num">$512K</td>
+            <td class="num vol">$35.4M</td>
+            <td class="num">93</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Jason Miller</td>
+            <td class="office">King + Miller Real Estate</td>
+            <td class="num">TEAM</td>
+            <td class="num">66</td>
+            <td class="num">$524K</td>
+            <td class="num vol">$34.6M</td>
+            <td class="num">84</td>
+        </tr></tbody>
+        </table></div>
+    </section></main>
+        <footer class="footer">
+            Generated 2026-04-16 00:00 UTC &middot; Data source: Zillow Directory &middot; gw-re-agent-scraper
+        </footer>
+    </div>
+<script>
+(function() {
+  function parseVal(text) {
+    var s = text.trim();
+    if (!s || s === 'N/A' || s === '—') return -Infinity;
+    // Currency: $1.3M -> 1300000, $807K -> 807000, $450,000 -> 450000
+    if (s.charAt(0) === '$') {
+      s = s.substring(1).replace(/,/g, '');
+      if (s.indexOf('M') !== -1) return parseFloat(s) * 1000000;
+      if (s.indexOf('K') !== -1) return parseFloat(s) * 1000;
+      return parseFloat(s) || 0;
+    }
+    // Plain number (sides, rank)
+    var n = parseFloat(s.replace(/,/g, ''));
+    if (!isNaN(n)) return n;
+    // Text — sort alphabetically
+    return s.toLowerCase();
+  }
+
+  document.querySelectorAll('thead th').forEach(function(th) {
+    // Add sort arrow span
+    var arrow = document.createElement('span');
+    arrow.className = 'sort-arrow';
+    arrow.textContent = '↕';
+    th.appendChild(arrow);
+
+    th.addEventListener('click', function() {
+      var table = th.closest('table');
+      var tbody = table.querySelector('tbody');
+      var rows = Array.from(tbody.querySelectorAll('tr'));
+      var idx = Array.from(th.parentNode.children).indexOf(th);
+      var asc = th.dataset.sortDir !== 'asc';
+      th.dataset.sortDir = asc ? 'asc' : 'desc';
+
+      // Clear other headers in this table
+      th.parentNode.querySelectorAll('th').forEach(function(h) {
+        h.classList.remove('sort-active');
+        var a = h.querySelector('.sort-arrow');
+        if (a) a.textContent = '↕';
+      });
+      th.classList.add('sort-active');
+      arrow.textContent = asc ? '▲' : '▼';
+
+      rows.sort(function(a, b) {
+        var va = parseVal(a.children[idx] ? a.children[idx].textContent : '');
+        var vb = parseVal(b.children[idx] ? b.children[idx].textContent : '');
+        if (typeof va === 'string' && typeof vb === 'string') {
+          return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+        }
+        return asc ? va - vb : vb - va;
+      });
+
+      rows.forEach(function(row) { tbody.appendChild(row); });
+    });
+  });
+})();
+</script>
+</body>
+</html>

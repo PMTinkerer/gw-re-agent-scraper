@@ -6,12 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Scrapes publicly visible sold property data from Redfin for 10 southern coastal Maine towns, then enriches each transaction with listing agent and brokerage data by visiting individual Redfin property pages via Playwright. The primary deliverables are `data/dashboard.html` (HTML leaderboard with trend badges, hosted on GitHub Pages) and `data/agent_leaderboard.md` (markdown version). Runs on GitHub Actions free tier with resumable chunk-based processing.
 
 ## Current State (as of 2026-04-16)
-- **Redfin pipeline**: 2,398 SFH/Condo transactions, ~85% enriched with agent data (listing agent only). County-query date chunking added for York/Wells/Ogunquit.
-- **Zillow pipeline**: 740 directory profiles + 683/740 enriched with career stats, avg price, and 5 most recent sold transactions. Buyer/seller split visible.
-- **Maine Listings pipeline (NEW — primary source going forward)**: 10,587 closed transactions discovered from mainelistings.com (MREIS MLS public portal). Captures BOTH listing agent AND buyer's agent on every transaction — data no other source provides. Phase 2 enrichment (detail page scraping) pending Firecrawl Standard plan upgrade.
-- **Tabbed dashboard** at `data/index.html` with Redfin, Zillow, and "All Agents" tabs — sortable, filterable, with Local Sales / Career Total / Local % / Est. Volume columns
-- **Agent search** across 834 Redfin + 685 Zillow agents with detail cards
-- **GitHub Pages live** at `https://pmtinkerer.github.io/gw-re-agent-scraper/`
+- **Maine Listings (MREIS MLS) — PRIMARY source**: 16,024 closed transactions enriched with both listing AND buyer agent across 10 towns, 15-year history (2011-2026). 99.97% enrichment success. Authoritative MLS data. 2,253 unique listing agents, 2,634 unique buyer agents, 3,165 total in search index.
+- **Redfin pipeline — ARCHIVED 2026-04-16**: 2,397 transactions captured before retirement. Strictly a subset of Maine MLS (CSV cap, listing-side only, 3-year window). 4x/day cron disabled. Manual dispatch still available in `.github/workflows/scrape_agents.yml` if we ever need to re-run.
+- **Zillow pipeline — ARCHIVED (kept as reference)**: 740 agent profiles with career stats, 12-month sales, and most-recent sold rows. Still useful for agent-profile enrichment (photos/bios/reviews), but numbers appear inflated vs. MLS truth. No cron; manual dispatch only.
+- **Tabbed dashboard** at `data/index.html`: "Maine MLS" (default) → "All Agents" (filterable master table, Maine-powered) → Zillow (archive) → Redfin (archive). Unified agent search across all 3 sources.
+- **GitHub Pages live** at `https://pmtinkerer.github.io/gw-re-agent-scraper/` (auto-deploys on push to `main`).
 - **Public repo on GitHub**
 
 ## Service Territory (10 Towns)
@@ -60,18 +59,33 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 - CLI: `python -m src.zillow_main --enrich-profiles --enrich-batch 50`
 - Data stored in `zillow_sold_transactions` table + enrichment columns on `zillow_profiles`
 
-### Phase 5: Maine Listings (MREIS MLS) (BUILT — PHASE 1 COMPLETE, PHASE 2 PENDING UPGRADE)
-- **This is the primary transaction source going forward.** Redfin misses buyer agents; Zillow paginates to only 5 sold rows. MaineListings.com (the Maine MLS public portal) provides BOTH listing and buyer agents on every closed transaction.
-- Architecture: Two-phase scraping
-  - **Phase 1 (discovery — DONE)**: Scrape `/listings?city={town}&mls_status=Closed&page={N}` search pages. Extract listing URL, price, address, beds/baths/sqft, listing office. 10,587 closed listings discovered across all 10 towns (~600 Firecrawl credits).
-  - **Phase 2 (enrichment — PENDING)**: Visit each detail page, extract data from embedded NUXT JavaScript blob. Fields: MLS#, listing_agent + MLS ID + email, buyer_agent + MLS ID + email, listing_office, buyer_office, close_date, sale_price, list_price, property_type, days_on_market.
-- Full enrichment cost: ~10,587 credits (needs Standard plan at $99/mo for one-time backfill)
-- Weekly incremental (`--recent-only`): ~50-100 credits/week (fits Hobby plan)
-- Key technical detail: Detail page has TWO `list_agent` objects in NUXT — first is `co_list_agent` (usually null), second has real data. Parser finds the one where `list_agent_email` is a quoted string, not minified `a`.
+### Phase 5: Maine Listings (MREIS MLS) — COMPLETE (2026-04-16)
+- **This is the primary transaction source.** MaineListings.com (the public MREIS portal operated by Maine Association of REALTORS) provides BOTH listing and buyer agents on every closed transaction, going back to 2011.
+- Two-phase architecture:
+  - **Phase 1 (discovery — DONE)**: Scrape `/listings?city={town}&mls_status=Closed&page={N}` search pages. Extract listing URL, price, address, beds/baths/sqft, listing office. 16,029 closed listings across all 10 towns.
+  - **Phase 2 (enrichment — DONE)**: Visit each detail page, extract from embedded NUXT JavaScript blob. Fields: MLS#, listing_agent + MLS ID + email, buyer_agent + MLS ID + email, listing_office, buyer_office, close_date, sale_price, list_price, property_type, days_on_market. 16,024 enriched (99.97% success; 5 Firecrawl 500 errors will retry next run).
+- **Concurrent enrichment**: `ThreadPoolExecutor` with `--workers 25` + circuit breaker (aborts at 5 consecutive or 20 total failures). Thread-safe SQLite writes via shared `db_lock` + retry on lock contention (WAL mode).
+- **Alerting**: Pushover + Resend on circuit-breaker abort, unexpected exception, and run summary. Reads `~/.env` shared secrets. See `src/maine_notifier.py`.
+- **DB backup**: Before every mutating run, the DB is copied to `data/maine_listings.db.bak_<timestamp>` (last 3 retained).
+- **Town canonicalization**: Users can pass `--towns old_orchard_beach` or `--towns "Old Orchard Beach"` or `OLD-ORCHARD-BEACH`; `_canonicalize_town` in `src/maine_main.py` maps to the human-readable form mainelistings.com expects.
+- **Escape decoding**: NUXT blob embeds `\u002F` style escapes; decoded in `src/maine_parser.py::_decode_escapes` after regex extraction.
+- Weekly incremental (`--recent-only`): ~50-100 credits/week (fits Hobby plan). GitHub Actions cron Mondays 6:30am ET.
+- **Key technical detail**: Detail page has TWO `list_agent` objects in NUXT — first is `co_list_agent` (usually null), second has real data. Parser finds the one where `list_agent_email` is a quoted string.
 - Separate DB: `data/maine_listings.db`, state: `data/maine_scrape_state.json`
-- Modules: `src/maine_database.py`, `src/maine_state.py`, `src/maine_parser.py`, `src/maine_firecrawl.py`, `src/maine_main.py`
-- CLI: `python -m src.maine_main --discover --max-pages 90` then `python -m src.maine_main --enrich --batch-size 50`
-- Weekly: `python -m src.maine_main --discover --recent-only --enrich --batch-size 50`
+- Modules: `src/maine_database.py`, `src/maine_state.py`, `src/maine_parser.py`, `src/maine_firecrawl.py`, `src/maine_main.py`, `src/maine_notifier.py`, `src/maine_kpis.py`, `src/maine_report.py`, `src/maine_dashboard.py`
+- CLI: `python -m src.maine_main --discover --max-pages 90 --workers 3` then `python -m src.maine_main --enrich --batch-size 16500 --workers 25`
+- Weekly: `python -m src.maine_main --discover --recent-only --enrich --batch-size 200 --workers 10`
+
+### Phase 6: Interactive Leaderboard — COMPLETE (2026-04-17)
+- Renamed "All Agents" tab to **"Leaderboard"**; made Maine MLS the default landing tab.
+- Data layer (`src/maine_kpis.py`):
+  - `compute_cutoffs(today)` returns ISO date strings for current-12mo / prior-12mo / 3yr windows.
+  - `query_agent_kpis(conn, *, town=None, limit=None, today=None)` — one row per agent with all period sums + listing/buyer split + primary_towns.
+  - `query_brokerage_kpis(...)` — same shape aggregated by `listing_office` + `buyer_office` union (branches stay separate).
+  - `compute_rank_movers(rows, ...)` — pure-Python rank-delta computation. NEW entities (no prior-period activity) get delta=None and land in risers.
+- Static dashboard (`src/maine_dashboard.py`) and interactive tab (`src/index_page.py`) both consume the KPI helpers.
+- Interactive features: Agent/Brokerage toggle, Town filter (caps to top 50 when set), Period selector (12mo/3yr/All-time — changes default sort), in-table name/office search, sortable columns, Biggest Movers banner (top 5 risers + fallers; auto-hides when < 10 qualifying).
+- Row click / mover-card click → detail modal with every period split.
 
 ## Key Decisions
 - **Redfin CSV** for property data (reliable, structured, no browser needed)
@@ -104,10 +118,11 @@ python -m src.zillow_main --enrich-profiles --enrich-batch 50                   
 python -m src.zillow_main --directory-report                                            # Regenerate from existing data
 
 # --- Maine Listings Pipeline (Firecrawl — PRIMARY GOING FORWARD) ---
-python -m src.maine_main --discover --max-pages 90                                      # Full discovery (all towns)
-python -m src.maine_main --enrich --batch-size 50                                       # Detail page enrichment
-python -m src.maine_main --discover --recent-only --enrich --batch-size 50              # Weekly incremental
-python -m src.maine_main --report                                                       # Print DB stats
+python -m src.maine_main --discover --max-pages 90 --workers 3                          # Full discovery (all towns, 3 concurrent)
+python -m src.maine_main --enrich --batch-size 200 --workers 25                         # Full enrichment (25 concurrent Firecrawl workers)
+python -m src.maine_main --discover --recent-only --enrich --batch-size 200 --workers 10  # Weekly incremental
+python -m src.maine_main --report                                                       # Generate md + HTML dashboard
+python -m src.maine_main --update-index                                                 # Regenerate tabbed index.html with all 3 sources
 
 # --- Tests ---
 python -m pytest tests/ -v                                 # All tests
@@ -153,22 +168,27 @@ gw-re-agent-scraper/
 │   ├── zillow.py                     # Playwright Zillow scraper (blocked, fallback)
 │   ├── zillow_state.py               # Zillow discovery state machine
 │   ├── maine_main.py                 # Maine Listings CLI orchestrator
-│   ├── maine_firecrawl.py            # Maine Listings search + detail page scraping
+│   ├── maine_firecrawl.py            # Maine Listings search + detail page scraping (concurrent via ThreadPoolExecutor)
 │   ├── maine_parser.py               # Search card regex + detail NUXT JS extraction
 │   ├── maine_database.py             # Maine Listings SQLite schema
+│   ├── maine_report.py               # Maine markdown leaderboard + agent search index
+│   ├── maine_dashboard.py            # Maine HTML dashboard (combined/listing/buyer/brokerage tables)
+│   ├── maine_kpis.py                 # Period-based KPI queries + rank movers
 │   └── maine_state.py                # Maine Listings state machine
 ├── tests/                            # 128+ unit tests
 ├── data/
 │   ├── agent_data.db                 # Redfin transactions (2,398)
 │   ├── zillow_agent_data.db          # Zillow profiles (740) + sold transactions (3,290)
 │   ├── maine_listings.db             # Maine Listings transactions (10,587 discovered)
-│   ├── index.html                    # Tabbed dashboard wrapper (Redfin | Zillow | All Agents)
+│   ├── index.html                    # Tabbed dashboard wrapper (Redfin | Zillow | Maine MLS | All Agents)
 │   ├── dashboard.html                # Redfin HTML dashboard
 │   ├── zillow_directory_dashboard.html  # Zillow HTML dashboard
+│   ├── maine_dashboard.html          # Maine MLS HTML dashboard
 │   └── *.md                          # Markdown leaderboards
 ├── .github/workflows/
 │   ├── scrape_agents.yml             # Redfin enrichment (4x/day)
-│   └── zillow_leaderboard.yml        # Zillow Firecrawl (manual dispatch)
+│   ├── zillow_leaderboard.yml        # Zillow Firecrawl (manual dispatch)
+│   └── maine_listings.yml            # Maine MLS Firecrawl (weekly cron + manual)
 ├── CLAUDE.md, AGENTS.md, README.md
 ├── requirements.txt
 └── .gitignore

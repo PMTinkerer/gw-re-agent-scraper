@@ -1,69 +1,59 @@
 # PROJECT_PLAN.md — gw-re-agent-scraper
 
 ## Objective
-Identify the top real estate listing agents across 10 southern Maine towns using 3 years of publicly visible sold data.
+Identify the top real estate agents and brokerages across 10 southern Maine towns using MLS-authoritative data — both listing-side and buyer-side, with period-based KPIs and year-over-year movement tracking.
 
 ## Phase Tracker
 - [x] Phase 1: Project scaffold and database module
 - [x] Phase 2: State manager and Redfin CSV integration
-- [x] Phase 3: Redfin region ID discovery and data collection (2,371 transactions)
+- [x] Phase 3: Redfin region ID discovery and data collection
 - [x] Phase 4: Report generator and CLI orchestrator
 - [x] Phase 5: GitHub Actions workflow and project docs
-- [x] **Phase 6: Playwright agent enrichment** — built, tested, 10 URLs enriched successfully
-- [x] Phase 7: Push to GitHub, configure residential proxy, automated enrichment running
-- [x] Phase 8: HTML dashboard with trend badges, deployed to GitHub Pages
-- [x] Phase 9: Property type filter (SFH + Condo only), purge non-residential records
-- [x] Phase 10: Office name normalization and brokerage-as-agent exclusion list
-- [ ] Phase 11: Enrichment completion (~7 batches remaining at 80 URLs/batch)
-- [ ] Phase 12: Agent name normalization tuning with real data
-- [ ] Phase 13: Leaderboard review and incremental mode
+- [x] Phase 6: Playwright agent enrichment
+- [x] Phase 7: Residential proxy + automated enrichment
+- [x] Phase 8: HTML dashboard + GitHub Pages
+- [x] Phase 9: Property type filter
+- [x] Phase 10: Office name normalization + brokerage-as-agent exclusion
+- [x] Phase 11: Redfin enrichment completion (archived 2026-04-16)
+- [x] Phase 12: Zillow parallel dataset — Firecrawl directory + profile enrichment (archived 2026-04-16)
+- [x] Phase 13: Tabbed dashboard + unified agent search
+- [x] Phase 14: Maine Listings (MREIS MLS) discovery — 16,029 closed listings across 10 towns
+- [x] Phase 15: Maine Listings concurrent Phase 2 enrichment — 16,024 enriched (99.97% success)
+- [x] Phase 16: Alerting (Pushover + Resend) + DB backup + weekly GH Actions cron
+- [x] Phase 17: Redfin/Zillow retirement + Maine promoted to primary
+- [x] Phase 18: Maine Leaderboard redesign — KPI rollups (12mo/prior-12mo/3yr/all-time), Biggest Movers banner, Agent/Brokerage toggle, period selector, in-table search, top-50-per-town
 
-## Current Priority: Phase 11 — Enrichment Completion
+## Current Status
+All primary objectives complete. The Maine MLS pipeline is the source of truth. Interactive Leaderboard + standalone HTML dashboard both in production. Weekly cron keeps data fresh.
 
-Enrichment running in production via GitHub Actions with IPRoyal residential proxy. 1,762 URLs enriched (76%), ~526 remaining. Dashboard live at https://pmtinkerer.github.io/gw-re-agent-scraper/
+**Live:** https://pmtinkerer.github.io/gw-re-agent-scraper/
 
-**What was built:**
-- `enrich_agents_from_redfin(conn, batch_size, headless)` in `src/scraper.py`
-- `_extract_agent_data(page)` — handles two Redfin DOM structures (Redfin-agent vs non-Redfin agent listings)
-- `_check_page_status(page)` — distinguishes captcha (stop batch) from CDN errors (retry)
-- Fresh browser context per page with viewport/user-agent rotation + residential proxy (IPRoyal)
-- Resource blocking (images/fonts/stylesheets/media) to reduce proxy bandwidth ~70-80%
-- `enrichment_status` + `enrichment_attempts` columns in DB for per-URL tracking
-- CLI: `python -m src.main --enrich --batch-size 80`
-- GitHub Actions step runs enrichment automatically 4x/day
-
-**Estimated runtime:** ~7 runs × 80 URLs × ~20s/URL ≈ 27 min/run, fits 45-min Actions timeout
-
-## Decision Log
+## Decision Log (major decisions only)
 | Date | Decision | Rationale |
 |------|----------|-----------|
-| 2026-03-21 | SQLite over Postgres | No external DB dependency, single file, committed to repo |
-| 2026-03-21 | Redfin CSV for property data | Reliable structured data: address, price, MLS#, sold date, beds, baths, sqft |
-| 2026-03-21 | Playwright for agent enrichment | Redfin CSV removed agent columns; individual property pages still show agent/brokerage data but require a real browser to render |
-| 2026-03-21 | Skip RapidAPI / Realtor.com | Unofficial third-party API, poorly documented, not credible — Redfin pages are more reliable |
-| 2026-03-21 | York County query for minorcivildivision towns | York, Ogunquit, Wells use region_type=40 which the CSV API doesn't support; querying county (type=5, id=1309) and filtering by city works |
-| 2026-03-21 | rapidfuzz for name matching | C-accelerated, permissive license, >90% threshold + same office |
-| 2026-03-21 | Chunk-based resumable processing | Fits GitHub Actions 45-min timeout and 2000 min/month free tier |
-| 2026-03-21 | Fresh browser context per page | Redfin CloudFront blocks repeated requests from same browser session — rotating context avoids 403s |
-| 2026-03-21 | 10-20s delay between enrichment visits | 5-10s caused CDN blocks; 10-20s is reliable |
-| 2026-03-21 | DB-level enrichment tracking | Per-URL `enrichment_status` column instead of state.py chunks — simpler for individual URL tracking with retry support |
-| 2026-03-21 | Dual DOM extraction strategy | Redfin uses `.agent-card-wrapper` for their agents, `.listing-agent-item` for external agents — both handled |
-| 2026-03-22 | IPRoyal residential proxy | GitHub Actions datacenter IPs get captcha'd by Redfin CloudFront; residential IPs work reliably |
-| 2026-03-22 | SFH + Condo only (`uipt=1,2`) | Land, multi-family, mobile home sales are irrelevant to residential agent leaderboard |
-| 2026-03-22 | Brokerage-as-agent exclusion | Some brokerages (e.g., Anchor Real Estate) show brokerage name as listing agent; excluded from agent rankings via `LOWER(listing_agent) != LOWER(listing_office)` |
-| 2026-03-22 | HTML dashboard on GitHub Pages | Auto-deployed after every CI run for zero-effort access to latest rankings |
-| 2026-03-23 | Workflow concurrency control | Prevents parallel CI runs from creating merge conflicts on binary DB file |
-| 2026-03-23 | Keep Redfin over Realtor.com | Realtor.com GraphQL API has agent data but only 1,066 results (vs 2,311) and months stale — not viable as primary source |
-| 2026-03-30 | Keep Redfin over PrimeMLS | PrimeMLS is authoritative MLS but Cloudflare-protected, explicit anti-scraping ToS, sold data likely behind login, IDX feed requires membership + $500+/mo |
-| 2026-03-31 | Office name normalization map | 15 variant office spellings merged to canonical names via OFFICE_NORMALIZATION dict — applied at upsert time |
-| 2026-03-31 | BROKERAGE_AS_AGENT exclusion set | Known brokerage-named agents (Anchor RE, Anne Erwin RE) excluded from agent rankings via explicit set, not just name=office match |
-| 2026-03-31 | 365-day rolling brokerage leaderboard | Added rolling brokerage rankings with trend badges and operating towns — mirrors existing agent pattern |
+| 2026-03-21 | SQLite over Postgres | No external DB; single file; committed to repo |
+| 2026-03-21 | Playwright for Redfin agent data | CSV dropped agent columns; property pages render them with browser |
+| 2026-03-21 | Skip RapidAPI/Realtor.com | Unofficial; far less comprehensive than Redfin at the time |
+| 2026-03-22 | IPRoyal residential proxy for Redfin | GH Actions datacenter IPs get captcha'd by CloudFront |
+| 2026-03-22 | SFH + Condo only | Land/multi-family/mobile irrelevant to residential agent leaderboard |
+| 2026-03-31 | Office name normalization + BROKERAGE_AS_AGENT exclusion | Variant spellings + placeholder names pollute rankings |
+| 2026-04-07 | Firecrawl for Zillow | PerimeterX blocks Playwright + residential proxies; Firecrawl bypasses it |
+| 2026-04-07 | Office branches stay separate | Competing entities within a chain; no cross-branch aggregation |
+| 2026-04-15 | Maine Listings as primary source | Only source that captures both listing + buyer agent on every transaction |
+| 2026-04-16 | Concurrent Firecrawl enrichment with ThreadPoolExecutor | Firecrawl Standard plan supports 50 concurrent; cuts 16K-listing backfill from ~18h → ~3h |
+| 2026-04-16 | Pushover + Resend alerting | User explicit requirement for failure notifications |
+| 2026-04-16 | DB backup before mutating runs | Protects against data loss if enrichment crashes mid-run |
+| 2026-04-16 | Archive Redfin + Zillow pipelines | Maine MLS strictly dominates Redfin (15yr vs 3yr, both sides, no CSV cap); Zillow still useful for profile richness only |
+| 2026-04-17 | Single enhanced table + Movers banner | UX: one dense sortable view beats multi-tab nav; Movers banner surfaces the momentum story at a glance |
+| 2026-04-17 | Period KPI rollups in separate `maine_kpis.py` module | Keeps `maine_report.py` focused on markdown; shared by static dashboard + interactive tab |
 
-## Changelog
-- 2026-03-21: Initial build complete. All Python modules, GitHub Actions workflow, unit tests, and documentation created.
-- 2026-03-21: Collected 2,371 Redfin transactions. Discovered CSV lacks agent columns. Pivoted strategy to Playwright-based agent enrichment from individual property pages. Dropped RapidAPI approach.
-- 2026-03-21: Built and validated Playwright agent enrichment pipeline. Handles two Redfin DOM structures, fresh browser context per page, CDN error detection and retry. 10/10 test URLs enriched correctly. 97 tests passing. GitHub Actions workflow updated with enrichment step.
-- 2026-03-22: Pushed to GitHub. Configured residential proxy (IPRoyal). Added resource blocking. Built HTML dashboard with trend badges. Added property type filter (SFH + Condo only). Added brokerage-as-agent exclusion. Purged 1,636 non-residential records. Set up GitHub Pages.
-- 2026-03-23: Fixed merge conflict from concurrent CI runs (added workflow concurrency control). Fixed Pages auto-deploy. Investigated Realtor.com GraphQL API — functional but far less comprehensive than Redfin; not viable as replacement. 115 tests passing.
-- 2026-03-30: Diagnosed IPRoyal proxy outage (ERR_TUNNEL_CONNECTION_FAILED since Mar 28). Evaluated PrimeMLS — not viable. Fixed table column alignment. Enrichment at 67%.
-- 2026-03-31: Added 365-day rolling brokerage leaderboard with trend badges and operating towns (6 sections total). Added office name normalization (15 variants, 139 rows). Added Anne Erwin Real Estate to brokerage-as-agent exclusion. 125 tests passing. Enrichment at 76%.
+## Changelog (most recent first)
+- **2026-04-17:** Maine Leaderboard redesign shipped. 12-column KPI table + Biggest Movers banner. New `src/maine_kpis.py` module. 24 new tests (232 total). See `docs/superpowers/specs/2026-04-16-maine-leaderboard-redesign-design.md` and `docs/superpowers/plans/2026-04-16-maine-leaderboard-redesign.md`.
+- **2026-04-16:** Maine Listings Phase 2 enrichment complete (16,024 / 16,029, 99.97%). Concurrent ThreadPoolExecutor refactor, circuit breaker, thread-safe SQLite writes. Pushover + Resend alerting. DB backup. Town canonicalization. Tabs reordered (Maine primary; Redfin + Zillow archived).
+- **2026-04-15:** Maine Listings scraper built. Phase 1 discovery: 10,587 closed listings across 10 towns. Two-phase architecture (search page → detail page NUXT blob).
+- **2026-04-10 to 2026-04-15:** Zillow profile enrichment. 683/740 agents. Page-1-only sold rows. Tabbed dashboard wrapping Redfin + Zillow.
+- **2026-04-07:** Zillow Firecrawl pipeline built. 740 agents across 10 towns.
+- **2026-04-06:** Zillow V1 scaffolded as parallel dataset (separate DB/state/reports, seller/buyer role-aware reporting).
+- **2026-03-31:** 365-day rolling brokerage leaderboard + office normalization.
+- **2026-03-22 to 2026-03-30:** Redfin enrichment + dashboard + proxy stabilization.
+- **2026-03-21:** Initial build. Redfin CSV collection + Playwright enrichment scaffolding.
