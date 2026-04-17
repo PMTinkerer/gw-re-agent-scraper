@@ -103,3 +103,65 @@ class TestURLBuilder:
         u3 = build_search_url(town='Wells', page=3, status='Active')
         assert '&page=' not in u1
         assert '&page=3' in u3
+
+
+from unittest.mock import patch, MagicMock
+
+from src.maine_database import get_connection, init_db
+from src.maine_firecrawl import discover_listings
+
+
+class TestDiscoverListingsWithStatus:
+    """End-to-end: discover_listings with status='Active' writes Active rows."""
+
+    @patch('src.maine_firecrawl._get_client')
+    def test_active_run_writes_active_rows(self, mock_get_client, tmp_path):
+        mock_result = MagicMock()
+        mock_result.markdown = ACTIVE_FIXTURE
+        mock_client = MagicMock()
+        mock_client.scrape.return_value = mock_result
+        mock_get_client.return_value = mock_client
+
+        conn = get_connection(str(tmp_path / 'd.db'))
+        init_db(conn)
+        state = {'towns': {}}
+
+        result = discover_listings(
+            conn, state,
+            towns=['Kittery'],
+            max_pages=1,
+            status='Active',
+            workers=1,
+        )
+
+        assert result['listings'] >= 1
+        rows = conn.execute(
+            "SELECT status, list_price, sale_price FROM maine_transactions"
+        ).fetchall()
+        assert len(rows) == 1
+        assert rows[0][0] == 'Active'
+        assert rows[0][1] == 875_000
+        assert rows[0][2] is None
+
+    @patch('src.maine_firecrawl._get_client')
+    def test_closed_run_still_writes_closed_rows(self, mock_get_client, tmp_path):
+        mock_result = MagicMock()
+        mock_result.markdown = CLOSED_FIXTURE
+        mock_client = MagicMock()
+        mock_client.scrape.return_value = mock_result
+        mock_get_client.return_value = mock_client
+
+        conn = get_connection(str(tmp_path / 'd2.db'))
+        init_db(conn)
+        state = {'towns': {}}
+
+        result = discover_listings(
+            conn, state, towns=['Kittery'], max_pages=1, workers=1,
+        )
+
+        rows = conn.execute(
+            "SELECT status, sale_price FROM maine_transactions"
+        ).fetchall()
+        assert len(rows) == 1
+        assert rows[0][0] == 'Closed'
+        assert rows[0][1] == 750_000

@@ -128,7 +128,10 @@ def main() -> int:
         description='Maine Listings (MREIS MLS) Transaction Scraper',
     )
     parser.add_argument('--discover', action='store_true',
-                        help='Discover closed listings from search pages')
+                        help='Discover listings from search pages')
+    parser.add_argument('--status', type=str, default='Closed',
+                        choices=['Active', 'Closed'],
+                        help='Listing status to discover (default: Closed)')
     parser.add_argument('--enrich', action='store_true',
                         help='Enrich listings with agent data from detail pages')
     parser.add_argument('--report', action='store_true',
@@ -165,8 +168,8 @@ def main() -> int:
     state = load_state(args.state)
 
     if args.discover:
-        logger.info('Starting Maine Listings discovery (max_pages=%d, recent_only=%s, workers=%d)...',
-                     args.max_pages, args.recent_only, args.workers)
+        logger.info('Starting Maine Listings discovery (status=%s, max_pages=%d, recent_only=%s, workers=%d)...',
+                     args.status, args.max_pages, args.recent_only, args.workers)
         result = discover_listings(
             conn, state,
             towns=towns,
@@ -174,9 +177,12 @@ def main() -> int:
             recent_only=args.recent_only,
             state_path=args.state,
             workers=args.workers,
+            status=args.status,
         )
-        logger.info('Discovery: %d towns, %d listings found',
-                     result['towns'], result['listings'])
+        logger.info('Discovery: %d towns, %d listings found (new=%d, status_changes=%d)',
+                     result['towns'], result['listings'],
+                     result.get('new_listings', 0),
+                     result.get('status_changes', 0))
 
     if args.enrich:
         _backup_db(args.db)
