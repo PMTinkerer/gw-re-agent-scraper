@@ -145,9 +145,90 @@ def query_brokerage_kpis(
     limit: Optional[int] = None,
     today: Optional[str] = None,
 ) -> list[dict]:
-    """One row per brokerage (listing_office + buyer_office union, kept at
-    branch level)."""
-    raise NotImplementedError  # Task A4
+    """One row per brokerage. Same period columns as query_agent_kpis plus:
+    - agent_count (# distinct agent names at that brokerage)
+    - top_agents (comma-separated top 3 agents by count at that brokerage)
+
+    Brokerages are kept at branch level — no normalization.
+    """
+    cutoffs = compute_cutoffs(today)
+
+    town_sql_listing = ''
+    town_sql_buyer = ''
+    town_params: list = []
+    if town:
+        town_sql_listing = 'AND LOWER(city) = LOWER(?)'
+        town_sql_buyer = 'AND LOWER(city) = LOWER(?)'
+        town_params = [town, town]
+
+    sql = f'''
+        WITH sides AS (
+            SELECT listing_office AS office,
+                   listing_agent AS agent,
+                   'listing' AS role,
+                   sale_price, city, close_date
+            FROM maine_transactions
+            WHERE enrichment_status = 'success'
+              AND listing_office IS NOT NULL AND TRIM(listing_office) != ''
+              {town_sql_listing}
+            UNION ALL
+            SELECT buyer_office AS office,
+                   buyer_agent AS agent,
+                   'buyer' AS role,
+                   sale_price, city, close_date
+            FROM maine_transactions
+            WHERE enrichment_status = 'success'
+              AND buyer_office IS NOT NULL AND TRIM(buyer_office) != ''
+              {town_sql_buyer}
+        )
+        SELECT
+            s.office AS name,
+            COUNT(DISTINCT s.agent) AS agent_count,
+            SUM(CASE WHEN s.close_date >= ? THEN 1 ELSE 0 END) AS current_12mo_sides,
+            SUM(CASE WHEN s.close_date >= ? THEN COALESCE(s.sale_price, 0) ELSE 0 END) AS current_12mo_volume,
+            SUM(CASE WHEN s.close_date >= ? AND s.close_date < ? THEN 1 ELSE 0 END) AS prior_12mo_sides,
+            SUM(CASE WHEN s.close_date >= ? AND s.close_date < ? THEN COALESCE(s.sale_price, 0) ELSE 0 END) AS prior_12mo_volume,
+            SUM(CASE WHEN s.close_date >= ? THEN 1 ELSE 0 END) AS three_yr_sides,
+            SUM(CASE WHEN s.close_date >= ? THEN COALESCE(s.sale_price, 0) ELSE 0 END) AS three_yr_volume,
+            COUNT(*) AS all_time_sides,
+            SUM(COALESCE(s.sale_price, 0)) AS all_time_volume,
+            SUM(CASE WHEN s.role = 'listing' THEN 1 ELSE 0 END) AS listing_sides,
+            SUM(CASE WHEN s.role = 'buyer' THEN 1 ELSE 0 END) AS buyer_sides,
+            MAX(s.close_date) AS most_recent,
+            (
+                SELECT GROUP_CONCAT(agent, ', ') FROM (
+                    SELECT agent, COUNT(*) AS cnt FROM sides s2
+                    WHERE s2.office = s.office AND s2.agent IS NOT NULL
+                    GROUP BY agent ORDER BY cnt DESC LIMIT 3
+                )
+            ) AS top_agents,
+            (
+                SELECT GROUP_CONCAT(city, ', ') FROM (
+                    SELECT city, COUNT(*) AS cnt FROM sides s3
+                    WHERE s3.office = s.office AND s3.city IS NOT NULL
+                    GROUP BY city ORDER BY cnt DESC LIMIT 3
+                )
+            ) AS primary_towns
+        FROM sides s
+        GROUP BY s.office
+        ORDER BY current_12mo_volume DESC, all_time_volume DESC
+    '''
+
+    params = town_params + [
+        cutoffs.current_12mo_start,
+        cutoffs.current_12mo_start,
+        cutoffs.prior_12mo_start, cutoffs.current_12mo_start,
+        cutoffs.prior_12mo_start, cutoffs.current_12mo_start,
+        cutoffs.three_year_start,
+        cutoffs.three_year_start,
+    ]
+
+    if limit is not None:
+        sql += ' LIMIT ?'
+        params.append(limit)
+
+    rows = conn.execute(sql, params).fetchall()
+    return [dict(r) for r in rows]
 
 
 def compute_rank_movers(

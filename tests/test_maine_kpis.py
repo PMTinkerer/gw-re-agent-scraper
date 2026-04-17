@@ -215,3 +215,37 @@ class TestQueryAgentKPIs:
         rows = query_agent_kpis(conn, today=today)
         names = {r['name'] for r in rows}
         assert 'NON-MREIS AGENT' not in names
+
+
+class TestQueryBrokerageKPIs:
+    def test_aggregates_by_office(self, kpi_conn):
+        conn, today = kpi_conn
+        rows = query_brokerage_kpis(conn, today=today)
+        offices = {r['name'] for r in rows}
+        # Acme should appear (Alice's listing office, 5 transactions)
+        assert 'Acme' in offices
+
+    def test_agent_count_correct(self, kpi_conn):
+        conn, today = kpi_conn
+        rows = query_brokerage_kpis(conn, today=today)
+        acme = next(r for r in rows if r['name'] == 'Acme')
+        # Only Alice is a listing agent at Acme
+        assert acme['agent_count'] == 1
+
+    def test_bbrok_has_bob_as_buyer(self, kpi_conn):
+        conn, today = kpi_conn
+        rows = query_brokerage_kpis(conn, today=today)
+        bbrok = next(r for r in rows if r['name'] == 'BBrok')
+        # Bob appears as buyer at BBrok in all 5 buyer-side rows
+        # (rows 1,6,7,8,9): day30/Kittery, day50/Saco, day200/Saco, day500/Saco, day600/Saco
+        assert bbrok['buyer_sides'] == 5
+        # BBrok only ever appears as buyer_office — no listing sides
+        assert bbrok['listing_sides'] == 0
+        # Only Bob is an agent at BBrok
+        assert bbrok['agent_count'] == 1
+
+    def test_top_agents_rollup(self, kpi_conn):
+        conn, today = kpi_conn
+        rows = query_brokerage_kpis(conn, today=today)
+        acme = next(r for r in rows if r['name'] == 'Acme')
+        assert 'Alice' in (acme['top_agents'] or '')
