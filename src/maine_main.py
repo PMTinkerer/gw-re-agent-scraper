@@ -26,6 +26,8 @@ logger = logging.getLogger(__name__)
 _CANON_LOOKUP = {t.lower().replace(' ', '_'): t for t in _CANONICAL_TOWNS}
 _CANON_LOOKUP.update({t.lower(): t for t in _CANONICAL_TOWNS})
 
+TOWNS_EXPECTED = 10  # southern coastal Maine territory
+
 
 def _canonicalize_town(raw: str) -> str:
     """Map user input (any case/separator) to the canonical TOWNS spelling.
@@ -81,6 +83,35 @@ def _backup_db(db_path: str | None) -> str | None:
     except OSError:
         pass
     return backup_path
+
+
+def detect_daily_active_anomaly(discovery_result: dict) -> bool:
+    """Return True if a daily-active run looks suspiciously quiet.
+
+    Criteria: all 10 towns scraped successfully AND zero new listings AND
+    zero status changes. Partial-coverage days (fewer towns scraped) are
+    not anomalies — per-town failures have their own alerts.
+    """
+    return (
+        discovery_result.get('towns_scraped', 0) >= TOWNS_EXPECTED
+        and discovery_result.get('new_listings', 0) == 0
+        and discovery_result.get('status_changes', 0) == 0
+    )
+
+
+def send_anomaly_alert(*, run_id: str) -> None:
+    """Fire a high-priority alert when the daily run looked broken."""
+    notify_failure(
+        'Daily-active run looks suspicious — zero deltas across all towns',
+        (
+            f'Run {run_id} scraped all 10 towns but saw zero new listings '
+            'and zero status changes. This is almost always a broken scraper '
+            '(site change, auth wall, parser regression) rather than a real '
+            'quiet day. Inspect mainelistings.com and the latest pipeline '
+            'log before the next cron fires.'
+        ),
+        run_id=run_id,
+    )
 
 
 def _notify_enrichment_result(result: dict, run_id: str) -> None:
@@ -143,6 +174,9 @@ def main() -> int:
                              '(run at end of daily-active cycle)')
     parser.add_argument('--sweep-days', type=int, default=7,
                         help='Age threshold (days) for withdrawn sweep')
+    parser.add_argument('--max-credits', type=int, default=None,
+                        help='Hard cap on Firecrawl calls this run '
+                             '(safeguard against budget overrun)')
     parser.add_argument('--towns', type=str, default=None,
                         help='Comma-separated town names')
     parser.add_argument('--max-pages', type=int, default=90,
@@ -172,6 +206,9 @@ def main() -> int:
     init_db(conn)
     state = load_state(args.state)
 
+    from .maine_firecrawl import set_credit_limit
+    set_credit_limit(args.max_credits)
+
     if args.discover:
         logger.info('Starting Maine Listings discovery (status=%s, max_pages=%d, recent_only=%s, workers=%d)...',
                      args.status, args.max_pages, args.recent_only, args.workers)
@@ -188,6 +225,11 @@ def main() -> int:
                      result['towns'], result['listings'],
                      result.get('new_listings', 0),
                      result.get('status_changes', 0))
+
+        if args.status == 'Active':
+            run_id = datetime.utcnow().strftime('%Y%m%d-%H%M%S')
+            if detect_daily_active_anomaly(result):
+                send_anomaly_alert(run_id=run_id)
 
     if args.sweep:
         from .maine_database import mark_withdrawn_stale

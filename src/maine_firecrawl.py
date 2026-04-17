@@ -41,6 +41,24 @@ _BLOCK_STRINGS = ['unexpected occurred', 'access denied', 'captcha']
 _DB_LOCK_RETRIES = 5
 
 
+_credit_counter = {
+    'count': 0,
+    'limit': None,
+    'lock': threading.Lock(),
+}
+
+
+def set_credit_limit(limit: int | None) -> None:
+    """Configure a hard cap on Firecrawl scrape calls for this process.
+
+    Subsequent calls that exceed the limit raise RuntimeError, aborting the
+    current run. Pass None to disable the cap. Resets the counter to zero.
+    """
+    with _credit_counter['lock']:
+        _credit_counter['count'] = 0
+        _credit_counter['limit'] = limit
+
+
 def build_search_url(*, town: str, page: int, status: str = 'Closed') -> str:
     """Compose a mainelistings.com search URL for one town + status + page."""
     url = f'{_SEARCH_URL}?city={town}&mls_status={status}'
@@ -71,6 +89,16 @@ def _open_threadsafe_conn(db_path: str | None = None) -> sqlite3.Connection:
 
 def _scrape(client, url: str, fmt: str = 'markdown'):
     """Scrape a page and return the result object. Raises on blocked pages."""
+    with _credit_counter['lock']:
+        limit = _credit_counter['limit']
+        count = _credit_counter['count']
+        if limit is not None and count >= limit:
+            raise RuntimeError(
+                f'Credit cap hit: {count} / {limit} Firecrawl calls. '
+                'Aborting run.'
+            )
+        _credit_counter['count'] = count + 1
+
     kwargs = {'formats': [fmt], 'wait_for': 8000}
     if fmt == 'rawHtml':
         kwargs['actions'] = [
