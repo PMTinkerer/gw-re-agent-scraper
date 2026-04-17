@@ -1,5 +1,5 @@
 # Maine MLS Agent Leaderboard -- Southern Coastal Maine
-_Generated: 2026-04-17 01:30 UTC | Source: MaineListings.com (MREIS MLS) | Date range: 2011-02-23 to 2026-04-16_
+_Generated: 2026-04-17 01:55 UTC | Source: MaineListings.com (MREIS MLS) | Date range: 2011-02-23 to 2026-04-16_
 _Enriched: 16,024 / 16,029 closed transactions | Listing agent: 16,024 | Buyer agent: 16,022_
 
 > Unique to MLS data: every transaction includes both listing and buyer agent, so buyer-side performance is visible.

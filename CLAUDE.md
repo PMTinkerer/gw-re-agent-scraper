@@ -158,6 +158,7 @@ gw-re-agent-scraper/
 │   ├── maine_database.py             # Maine Listings SQLite schema
 │   ├── maine_report.py               # Maine markdown leaderboard + agent search index
 │   ├── maine_dashboard.py            # Maine HTML dashboard (combined/listing/buyer/brokerage tables)
+│   ├── maine_kpis.py                 # Period-based KPI queries + rank movers
 │   └── maine_state.py                # Maine Listings state machine
 ├── tests/                            # 128+ unit tests
 ├── data/
