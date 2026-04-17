@@ -853,15 +853,20 @@ def _search_js() -> str:
         if (md) {
             html += '<div class="source-label">Maine MLS &mdash; Closed Transactions</div>';
             html += '<div class="stat-row">';
-            html += stat("Total Sides", md.total_sides);
-            html += stat("Listing Sides", md.listing_sides);
-            html += stat("Buyer Sides", md.buyer_sides);
-            html += stat("Total Volume", fmtCur(md.volume));
+            html += stat("Last 12mo",   md.current_12mo_sides + " sides");
+            html += stat("12mo Vol",    fmtCur(md.current_12mo_volume));
+            html += stat("Prior 12mo",  md.prior_12mo_sides + " sides");
+            html += stat("Prior Vol",   fmtCur(md.prior_12mo_volume));
+            html += stat("3yr",         md.three_yr_sides + " sides");
+            html += stat("3yr Vol",     fmtCur(md.three_yr_volume));
+            html += stat("All-Time",    md.all_time_sides + " sides");
+            html += stat("All-Time Vol", fmtCur(md.all_time_volume));
+            html += stat("L / B",        (md.listing_sides||0) + " / " + (md.buyer_sides||0));
             html += stat("Most Recent", md.most_recent || "N/A");
             html += '</div>';
             if (md.towns && md.towns.length) {
                 html += '<div class="office-line" style="margin-top:10px;">Towns: ' +
-                    esc(md.towns.join(", ")) + '</div>';
+                    esc((md.towns || []).filter(Boolean).join(", ")) + '</div>';
             }
         }
 
