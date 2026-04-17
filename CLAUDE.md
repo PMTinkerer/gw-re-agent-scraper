@@ -6,12 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Scrapes publicly visible sold property data from Redfin for 10 southern coastal Maine towns, then enriches each transaction with listing agent and brokerage data by visiting individual Redfin property pages via Playwright. The primary deliverables are `data/dashboard.html` (HTML leaderboard with trend badges, hosted on GitHub Pages) and `data/agent_leaderboard.md` (markdown version). Runs on GitHub Actions free tier with resumable chunk-based processing.
 
 ## Current State (as of 2026-04-16)
-- **Redfin pipeline**: 2,398 SFH/Condo transactions, ~85% enriched with agent data (listing agent only). County-query date chunking added for York/Wells/Ogunquit.
-- **Zillow pipeline**: 740 directory profiles + 683/740 enriched with career stats, avg price, and 5 most recent sold transactions. Buyer/seller split visible.
-- **Maine Listings pipeline (NEW — primary source going forward)**: 10,587 closed transactions discovered from mainelistings.com (MREIS MLS public portal). Captures BOTH listing agent AND buyer's agent on every transaction — data no other source provides. Phase 2 enrichment (detail page scraping) pending Firecrawl Standard plan upgrade.
-- **Tabbed dashboard** at `data/index.html` with Redfin, Zillow, and "All Agents" tabs — sortable, filterable, with Local Sales / Career Total / Local % / Est. Volume columns
-- **Agent search** across 834 Redfin + 685 Zillow agents with detail cards
-- **GitHub Pages live** at `https://pmtinkerer.github.io/gw-re-agent-scraper/`
+- **Maine Listings (MREIS MLS) — PRIMARY source**: 16,024 closed transactions enriched with both listing AND buyer agent across 10 towns, 15-year history (2011-2026). 99.97% enrichment success. Authoritative MLS data. 2,253 unique listing agents, 2,634 unique buyer agents, 3,165 total in search index.
+- **Redfin pipeline — ARCHIVED 2026-04-16**: 2,397 transactions captured before retirement. Strictly a subset of Maine MLS (CSV cap, listing-side only, 3-year window). 4x/day cron disabled. Manual dispatch still available in `.github/workflows/scrape_agents.yml` if we ever need to re-run.
+- **Zillow pipeline — ARCHIVED (kept as reference)**: 740 agent profiles with career stats, 12-month sales, and most-recent sold rows. Still useful for agent-profile enrichment (photos/bios/reviews), but numbers appear inflated vs. MLS truth. No cron; manual dispatch only.
+- **Tabbed dashboard** at `data/index.html`: "Maine MLS" (default) → "All Agents" (filterable master table, Maine-powered) → Zillow (archive) → Redfin (archive). Unified agent search across all 3 sources.
+- **GitHub Pages live** at `https://pmtinkerer.github.io/gw-re-agent-scraper/` (auto-deploys on push to `main`).
 - **Public repo on GitHub**
 
 ## Service Territory (10 Towns)

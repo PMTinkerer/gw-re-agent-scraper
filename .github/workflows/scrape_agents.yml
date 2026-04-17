@@ -1,11 +1,13 @@
 name: Scrape RE Agent Data
 
 on:
-  schedule:
-    # During backfill (initial/enriching): runs 4x/day
-    # After backfill complete (maintenance): only Sunday midnight UTC fires
-    - cron: '0 6,12,18,0 * * *'
-    - cron: '0 0 * * 0'
+  # Archived 2026-04-16: Redfin pipeline superseded by Maine Listings (MREIS MLS).
+  # Kept on manual-dispatch only so the workflow remains available if we ever
+  # need to re-run Redfin enrichment. Re-enable the cron below to resume.
+  #
+  # schedule:
+  #   - cron: '0 6,12,18,0 * * *'
+  #   - cron: '0 0 * * 0'
   workflow_dispatch:
     inputs:
       max_chunks:

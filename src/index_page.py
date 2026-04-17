@@ -73,19 +73,19 @@ def _build_html(redfin_json: str, zillow_json: str, maine_json: str) -> str:
 <body>
     <nav class="tab-bar">
         <div class="logo">Southern Coastal <span>Maine</span></div>
-        <button class="tab active" data-tab="redfin">Redfin</button>
-        <button class="tab" data-tab="zillow">Zillow</button>
-        <button class="tab" data-tab="maine">Maine MLS</button>
+        <button class="tab active" data-tab="maine">Maine MLS</button>
         <button class="tab" data-tab="master">All Agents</button>
+        <button class="tab" data-tab="zillow">Zillow <span class="archived-pill">archive</span></button>
+        <button class="tab" data-tab="redfin">Redfin <span class="archived-pill">archive</span></button>
         <div class="search-wrap">
             <input type="text" id="agent-search" placeholder="Search any agent or office..." autocomplete="off">
             <div id="search-results" class="search-results hidden"></div>
         </div>
     </nav>
     <div class="tab-content">
-        <iframe id="redfin" class="active" src="redfin.html"></iframe>
+        <iframe id="maine" class="active" src="maine.html"></iframe>
         <iframe id="zillow" src="zillow.html"></iframe>
-        <iframe id="maine" src="maine.html"></iframe>
+        <iframe id="redfin" src="redfin.html"></iframe>
         <div id="master" class="master-tab">
             <div class="master-filters">
                 <select id="filter-town"><option value="">All Towns</option></select>
@@ -98,14 +98,14 @@ def _build_html(redfin_json: str, zillow_json: str, maine_json: str) -> str:
                     <th class="num">#</th>
                     <th>Agent</th>
                     <th>Office</th>
-                    <th class="num">Type</th>
-                    <th class="num">Local Sales</th>
-                    <th class="num">Career Total</th>
-                    <th class="num">Local %</th>
+                    <th class="num">Total Sides</th>
+                    <th class="num">Listing</th>
+                    <th class="num">Buyer</th>
                     <th class="num">12-Mo</th>
                     <th class="num">Avg Price</th>
-                    <th class="num">Local Volume</th>
-                    <th>Towns</th>
+                    <th class="num">Total Volume</th>
+                    <th class="num">Most Recent</th>
+                    <th>Primary Towns</th>
                 </tr></thead>
                 <tbody id="master-body"></tbody>
             </table></div>
@@ -231,6 +231,19 @@ def _css() -> str:
     .sr-badge.redfin { background: hsla(0,60%,50%,0.2); color: hsl(0,70%,65%); }
     .sr-badge.zillow { background: hsla(210,60%,50%,0.2); color: hsl(210,70%,65%); }
     .sr-badge.maine { background: hsla(140,60%,45%,0.2); color: hsl(140,70%,65%); }
+    .archived-pill {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 0.55rem;
+        font-family: var(--mono);
+        background: rgba(255,255,255,0.06);
+        color: var(--text-3);
+        vertical-align: middle;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
     .tab-content { flex: 1; position: relative; }
     .tab-content iframe {
         position: absolute; inset: 0; width: 100%; height: 100%;
@@ -545,25 +558,34 @@ def _search_js() -> str:
     const filterName = document.getElementById("filter-name");
     const masterCount = document.getElementById("master-count");
 
-    // Build master dataset from Zillow (richer data)
-    const masterData = zillow.map((a, i) => {
-        const local = a.total_local_sales || 0;
-        const career = a.career_sales || local;
-        const avg = a.avg_price || 0;
-        const pct = career > 0 ? Math.round(local / career * 100) : 0;
+    // Build master dataset from Maine MLS (authoritative source of truth),
+    // optionally enriched with Zillow data on exact name match (case-insensitive)
+    // for team badge and 12-month recency indicator.
+    const zillowByName = {};
+    zillow.forEach(a => {
+        if (a.name) zillowByName[a.name.toLowerCase().trim()] = a;
+    });
+    const masterData = maine.map(a => {
+        const key = (a.name || "").toLowerCase().trim();
+        const z = zillowByName[key];
+        const totalSides = a.total_sides || 0;
+        const volume = a.volume || 0;
+        const avg = totalSides > 0 ? volume / totalSides : 0;
         return {
             name: a.name || "",
             office: a.office || "",
-            type: a.type || "",
-            local: local,
-            career: career,
-            pct: pct,
-            mo12: a.sales_12mo || 0,
+            type: z ? (z.type || "") : "",
+            totalSides: totalSides,
+            listing: a.listing_sides || 0,
+            buyer: a.buyer_sides || 0,
+            mo12: z ? (z.sales_12mo || 0) : 0,
             avg: avg,
-            localVol: local * avg,
-            towns: a.towns ? Object.keys(a.towns).join(", ") : "",
-            townList: a.towns ? Object.keys(a.towns) : [],
-            _orig: a,
+            volume: volume,
+            mostRecent: a.most_recent || "",
+            towns: (a.towns || []).join(", "),
+            townList: a.towns || [],
+            _maine: a,
+            _zillow: z,
         };
     });
 
@@ -601,17 +623,18 @@ def _search_js() -> str:
 
         let html = "";
         filtered.forEach((a, i) => {
+            const teamBadge = a.type === "team" ? ' <span class="sr-badge zillow">team</span>' : "";
             html += '<tr data-idx="' + i + '">' +
                 '<td class="num">' + (i+1) + '</td>' +
-                '<td>' + esc(a.name) + '</td>' +
+                '<td>' + esc(a.name) + teamBadge + '</td>' +
                 '<td>' + esc(a.office) + '</td>' +
-                '<td class="num">' + (a.type === "team" ? "TEAM" : "") + '</td>' +
-                '<td class="num">' + (a.local ? a.local.toLocaleString() : "0") + '</td>' +
-                '<td class="num">' + (a.career ? a.career.toLocaleString() : "N/A") + '</td>' +
-                '<td class="num">' + (a.pct > 0 ? a.pct + '%' : 'N/A') + '</td>' +
-                '<td class="num">' + (a.mo12 || "N/A") + '</td>' +
+                '<td class="num">' + a.totalSides.toLocaleString() + '</td>' +
+                '<td class="num">' + a.listing.toLocaleString() + '</td>' +
+                '<td class="num">' + a.buyer.toLocaleString() + '</td>' +
+                '<td class="num">' + (a.mo12 ? a.mo12 : "&mdash;") + '</td>' +
                 '<td class="num">' + fmtCur(a.avg) + '</td>' +
-                '<td class="num">' + fmtCur(a.localVol) + '</td>' +
+                '<td class="num">' + fmtCur(a.volume) + '</td>' +
+                '<td class="num">' + esc(a.mostRecent || "") + '</td>' +
                 '<td>' + esc(a.towns) + '</td>' +
                 '</tr>';
         });
@@ -623,25 +646,27 @@ def _search_js() -> str:
             tr.addEventListener("click", () => {
                 const idx = parseInt(tr.dataset.idx);
                 const a = filtered[idx];
-                if (a && a._orig) {
-                    showDetail({name: a.name, office: a.office, sources: ["zillow"], data: {zillow: a._orig}});
-                }
+                if (!a) return;
+                const sources = ["maine"];
+                const data = {maine: a._maine};
+                if (a._zillow) { sources.push("zillow"); data.zillow = a._zillow; }
+                showDetail({name: a.name, office: a.office, sources: sources, data: data});
             });
         });
     }
 
-    const masterSort = {col: 4, asc: false}; // Default: local sales desc
+    const masterSort = {col: 3, asc: false}; // Default: total sides desc
     function masterSortVal(a, col) {
         switch(col) {
             case 1: return a.name.toLowerCase();
             case 2: return a.office.toLowerCase();
-            case 3: return a.type;
-            case 4: return a.local || 0;
-            case 5: return a.career || 0;
-            case 6: return a.pct || 0;
-            case 7: return a.mo12 || 0;
-            case 8: return a.avg || 0;
-            case 9: return a.localVol || 0;
+            case 3: return a.totalSides || 0;
+            case 4: return a.listing || 0;
+            case 5: return a.buyer || 0;
+            case 6: return a.mo12 || 0;
+            case 7: return a.avg || 0;
+            case 8: return a.volume || 0;
+            case 9: return a.mostRecent || "";
             case 10: return a.towns.toLowerCase();
             default: return 0;
         }
@@ -651,9 +676,9 @@ def _search_js() -> str:
     document.querySelectorAll("#master-table thead th").forEach((th, idx) => {
         const arrow = document.createElement("span");
         arrow.className = "sort-arrow";
-        arrow.textContent = idx === 4 ? "\u25BC" : "\u2195";
+        arrow.textContent = idx === 3 ? "\u25BC" : "\u2195";
         th.appendChild(arrow);
-        if (idx === 4) th.classList.add("sort-active");
+        if (idx === 3) th.classList.add("sort-active");
 
         th.addEventListener("click", () => {
             const asc = masterSort.col === idx ? !masterSort.asc : false;
