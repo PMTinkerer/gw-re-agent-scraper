@@ -16,6 +16,13 @@ build/
 *.db.corrupt-shm
 *.db.corrupt-wal
 *_backup_*.db
+*.db.bak_*
+
+# Local-only file aliases for http.server iframe resolution
+# (the GH Pages workflow copies dashboards into _site/ with these names)
+data/maine.html
+data/redfin.html
+data/zillow.html
 
 # Local tool directories
 .claude/
