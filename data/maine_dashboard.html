@@ -1,0 +1,3649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maine MLS Leaderboard &mdash; Southern Coastal Maine</title>
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+        --bg-base: hsl(220, 15%, 8%);
+        --bg-surface: hsl(220, 13%, 11%);
+        --bg-elevated: hsl(220, 12%, 14%);
+        --bg-hover: hsl(220, 11%, 17%);
+        --text-1: rgba(255,255,255,0.90);
+        --text-2: rgba(255,255,255,0.55);
+        --text-3: rgba(255,255,255,0.32);
+        --accent: hsl(42, 78%, 60%);
+        --accent-dim: hsla(42, 78%, 60%, 0.80);
+        --trend-up: hsl(152, 55%, 45%);
+        --trend-down: hsl(0, 60%, 52%);
+        --trend-flat: rgba(255,255,255,0.30);
+        --trend-new: hsl(200, 75%, 52%);
+        --shadow: hsla(220, 40%, 4%, 0.55);
+        --rule: rgba(255,255,255,0.06);
+        --radius: 10px;
+        --font: 'DM Sans', sans-serif;
+        --mono: 'JetBrains Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+        font-family: var(--font);
+        background: var(--bg-base);
+        color: var(--text-1);
+        line-height: 1.5;
+        min-height: 100dvh;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(ellipse at 8% -5%, hsla(42,70%,55%,0.045) 0%, transparent 55%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    body::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        opacity: 0.018;
+        pointer-events: none;
+        z-index: 1;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        background-repeat: repeat;
+        background-size: 256px 256px;
+    }
+
+    .wrap {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 32px;
+        position: relative;
+        z-index: 2;
+    }
+
+    /* --- HEADER --- */
+    .header {
+        padding: 56px 0 20px;
+    }
+    .header h1 {
+        font-size: 2.1rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1.15;
+        color: var(--text-1);
+        text-wrap: balance;
+    }
+    .header .sub {
+        font-size: 0.78rem;
+        color: var(--text-3);
+        margin-top: 6px;
+        font-family: var(--mono);
+        letter-spacing: 0.01em;
+    }
+
+    /* --- STAT CARDS --- */
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin: 28px 0 48px;
+    }
+    .stat {
+        background: var(--bg-surface);
+        border-radius: var(--radius);
+        padding: 22px 26px;
+        transition: transform 180ms ease-out, box-shadow 180ms ease-out;
+        animation: fadeUp 450ms ease-out both;
+    }
+    .stat:nth-child(1) { animation-delay: 0ms; }
+    .stat:nth-child(2) { animation-delay: 70ms; }
+    .stat:nth-child(3) { animation-delay: 140ms; }
+    .stat:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px var(--shadow);
+    }
+    .stat .label {
+        font-family: var(--mono);
+        font-size: 0.62rem;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-3);
+        margin-bottom: 8px;
+    }
+    .stat .value {
+        font-size: 1.85rem;
+        font-weight: 700;
+        color: var(--accent);
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    /* --- SECTIONS --- */
+    .section {
+        background: var(--bg-surface);
+        border-radius: var(--radius);
+        padding: 28px 32px 24px;
+        margin-bottom: 24px;
+        animation: fadeUp 450ms ease-out both;
+    }
+    .section:nth-of-type(1) { animation-delay: 200ms; }
+    .section:nth-of-type(2) { animation-delay: 280ms; }
+    .section:nth-of-type(3) { animation-delay: 360ms; }
+    .section:nth-of-type(4) { animation-delay: 440ms; }
+    .section:nth-of-type(5) { animation-delay: 520ms; }
+    .section:nth-of-type(6) { animation-delay: 600ms; }
+
+    .section h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--text-1);
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--rule);
+        margin-bottom: 4px;
+    }
+
+    /* --- TOWN SUB-SECTIONS --- */
+    .town-group h3 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-2);
+        margin: 24px 0 4px;
+        padding-left: 2px;
+    }
+
+    /* --- TABLES --- */
+    .table-wrap { overflow-x: auto; }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+        table-layout: fixed;
+    }
+    thead th {
+        font-family: var(--mono);
+        font-size: 0.6rem;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-3);
+        text-align: left;
+        padding: 14px 12px 10px;
+        border-bottom: 1px solid var(--rule);
+        position: sticky;
+        top: 0;
+        background: var(--bg-surface);
+    }
+    thead th.num { text-align: right; }
+
+    tbody td {
+        padding: 10px 12px;
+        color: var(--text-2);
+        border: none;
+        transition: background 120ms ease-out, color 120ms ease-out;
+        vertical-align: middle;
+    }
+    tbody tr:nth-child(odd) td { background: transparent; }
+    tbody tr:nth-child(even) td { background: var(--bg-elevated); }
+    tbody tr:hover td { background: var(--bg-hover); }
+
+    td.num {
+        text-align: right;
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+        font-size: 0.8rem;
+    }
+    td.vol {
+        color: var(--accent-dim);
+        font-weight: 500;
+    }
+    td.agent-name, td.office, td.top-agents {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    td.agent-name {
+        color: var(--text-1);
+        font-weight: 500;
+    }
+    td.office {
+        color: var(--text-2);
+    }
+    tr.rank-1 td.agent-name {
+        color: var(--accent);
+        font-weight: 600;
+    }
+    tr.rank-1 td:first-child {
+        border-left: 2px solid var(--accent);
+    }
+
+    td.towns {
+        font-size: 0.75rem;
+        color: var(--text-3);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    td.top-agents {
+        font-size: 0.78rem;
+        color: var(--text-2);
+    }
+
+    .no-data {
+        text-align: center;
+        color: var(--text-3);
+        font-style: italic;
+        padding: 32px 12px;
+    }
+
+    /* --- TREND BADGES --- */
+    .badge {
+        display: inline-block;
+        font-family: var(--mono);
+        font-size: 0.68rem;
+        font-weight: 500;
+        padding: 2px 8px;
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+    .badge-up {
+        color: var(--trend-up);
+        background: hsla(152, 55%, 45%, 0.12);
+    }
+    .badge-down {
+        color: var(--trend-down);
+        background: hsla(0, 60%, 52%, 0.12);
+    }
+    .badge-flat {
+        color: var(--trend-flat);
+        background: rgba(255,255,255,0.05);
+    }
+    .badge-new {
+        color: var(--trend-new);
+        background: hsla(200, 75%, 52%, 0.12);
+    }
+
+    /* --- FOOTER --- */
+    .footer {
+        text-align: center;
+        padding: 40px 0 48px;
+        font-size: 0.7rem;
+        color: var(--text-3);
+        font-family: var(--mono);
+    }
+
+    /* --- ANIMATION --- */
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* --- SORTABLE HEADERS --- */
+    thead th { cursor: pointer; user-select: none; position: relative; }
+    thead th:hover { color: var(--text-2); }
+    thead th .sort-arrow { margin-left: 4px; font-size: 0.55rem; opacity: 0.5; }
+    thead th.sort-active .sort-arrow { opacity: 1; color: var(--accent); }
+
+    /* --- RESPONSIVE --- */
+    @media (max-width: 768px) {
+        .wrap { padding: 0 16px; }
+        .header { padding: 32px 0 16px; }
+        .header h1 { font-size: 1.5rem; }
+        .stat .value { font-size: 1.4rem; }
+        .section { padding: 20px 16px 16px; }
+        table { font-size: 0.75rem; }
+        thead th { font-size: 0.55rem; }
+    }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <header class="header">
+            <h1>Maine MLS Leaderboard</h1>
+            <p class="sub">MaineListings.com (MREIS) &middot; 10 Towns &middot; 2026-04-17 00:07 UTC</p>
+        </header>
+        <div class="stats">
+            <div class="stat"><div class="label">Closed Transactions</div><div class="value">16,024</div></div>
+            <div class="stat"><div class="label">Agents</div><div class="value">3,169</div></div>
+            <div class="stat"><div class="label">Brokerages</div><div class="value">444</div></div>
+            <div class="stat"><div class="label">Volume</div><div class="value">$10047.4M</div></div>
+        </div>
+        <p class="sub" style="margin: 24px 0 8px; font-size: 0.75rem; color: var(--text-3);">
+            Unique to MLS data: every transaction shows both sides, so
+            <strong>buyer-side performance</strong> is visible alongside listings.
+            Date range: 2011-02-23 to 2026-04-16.
+        </p>
+        <main><section class="section">
+        <h2>Top Agents by Total Sides (Listing + Buyer)</h2>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Agent</th>
+                <th>Office</th>
+                <th class="num">Total</th>
+                <th class="num">List</th>
+                <th class="num">Buy</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Primary Towns</th>
+                <th class="num">Most Recent</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Troy Williams</td>
+            <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">592</td>
+            <td class="num">224</td>
+            <td class="num">368</td>
+            <td class="num">$461.1M</td>
+            <td class="num">$779K</td>
+            <td>York, Kittery, Wells</td>
+            <td class="num">2026-04-02</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Donald Wunder</td>
+            <td>RE/MAX Realty One</td>
+            <td class="num">339</td>
+            <td class="num">192</td>
+            <td class="num">147</td>
+            <td class="num">$266.9M</td>
+            <td class="num">$787K</td>
+            <td>Ogunquit, York, Wells</td>
+            <td class="num">2026-02-27</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Pamela Moody-Maxon</td>
+            <td>Moody Maxon Real Estate</td>
+            <td class="num">295</td>
+            <td class="num">163</td>
+            <td class="num">132</td>
+            <td class="num">$111.9M</td>
+            <td class="num">$379K</td>
+            <td>Wells, Ogunquit, Kennebunk</td>
+            <td class="num">2026-04-01</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Carrie Scovi Amy Foley</td>
+            <td>Signature Homes Real Estate Group, LLC</td>
+            <td class="num">251</td>
+            <td class="num">167</td>
+            <td class="num">84</td>
+            <td class="num">$122.3M</td>
+            <td class="num">$487K</td>
+            <td>Scarborough, Biddeford, Old Orchard Beach</td>
+            <td class="num">2025-10-17</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Nancy Moreshead</td>
+            <td>Best Maine Beach Properties</td>
+            <td class="num">234</td>
+            <td class="num">108</td>
+            <td class="num">126</td>
+            <td class="num">$113.9M</td>
+            <td class="num">$487K</td>
+            <td>Old Orchard Beach, Saco, Scarborough</td>
+            <td class="num">2025-10-01</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Scott Townsend</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">210</td>
+            <td class="num">70</td>
+            <td class="num">140</td>
+            <td class="num">$156.0M</td>
+            <td class="num">$743K</td>
+            <td>Scarborough, Old Orchard Beach, Saco</td>
+            <td class="num">2026-04-09</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Janna Syrene</td>
+            <td>Bean Group</td>
+            <td class="num">209</td>
+            <td class="num">87</td>
+            <td class="num">122</td>
+            <td class="num">$124.5M</td>
+            <td class="num">$596K</td>
+            <td>Wells, York, Kittery</td>
+            <td class="num">2026-03-27</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Victoria Benenti</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">208</td>
+            <td class="num">109</td>
+            <td class="num">99</td>
+            <td class="num">$224.2M</td>
+            <td class="num">$1.1M</td>
+            <td>Kennebunkport, Kennebunk, Biddeford</td>
+            <td class="num">2026-03-06</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Adam Parent</td>
+            <td>Maine Real Estate Co</td>
+            <td class="num">193</td>
+            <td class="num">103</td>
+            <td class="num">90</td>
+            <td class="num">$109.8M</td>
+            <td class="num">$569K</td>
+            <td>Saco, Biddeford, Old Orchard Beach</td>
+            <td class="num">2026-03-30</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Corey Tracy</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">187</td>
+            <td class="num">158</td>
+            <td class="num">29</td>
+            <td class="num">$207.2M</td>
+            <td class="num">$1.1M</td>
+            <td>Kennebunkport, Kennebunk, Biddeford</td>
+            <td class="num">2024-12-13</td>
+        </tr><tr>
+            <td class="num">11</td>
+            <td class="agent-name">Carrie Scoville Amy Foley</td>
+            <td>Signature Homes Real Estate Group, LLC</td>
+            <td class="num">183</td>
+            <td class="num">122</td>
+            <td class="num">61</td>
+            <td class="num">$102.2M</td>
+            <td class="num">$558K</td>
+            <td>Scarborough, Wells, Kennebunk</td>
+            <td class="num">2026-03-31</td>
+        </tr><tr>
+            <td class="num">12</td>
+            <td class="agent-name">Grainne Archer</td>
+            <td>Portside Real Estate Group</td>
+            <td class="num">156</td>
+            <td class="num">147</td>
+            <td class="num">9</td>
+            <td class="num">$105.5M</td>
+            <td class="num">$677K</td>
+            <td>Kennebunk, Kennebunkport, Wells</td>
+            <td class="num">2026-01-16</td>
+        </tr><tr>
+            <td class="num">13</td>
+            <td class="agent-name">Heidi Hayes</td>
+            <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">147</td>
+            <td class="num">145</td>
+            <td class="num">2</td>
+            <td class="num">$102.1M</td>
+            <td class="num">$695K</td>
+            <td>York, Kittery, Wells</td>
+            <td class="num">2023-06-29</td>
+        </tr><tr>
+            <td class="num">14</td>
+            <td class="agent-name">Jeffrey Mateja</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">136</td>
+            <td class="num">38</td>
+            <td class="num">98</td>
+            <td class="num">$69.9M</td>
+            <td class="num">$514K</td>
+            <td>Scarborough, Saco, Old Orchard Beach</td>
+            <td class="num">2026-03-27</td>
+        </tr><tr>
+            <td class="num">15</td>
+            <td class="agent-name">Jennifer Walker</td>
+            <td>207 Prime Properties, LLC</td>
+            <td class="num">134</td>
+            <td class="num">46</td>
+            <td class="num">88</td>
+            <td class="num">$99.3M</td>
+            <td class="num">$741K</td>
+            <td>Ogunquit, Wells, York</td>
+            <td class="num">2026-04-10</td>
+        </tr><tr>
+            <td class="num">16</td>
+            <td class="agent-name">Cynthia Dubois-Cote</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">128</td>
+            <td class="num">91</td>
+            <td class="num">37</td>
+            <td class="num">$54.4M</td>
+            <td class="num">$425K</td>
+            <td>Biddeford, Old Orchard Beach, Saco</td>
+            <td class="num">2025-08-20</td>
+        </tr><tr>
+            <td class="num">17</td>
+            <td class="agent-name">Bridgette Vermette</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">126</td>
+            <td class="num">85</td>
+            <td class="num">41</td>
+            <td class="num">$78.8M</td>
+            <td class="num">$625K</td>
+            <td>Scarborough, Old Orchard Beach, Saco</td>
+            <td class="num">2025-09-12</td>
+        </tr><tr>
+            <td class="num">18</td>
+            <td class="agent-name">Gail Bergeron</td>
+            <td>The Aland Realty Group, LLC</td>
+            <td class="num">125</td>
+            <td class="num">68</td>
+            <td class="num">57</td>
+            <td class="num">$85.5M</td>
+            <td class="num">$684K</td>
+            <td>Ogunquit, Wells, York</td>
+            <td class="num">2025-12-11</td>
+        </tr><tr>
+            <td class="num">19</td>
+            <td class="agent-name">Pamela Gray</td>
+            <td>RE/MAX Shoreline</td>
+            <td class="num">123</td>
+            <td class="num">88</td>
+            <td class="num">35</td>
+            <td class="num">$44.9M</td>
+            <td class="num">$365K</td>
+            <td>Kittery, York</td>
+            <td class="num">2025-10-15</td>
+        </tr><tr>
+            <td class="num">20</td>
+            <td class="agent-name">Jessica Girard</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">122</td>
+            <td class="num">63</td>
+            <td class="num">59</td>
+            <td class="num">$107.7M</td>
+            <td class="num">$883K</td>
+            <td>Kennebunk, Kennebunkport, Biddeford</td>
+            <td class="num">2026-03-04</td>
+        </tr><tr>
+            <td class="num">21</td>
+            <td class="agent-name">Heidi Maynard</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">121</td>
+            <td class="num">30</td>
+            <td class="num">91</td>
+            <td class="num">$112.1M</td>
+            <td class="num">$927K</td>
+            <td>Kennebunkport, Kennebunk, Biddeford</td>
+            <td class="num">2025-05-21</td>
+        </tr><tr>
+            <td class="num">22</td>
+            <td class="agent-name">Elise Wyman</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">120</td>
+            <td class="num">40</td>
+            <td class="num">80</td>
+            <td class="num">$126.6M</td>
+            <td class="num">$1.1M</td>
+            <td>Kennebunk, Kennebunkport, Biddeford</td>
+            <td class="num">2026-04-14</td>
+        </tr><tr>
+            <td class="num">23</td>
+            <td class="agent-name">Angela Adrien</td>
+            <td>Heart &amp; Home Realty</td>
+            <td class="num">120</td>
+            <td class="num">116</td>
+            <td class="num">4</td>
+            <td class="num">$63.1M</td>
+            <td class="num">$526K</td>
+            <td>Wells, Saco, Biddeford</td>
+            <td class="num">2026-03-18</td>
+        </tr><tr>
+            <td class="num">24</td>
+            <td class="agent-name">Lorilyn Barrett</td>
+            <td>Coldwell Banker Yorke Realty</td>
+            <td class="num">119</td>
+            <td class="num">80</td>
+            <td class="num">39</td>
+            <td class="num">$74.6M</td>
+            <td class="num">$627K</td>
+            <td>Wells, York, Kittery</td>
+            <td class="num">2026-02-26</td>
+        </tr><tr>
+            <td class="num">25</td>
+            <td class="agent-name">Sandra Murray</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">113</td>
+            <td class="num">81</td>
+            <td class="num">32</td>
+            <td class="num">$147.3M</td>
+            <td class="num">$1.3M</td>
+            <td>Saco, Old Orchard Beach, Scarborough</td>
+            <td class="num">2025-10-30</td>
+        </tr><tr>
+            <td class="num">26</td>
+            <td class="agent-name">Rebecca Bassett</td>
+            <td>Kennebunk Beach Realty</td>
+            <td class="num">112</td>
+            <td class="num">10</td>
+            <td class="num">102</td>
+            <td class="num">$65.7M</td>
+            <td class="num">$587K</td>
+            <td>Kennebunk, Kennebunkport, Wells</td>
+            <td class="num">2026-03-04</td>
+        </tr><tr>
+            <td class="num">27</td>
+            <td class="agent-name">Gregory Clou Christina Connell</td>
+            <td>Berkshire Hathaway HomeServices Verani Realty</td>
+            <td class="num">110</td>
+            <td class="num">74</td>
+            <td class="num">36</td>
+            <td class="num">$50.6M</td>
+            <td class="num">$460K</td>
+            <td>Old Orchard Beach, Saco, Biddeford</td>
+            <td class="num">2025-09-12</td>
+        </tr><tr>
+            <td class="num">28</td>
+            <td class="agent-name">Nola Cady</td>
+            <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">109</td>
+            <td class="num">63</td>
+            <td class="num">46</td>
+            <td class="num">$70.7M</td>
+            <td class="num">$649K</td>
+            <td>York, Kittery, Wells</td>
+            <td class="num">2026-04-14</td>
+        </tr><tr>
+            <td class="num">29</td>
+            <td class="agent-name">Jeffrey Jellison</td>
+            <td>CENTURY 21 Atlantic Realty</td>
+            <td class="num">108</td>
+            <td class="num">79</td>
+            <td class="num">29</td>
+            <td class="num">$83.4M</td>
+            <td class="num">$772K</td>
+            <td>York, Kittery, Ogunquit</td>
+            <td class="num">2026-04-03</td>
+        </tr><tr>
+            <td class="num">30</td>
+            <td class="agent-name">Abigail Douris</td>
+            <td>RE/MAX Realty One</td>
+            <td class="num">106</td>
+            <td class="num">71</td>
+            <td class="num">35</td>
+            <td class="num">$78.0M</td>
+            <td class="num">$736K</td>
+            <td>Kittery, York, Ogunquit</td>
+            <td class="num">2026-01-01</td>
+        </tr><tr>
+            <td class="num">31</td>
+            <td class="agent-name">Helen Curry</td>
+            <td>Kennebunk Beach Realty</td>
+            <td class="num">106</td>
+            <td class="num">73</td>
+            <td class="num">33</td>
+            <td class="num">$65.4M</td>
+            <td class="num">$617K</td>
+            <td>Kennebunkport, Kennebunk, Wells</td>
+            <td class="num">2026-03-06</td>
+        </tr><tr>
+            <td class="num">32</td>
+            <td class="agent-name">Jason Saphire</td>
+            <td>www.HomeZu.com</td>
+            <td class="num">106</td>
+            <td class="num">86</td>
+            <td class="num">20</td>
+            <td class="num">$60.6M</td>
+            <td class="num">$572K</td>
+            <td>Kittery, Wells, Old Orchard Beach</td>
+            <td class="num">2026-01-29</td>
+        </tr><tr>
+            <td class="num">33</td>
+            <td class="agent-name">Christopher Erikson</td>
+            <td>The Aland Realty Group, LLC</td>
+            <td class="num">105</td>
+            <td class="num">54</td>
+            <td class="num">51</td>
+            <td class="num">$97.6M</td>
+            <td class="num">$930K</td>
+            <td>Kittery, Ogunquit, York</td>
+            <td class="num">2026-04-10</td>
+        </tr><tr>
+            <td class="num">34</td>
+            <td class="agent-name">Julie Barros</td>
+            <td>Coldwell Banker Realty</td>
+            <td class="num">104</td>
+            <td class="num">53</td>
+            <td class="num">51</td>
+            <td class="num">$76.3M</td>
+            <td class="num">$733K</td>
+            <td>Kennebunk, Wells, Kennebunkport</td>
+            <td class="num">2026-01-27</td>
+        </tr><tr>
+            <td class="num">35</td>
+            <td class="agent-name">Jeffrey Rioux</td>
+            <td>Portside Real Estate Group</td>
+            <td class="num">103</td>
+            <td class="num">49</td>
+            <td class="num">54</td>
+            <td class="num">$56.3M</td>
+            <td class="num">$546K</td>
+            <td>Wells, Kennebunk, Kennebunkport</td>
+            <td class="num">2026-03-24</td>
+        </tr><tr>
+            <td class="num">36</td>
+            <td class="agent-name">Glenn Thibodeau</td>
+            <td>RE/MAX Shoreline</td>
+            <td class="num">102</td>
+            <td class="num">64</td>
+            <td class="num">38</td>
+            <td class="num">$41.7M</td>
+            <td class="num">$408K</td>
+            <td>Wells, Ogunquit, York</td>
+            <td class="num">2026-04-02</td>
+        </tr><tr>
+            <td class="num">37</td>
+            <td class="agent-name">Karen Schlegel</td>
+            <td>RE/MAX Realty One</td>
+            <td class="num">100</td>
+            <td class="num">40</td>
+            <td class="num">60</td>
+            <td class="num">$68.7M</td>
+            <td class="num">$687K</td>
+            <td>Kennebunkport, Kennebunk, Wells</td>
+            <td class="num">2026-02-27</td>
+        </tr><tr>
+            <td class="num">38</td>
+            <td class="agent-name">Bette Schofield</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">99</td>
+            <td class="num">52</td>
+            <td class="num">47</td>
+            <td class="num">$71.2M</td>
+            <td class="num">$719K</td>
+            <td>Kennebunkport, Kennebunk, Wells</td>
+            <td class="num">2026-04-06</td>
+        </tr><tr>
+            <td class="num">39</td>
+            <td class="agent-name">Jonathan Safford</td>
+            <td>Better Homes &amp; Gardens Real Estate/The Masiello Group</td>
+            <td class="num">99</td>
+            <td class="num">54</td>
+            <td class="num">45</td>
+            <td class="num">$50.0M</td>
+            <td class="num">$505K</td>
+            <td>Saco, Old Orchard Beach, Biddeford</td>
+            <td class="num">2026-02-13</td>
+        </tr><tr>
+            <td class="num">40</td>
+            <td class="agent-name">Bailey Pate</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">98</td>
+            <td class="num">51</td>
+            <td class="num">47</td>
+            <td class="num">$51.1M</td>
+            <td class="num">$521K</td>
+            <td>Saco, Old Orchard Beach, Biddeford</td>
+            <td class="num">2026-03-06</td>
+        </tr><tr>
+            <td class="num">41</td>
+            <td class="agent-name">Tracy Jackson McCarty</td>
+            <td>The Aland Realty Group, LLC</td>
+            <td class="num">96</td>
+            <td class="num">44</td>
+            <td class="num">52</td>
+            <td class="num">$91.5M</td>
+            <td class="num">$953K</td>
+            <td>York, Wells, Kennebunk</td>
+            <td class="num">2026-03-24</td>
+        </tr><tr>
+            <td class="num">42</td>
+            <td class="agent-name">Stephen Foran</td>
+            <td>First Maine Real Estate</td>
+            <td class="num">93</td>
+            <td class="num">56</td>
+            <td class="num">37</td>
+            <td class="num">$85.7M</td>
+            <td class="num">$922K</td>
+            <td>Biddeford, Kennebunkport, Saco</td>
+            <td class="num">2026-03-09</td>
+        </tr><tr>
+            <td class="num">43</td>
+            <td class="agent-name">David Banks</td>
+            <td>RE/MAX By The Bay</td>
+            <td class="num">92</td>
+            <td class="num">49</td>
+            <td class="num">43</td>
+            <td class="num">$103.9M</td>
+            <td class="num">$1.1M</td>
+            <td>Scarborough, Saco, Kennebunk</td>
+            <td class="num">2026-03-30</td>
+        </tr><tr>
+            <td class="num">44</td>
+            <td class="agent-name">Deja Lett</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">91</td>
+            <td class="num">66</td>
+            <td class="num">25</td>
+            <td class="num">$35.9M</td>
+            <td class="num">$395K</td>
+            <td>Old Orchard Beach, Saco, Biddeford</td>
+            <td class="num">2026-03-20</td>
+        </tr><tr>
+            <td class="num">45</td>
+            <td class="agent-name">Lisa Macbride</td>
+            <td>The Gove Group Real Estate, LLC</td>
+            <td class="num">90</td>
+            <td class="num">54</td>
+            <td class="num">36</td>
+            <td class="num">$51.1M</td>
+            <td class="num">$567K</td>
+            <td>Kittery, York, Kennebunk</td>
+            <td class="num">2025-11-11</td>
+        </tr><tr>
+            <td class="num">46</td>
+            <td class="agent-name">Roslind Anton</td>
+            <td>EXP Realty</td>
+            <td class="num">90</td>
+            <td class="num">51</td>
+            <td class="num">39</td>
+            <td class="num">$40.8M</td>
+            <td class="num">$453K</td>
+            <td>Biddeford, Saco, Old Orchard Beach</td>
+            <td class="num">2026-01-05</td>
+        </tr><tr>
+            <td class="num">47</td>
+            <td class="agent-name">Julie Grady</td>
+            <td>Coldwell Banker Realty</td>
+            <td class="num">89</td>
+            <td class="num">54</td>
+            <td class="num">35</td>
+            <td class="num">$60.2M</td>
+            <td class="num">$677K</td>
+            <td>Kennebunk, Kennebunkport, Wells</td>
+            <td class="num">2025-11-24</td>
+        </tr><tr>
+            <td class="num">48</td>
+            <td class="agent-name">Stephen Erickson</td>
+            <td>Bean Group</td>
+            <td class="num">89</td>
+            <td class="num">88</td>
+            <td class="num">1</td>
+            <td class="num">$36.3M</td>
+            <td class="num">$408K</td>
+            <td>Old Orchard Beach, Saco, Biddeford</td>
+            <td class="num">2026-01-09</td>
+        </tr><tr>
+            <td class="num">49</td>
+            <td class="agent-name">Peter Larochelle</td>
+            <td>Better Homes &amp; Gardens Real Estate/The Masiello Group</td>
+            <td class="num">87</td>
+            <td class="num">57</td>
+            <td class="num">30</td>
+            <td class="num">$102.9M</td>
+            <td class="num">$1.2M</td>
+            <td>Wells, Ogunquit, Kennebunk</td>
+            <td class="num">2026-04-01</td>
+        </tr><tr>
+            <td class="num">50</td>
+            <td class="agent-name">Jeffrey Walker</td>
+            <td>Bean Group</td>
+            <td class="num">87</td>
+            <td class="num">66</td>
+            <td class="num">21</td>
+            <td class="num">$65.8M</td>
+            <td class="num">$757K</td>
+            <td>Scarborough, Biddeford, Saco</td>
+            <td class="num">2026-02-25</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Listing-Side Agents</h2>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Agent</th>
+                <th>Office</th>
+                <th class="num">Sides</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th class="num">$500K+</th>
+                <th>Primary Towns</th>
+                <th class="num">Most Recent</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Troy Williams</td>
+            <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">224</td>
+            <td class="num">$185.7M</td>
+            <td class="num">$829K</td>
+            <td class="num">162</td>
+            <td>York, Kittery, Wells</td>
+            <td class="num">2026-04-02</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Donald Wunder</td>
+            <td>RE/MAX Realty One</td>
+            <td class="num">192</td>
+            <td class="num">$147.6M</td>
+            <td class="num">$769K</td>
+            <td class="num">135</td>
+            <td>Ogunquit, York, Wells</td>
+            <td class="num">2025-12-31</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Carrie Scovi Amy Foley</td>
+            <td>Signature Homes Real Estate Group, LLC</td>
+            <td class="num">167</td>
+            <td class="num">$83.0M</td>
+            <td class="num">$497K</td>
+            <td class="num">64</td>
+            <td>Scarborough, Biddeford, Old Orchard Beach</td>
+            <td class="num">2025-10-17</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Pamela Moody-Maxon</td>
+            <td>Moody Maxon Real Estate</td>
+            <td class="num">163</td>
+            <td class="num">$63.4M</td>
+            <td class="num">$389K</td>
+            <td class="num">53</td>
+            <td>Wells, Ogunquit, Kennebunk</td>
+            <td class="num">2026-04-01</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Corey Tracy</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">158</td>
+            <td class="num">$179.2M</td>
+            <td class="num">$1.1M</td>
+            <td class="num">122</td>
+            <td>Kennebunkport, Kennebunk, Biddeford</td>
+            <td class="num">2024-12-02</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Grainne Archer</td>
+            <td>Portside Real Estate Group</td>
+            <td class="num">147</td>
+            <td class="num">$99.2M</td>
+            <td class="num">$675K</td>
+            <td class="num">87</td>
+            <td>Kennebunk, Kennebunkport, Wells</td>
+            <td class="num">2026-01-16</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Heidi Hayes</td>
+            <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">145</td>
+            <td class="num">$101.6M</td>
+            <td class="num">$701K</td>
+            <td class="num">83</td>
+            <td>York, Kittery, Wells</td>
+            <td class="num">2023-06-29</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Carrie Scoville Amy Foley</td>
+            <td>Signature Homes Real Estate Group, LLC</td>
+            <td class="num">122</td>
+            <td class="num">$69.9M</td>
+            <td class="num">$573K</td>
+            <td class="num">68</td>
+            <td>Scarborough, Wells, Kennebunk</td>
+            <td class="num">2026-03-31</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Angela Adrien</td>
+            <td>Heart &amp; Home Realty</td>
+            <td class="num">116</td>
+            <td class="num">$61.6M</td>
+            <td class="num">$531K</td>
+            <td class="num">80</td>
+            <td>Wells, Saco, Biddeford</td>
+            <td class="num">2026-03-18</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Victoria Benenti</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">109</td>
+            <td class="num">$132.2M</td>
+            <td class="num">$1.2M</td>
+            <td class="num">90</td>
+            <td>Kennebunkport, Kennebunk, Biddeford</td>
+            <td class="num">2026-03-06</td>
+        </tr><tr>
+            <td class="num">11</td>
+            <td class="agent-name">Nancy Moreshead</td>
+            <td>Best Maine Beach Properties</td>
+            <td class="num">108</td>
+            <td class="num">$52.4M</td>
+            <td class="num">$485K</td>
+            <td class="num">42</td>
+            <td>Old Orchard Beach, Scarborough, Saco</td>
+            <td class="num">2025-03-07</td>
+        </tr><tr>
+            <td class="num">12</td>
+            <td class="agent-name">Adam Parent</td>
+            <td>Maine Real Estate Co</td>
+            <td class="num">103</td>
+            <td class="num">$59.5M</td>
+            <td class="num">$577K</td>
+            <td class="num">44</td>
+            <td>Saco, Biddeford, Old Orchard Beach</td>
+            <td class="num">2026-02-20</td>
+        </tr><tr>
+            <td class="num">13</td>
+            <td class="agent-name">Cynthia Dubois-Cote</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">91</td>
+            <td class="num">$35.6M</td>
+            <td class="num">$391K</td>
+            <td class="num">21</td>
+            <td>Biddeford, Saco, Old Orchard Beach</td>
+            <td class="num">2025-07-02</td>
+        </tr><tr>
+            <td class="num">14</td>
+            <td class="agent-name">Stephen Erickson</td>
+            <td>Bean Group</td>
+            <td class="num">88</td>
+            <td class="num">$35.8M</td>
+            <td class="num">$407K</td>
+            <td class="num">19</td>
+            <td>Old Orchard Beach, Saco, Biddeford</td>
+            <td class="num">2023-10-06</td>
+        </tr><tr>
+            <td class="num">15</td>
+            <td class="agent-name">Pamela Gray</td>
+            <td>RE/MAX Shoreline</td>
+            <td class="num">88</td>
+            <td class="num">$33.7M</td>
+            <td class="num">$383K</td>
+            <td class="num">21</td>
+            <td>Kittery, York</td>
+            <td class="num">2025-10-15</td>
+        </tr><tr>
+            <td class="num">16</td>
+            <td class="agent-name">Janna Syrene</td>
+            <td>Bean Group</td>
+            <td class="num">87</td>
+            <td class="num">$42.2M</td>
+            <td class="num">$486K</td>
+            <td class="num">26</td>
+            <td>Wells, Kittery, Kennebunk</td>
+            <td class="num">2026-03-27</td>
+        </tr><tr>
+            <td class="num">17</td>
+            <td class="agent-name">Jason Saphire</td>
+            <td>www.HomeZu.com</td>
+            <td class="num">86</td>
+            <td class="num">$47.4M</td>
+            <td class="num">$551K</td>
+            <td class="num">39</td>
+            <td>Kittery, Old Orchard Beach, Wells</td>
+            <td class="num">2026-01-29</td>
+        </tr><tr>
+            <td class="num">18</td>
+            <td class="agent-name">Bridgette Vermette</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">85</td>
+            <td class="num">$56.3M</td>
+            <td class="num">$662K</td>
+            <td class="num">63</td>
+            <td>Scarborough, Saco, Old Orchard Beach</td>
+            <td class="num">2024-08-29</td>
+        </tr><tr>
+            <td class="num">19</td>
+            <td class="agent-name">Sandra Murray</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">81</td>
+            <td class="num">$94.7M</td>
+            <td class="num">$1.2M</td>
+            <td class="num">72</td>
+            <td>Saco, Old Orchard Beach, Scarborough</td>
+            <td class="num">2025-10-30</td>
+        </tr><tr>
+            <td class="num">20</td>
+            <td class="agent-name">Lorilyn Barrett</td>
+            <td>Coldwell Banker Yorke Realty</td>
+            <td class="num">80</td>
+            <td class="num">$50.5M</td>
+            <td class="num">$631K</td>
+            <td class="num">59</td>
+            <td>Wells, York, Kittery</td>
+            <td class="num">2026-02-17</td>
+        </tr><tr>
+            <td class="num">21</td>
+            <td class="agent-name">Jeffrey Jellison</td>
+            <td>CENTURY 21 Atlantic Realty</td>
+            <td class="num">79</td>
+            <td class="num">$63.8M</td>
+            <td class="num">$807K</td>
+            <td class="num">58</td>
+            <td>York, Kittery, Wells</td>
+            <td class="num">2026-04-03</td>
+        </tr><tr>
+            <td class="num">22</td>
+            <td class="agent-name">Gregory Clou Christina Connell</td>
+            <td>Berkshire Hathaway HomeServices Verani Realty</td>
+            <td class="num">74</td>
+            <td class="num">$33.4M</td>
+            <td class="num">$452K</td>
+            <td class="num">31</td>
+            <td>Old Orchard Beach, Saco, Biddeford</td>
+            <td class="num">2025-03-04</td>
+        </tr><tr>
+            <td class="num">23</td>
+            <td class="agent-name">Helen Curry</td>
+            <td>Kennebunk Beach Realty</td>
+            <td class="num">73</td>
+            <td class="num">$41.3M</td>
+            <td class="num">$566K</td>
+            <td class="num">34</td>
+            <td>Kennebunkport, Kennebunk</td>
+            <td class="num">2026-03-06</td>
+        </tr><tr>
+            <td class="num">24</td>
+            <td class="agent-name">Abigail Douris</td>
+            <td>RE/MAX Realty One</td>
+            <td class="num">71</td>
+            <td class="num">$55.3M</td>
+            <td class="num">$779K</td>
+            <td class="num">39</td>
+            <td>Kittery, York, Ogunquit</td>
+            <td class="num">2026-01-01</td>
+        </tr><tr>
+            <td class="num">25</td>
+            <td class="agent-name">Scott Townsend</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">70</td>
+            <td class="num">$55.9M</td>
+            <td class="num">$798K</td>
+            <td class="num">48</td>
+            <td>Scarborough, Old Orchard Beach, Biddeford</td>
+            <td class="num">2026-02-18</td>
+        </tr><tr>
+            <td class="num">26</td>
+            <td class="agent-name">David Trottier</td>
+            <td>Realty Sales Inc</td>
+            <td class="num">69</td>
+            <td class="num">$28.4M</td>
+            <td class="num">$412K</td>
+            <td class="num">15</td>
+            <td>Biddeford, Saco, Old Orchard Beach</td>
+            <td class="num">2026-03-20</td>
+        </tr><tr>
+            <td class="num">27</td>
+            <td class="agent-name">Gail Bergeron</td>
+            <td>The Aland Realty Group, LLC</td>
+            <td class="num">68</td>
+            <td class="num">$48.0M</td>
+            <td class="num">$705K</td>
+            <td class="num">39</td>
+            <td>Ogunquit, Wells, York</td>
+            <td class="num">2025-12-11</td>
+        </tr><tr>
+            <td class="num">28</td>
+            <td class="agent-name">Rosane Hirschy</td>
+            <td>Legacy Properties Sotheby&#x27;s International Realty</td>
+            <td class="num">67</td>
+            <td class="num">$63.5M</td>
+            <td class="num">$948K</td>
+            <td class="num">53</td>
+            <td>Kennebunkport, Kennebunk</td>
+            <td class="num">2024-05-23</td>
+        </tr><tr>
+            <td class="num">29</td>
+            <td class="agent-name">Anne McPheeters</td>
+            <td>OceanView Properties, Inc.</td>
+            <td class="num">66</td>
+            <td class="num">$98.7M</td>
+            <td class="num">$1.5M</td>
+            <td class="num">60</td>
+            <td>Biddeford, Kennebunkport, Saco</td>
+            <td class="num">2025-11-13</td>
+        </tr><tr>
+            <td class="num">30</td>
+            <td class="agent-name">Jeffrey Walker</td>
+            <td>Bean Group</td>
+            <td class="num">66</td>
+            <td class="num">$51.1M</td>
+            <td class="num">$774K</td>
+            <td class="num">62</td>
+            <td>Scarborough, Biddeford</td>
+            <td class="num">2026-02-25</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Buyer-Side Agents</h2>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Agent</th>
+                <th>Office</th>
+                <th class="num">Sides</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th class="num">$500K+</th>
+                <th>Primary Towns</th>
+                <th class="num">Most Recent</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Troy Williams</td>
+            <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">368</td>
+            <td class="num">$275.3M</td>
+            <td class="num">$748K</td>
+            <td class="num">223</td>
+            <td>York, Kittery, Wells</td>
+            <td class="num">2026-03-20</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Donald Wunder</td>
+            <td>RE/MAX Realty One</td>
+            <td class="num">147</td>
+            <td class="num">$119.3M</td>
+            <td class="num">$811K</td>
+            <td class="num">101</td>
+            <td>Ogunquit, York, Wells</td>
+            <td class="num">2026-02-27</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Scott Townsend</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">140</td>
+            <td class="num">$100.2M</td>
+            <td class="num">$715K</td>
+            <td class="num">91</td>
+            <td>Scarborough, Old Orchard Beach, Saco</td>
+            <td class="num">2026-04-09</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Pamela Moody-Maxon</td>
+            <td>Moody Maxon Real Estate</td>
+            <td class="num">132</td>
+            <td class="num">$48.5M</td>
+            <td class="num">$367K</td>
+            <td class="num">39</td>
+            <td>Wells, Kennebunk, Ogunquit</td>
+            <td class="num">2026-04-01</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Nancy Moreshead</td>
+            <td>Best Maine Beach Properties</td>
+            <td class="num">126</td>
+            <td class="num">$61.5M</td>
+            <td class="num">$488K</td>
+            <td class="num">53</td>
+            <td>Old Orchard Beach, Saco, Scarborough</td>
+            <td class="num">2025-10-01</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Janna Syrene</td>
+            <td>Bean Group</td>
+            <td class="num">122</td>
+            <td class="num">$82.2M</td>
+            <td class="num">$674K</td>
+            <td class="num">62</td>
+            <td>York, Wells, Kittery</td>
+            <td class="num">2026-01-20</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Rebecca Bassett</td>
+            <td>Kennebunk Beach Realty</td>
+            <td class="num">102</td>
+            <td class="num">$61.8M</td>
+            <td class="num">$606K</td>
+            <td class="num">51</td>
+            <td>Kennebunk, Kennebunkport, Wells</td>
+            <td class="num">2026-03-04</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Victoria Benenti</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">99</td>
+            <td class="num">$92.0M</td>
+            <td class="num">$930K</td>
+            <td class="num">71</td>
+            <td>Kennebunkport, Kennebunk, Biddeford</td>
+            <td class="num">2025-12-12</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Jeffrey Mateja</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">98</td>
+            <td class="num">$48.4M</td>
+            <td class="num">$494K</td>
+            <td class="num">36</td>
+            <td>Saco, Kennebunk, Scarborough</td>
+            <td class="num">2025-10-31</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Heidi Maynard</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">91</td>
+            <td class="num">$93.3M</td>
+            <td class="num">$1.0M</td>
+            <td class="num">71</td>
+            <td>Kennebunkport, Kennebunk, Wells</td>
+            <td class="num">2025-05-21</td>
+        </tr><tr>
+            <td class="num">11</td>
+            <td class="agent-name">Adam Parent</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">90</td>
+            <td class="num">$50.4M</td>
+            <td class="num">$560K</td>
+            <td class="num">42</td>
+            <td>Saco, Biddeford, Old Orchard Beach</td>
+            <td class="num">2026-03-30</td>
+        </tr><tr>
+            <td class="num">12</td>
+            <td class="agent-name">Jennifer Walker</td>
+            <td>207 Prime Properties, LLC</td>
+            <td class="num">88</td>
+            <td class="num">$65.7M</td>
+            <td class="num">$747K</td>
+            <td class="num">66</td>
+            <td>Ogunquit, York, Wells</td>
+            <td class="num">2026-04-10</td>
+        </tr><tr>
+            <td class="num">13</td>
+            <td class="agent-name">Carrie Scovi Amy Foley</td>
+            <td>Signature Homes Real Estate Group, LLC</td>
+            <td class="num">84</td>
+            <td class="num">$39.4M</td>
+            <td class="num">$469K</td>
+            <td class="num">28</td>
+            <td>Scarborough, Biddeford, Saco</td>
+            <td class="num">2025-01-13</td>
+        </tr><tr>
+            <td class="num">14</td>
+            <td class="agent-name">Elise Wyman</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">80</td>
+            <td class="num">$79.3M</td>
+            <td class="num">$991K</td>
+            <td class="num">62</td>
+            <td>Kennebunkport, Kennebunk, Biddeford</td>
+            <td class="num">2026-03-27</td>
+        </tr><tr>
+            <td class="num">15</td>
+            <td class="agent-name">Carrie Scoville Amy Foley</td>
+            <td>Signature Homes Real Estate Group, LLC</td>
+            <td class="num">61</td>
+            <td class="num">$32.3M</td>
+            <td class="num">$529K</td>
+            <td class="num">28</td>
+            <td>Scarborough, Wells, Biddeford</td>
+            <td class="num">2026-03-31</td>
+        </tr><tr>
+            <td class="num">16</td>
+            <td class="agent-name">Karen Schlegel</td>
+            <td>RE/MAX Realty One</td>
+            <td class="num">60</td>
+            <td class="num">$44.3M</td>
+            <td class="num">$738K</td>
+            <td class="num">38</td>
+            <td>Kennebunkport, Kennebunk, Wells</td>
+            <td class="num">2026-02-27</td>
+        </tr><tr>
+            <td class="num">17</td>
+            <td class="agent-name">Jessica Girard</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">59</td>
+            <td class="num">$50.2M</td>
+            <td class="num">$851K</td>
+            <td class="num">34</td>
+            <td>Kennebunk, Kennebunkport, Biddeford</td>
+            <td class="num">2025-12-12</td>
+        </tr><tr>
+            <td class="num">18</td>
+            <td class="agent-name">Gail Bergeron</td>
+            <td>The Aland Realty Group, LLC</td>
+            <td class="num">57</td>
+            <td class="num">$37.5M</td>
+            <td class="num">$658K</td>
+            <td class="num">33</td>
+            <td>Ogunquit, Wells, York</td>
+            <td class="num">2025-09-26</td>
+        </tr><tr>
+            <td class="num">19</td>
+            <td class="agent-name">Denise Hodsdon</td>
+            <td>Kennebunk Beach Realty</td>
+            <td class="num">57</td>
+            <td class="num">$31.3M</td>
+            <td class="num">$549K</td>
+            <td class="num">25</td>
+            <td>Kennebunk, Kennebunkport, Wells</td>
+            <td class="num">2026-01-29</td>
+        </tr><tr>
+            <td class="num">20</td>
+            <td class="agent-name">Jocelyn Chavez</td>
+            <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">56</td>
+            <td class="num">$58.4M</td>
+            <td class="num">$1.0M</td>
+            <td class="num">52</td>
+            <td>York, Kittery, Ogunquit</td>
+            <td class="num">2026-04-10</td>
+        </tr><tr>
+            <td class="num">21</td>
+            <td class="agent-name">Jeffrey Rioux</td>
+            <td>Portside Real Estate Group</td>
+            <td class="num">54</td>
+            <td class="num">$31.5M</td>
+            <td class="num">$584K</td>
+            <td class="num">28</td>
+            <td>Wells, Kennebunk, Kennebunkport</td>
+            <td class="num">2025-12-05</td>
+        </tr><tr>
+            <td class="num">22</td>
+            <td class="agent-name">Peter McPheeters</td>
+            <td>OceanView Properties, Inc.</td>
+            <td class="num">53</td>
+            <td class="num">$79.0M</td>
+            <td class="num">$1.5M</td>
+            <td class="num">45</td>
+            <td>Biddeford, Kennebunkport, Kennebunk</td>
+            <td class="num">2025-11-17</td>
+        </tr><tr>
+            <td class="num">23</td>
+            <td class="agent-name">Tracy Jackson McCarty</td>
+            <td>The Aland Realty Group, LLC</td>
+            <td class="num">52</td>
+            <td class="num">$47.5M</td>
+            <td class="num">$913K</td>
+            <td class="num">46</td>
+            <td>York, Kennebunk, Wells</td>
+            <td class="num">2026-03-24</td>
+        </tr><tr>
+            <td class="num">24</td>
+            <td class="agent-name">Susan Hill</td>
+            <td>GRB Maritime Realty LLC</td>
+            <td class="num">51</td>
+            <td class="num">$47.7M</td>
+            <td class="num">$936K</td>
+            <td class="num">36</td>
+            <td>Kennebunkport, Kennebunk, Biddeford</td>
+            <td class="num">2025-10-16</td>
+        </tr><tr>
+            <td class="num">25</td>
+            <td class="agent-name">Christopher Erikson</td>
+            <td>The Aland Realty Group, LLC</td>
+            <td class="num">51</td>
+            <td class="num">$45.1M</td>
+            <td class="num">$884K</td>
+            <td class="num">37</td>
+            <td>Kittery, Ogunquit, Wells</td>
+            <td class="num">2025-06-30</td>
+        </tr><tr>
+            <td class="num">26</td>
+            <td class="agent-name">Julie Barros</td>
+            <td>Coldwell Banker Realty</td>
+            <td class="num">51</td>
+            <td class="num">$42.9M</td>
+            <td class="num">$842K</td>
+            <td class="num">28</td>
+            <td>Kennebunk, Wells, York</td>
+            <td class="num">2025-12-09</td>
+        </tr><tr>
+            <td class="num">27</td>
+            <td class="agent-name">Megan McShane</td>
+            <td>Redfin Corporation</td>
+            <td class="num">51</td>
+            <td class="num">$39.3M</td>
+            <td class="num">$771K</td>
+            <td class="num">31</td>
+            <td>Scarborough, Old Orchard Beach, York</td>
+            <td class="num">2026-03-30</td>
+        </tr><tr>
+            <td class="num">28</td>
+            <td class="agent-name">Jennifer Eri Susan Croteau</td>
+            <td>Bean Group</td>
+            <td class="num">50</td>
+            <td class="num">$17.9M</td>
+            <td class="num">$358K</td>
+            <td class="num">7</td>
+            <td>Old Orchard Beach, Saco, Biddeford</td>
+            <td class="num">2023-10-06</td>
+        </tr><tr>
+            <td class="num">29</td>
+            <td class="agent-name">April Cohen</td>
+            <td>Bean Group</td>
+            <td class="num">49</td>
+            <td class="num">$22.6M</td>
+            <td class="num">$460K</td>
+            <td class="num">16</td>
+            <td>Scarborough, Saco, Old Orchard Beach</td>
+            <td class="num">2026-03-24</td>
+        </tr><tr>
+            <td class="num">30</td>
+            <td class="agent-name">Bette Schofield</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">47</td>
+            <td class="num">$29.8M</td>
+            <td class="num">$635K</td>
+            <td class="num">21</td>
+            <td>Kennebunkport, Kennebunk, Wells</td>
+            <td class="num">2026-04-06</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages by Total Sides</h2>
+        <p class="sub">Office branches kept separate (branches compete with each other).</p>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Brokerage</th>
+                <th class="num">Sides</th>
+                <th class="num">Agents</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Top Agents</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Keller Williams Realty</td>
+            <td class="num">3366</td>
+            <td class="num">378</td>
+            <td class="num">$1928.7M</td>
+            <td class="num">$573K</td>
+            <td>Scott Townsend, Jeffrey Mateja, Cynthia Dubois-Cote</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Coldwell Banker Realty</td>
+            <td class="num">2465</td>
+            <td class="num">285</td>
+            <td class="num">$1232.7M</td>
+            <td class="num">$500K</td>
+            <td>Julie Barros, Catherine Bame, Margaret Mailman</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">2279</td>
+            <td class="num">255</td>
+            <td class="num">$1450.1M</td>
+            <td class="num">$636K</td>
+            <td>Troy Williams, Heidi Hayes, Nola Cady</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">RE/MAX Realty One</td>
+            <td class="num">1576</td>
+            <td class="num">96</td>
+            <td class="num">$913.3M</td>
+            <td class="num">$580K</td>
+            <td>Donald Wunder, Abigail Douris, Carolyn Weller</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Bean Group</td>
+            <td class="num">1510</td>
+            <td class="num">253</td>
+            <td class="num">$697.6M</td>
+            <td class="num">$462K</td>
+            <td>Janna Syrene, Stephen Erickson, Jeffrey Walker</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Portside Real Estate Group</td>
+            <td class="num">1398</td>
+            <td class="num">169</td>
+            <td class="num">$866.5M</td>
+            <td class="num">$620K</td>
+            <td>Grainne Archer, Jeffrey Rioux, Rebecca Bassett</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Pack Maynard and Associates</td>
+            <td class="num">1270</td>
+            <td class="num">25</td>
+            <td class="num">$1220.0M</td>
+            <td class="num">$961K</td>
+            <td>Victoria Benenti, Corey Tracy, Jessica Girard</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Better Homes &amp; Gardens Real Estate/The Masiello Group</td>
+            <td class="num">974</td>
+            <td class="num">168</td>
+            <td class="num">$561.0M</td>
+            <td class="num">$576K</td>
+            <td>Jonathan Safford, Peter Larochelle, Cindy Donnell</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Anne Erwin Sotheby&#x27;s International Realty</td>
+            <td class="num">901</td>
+            <td class="num">8</td>
+            <td class="num">$895.4M</td>
+            <td class="num">$994K</td>
+            <td>Anne Erwin Real Estate, Walter Kallenback Jr, Louise Ducharme</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Legacy Properties Sotheby&#x27;s International Realty</td>
+            <td class="num">816</td>
+            <td class="num">70</td>
+            <td class="num">$962.5M</td>
+            <td class="num">$1.2M</td>
+            <td>Elizabeth Coughlan, William Gaynor, Rosane Hirschy</td>
+        </tr><tr>
+            <td class="num">11</td>
+            <td class="agent-name">EXP Realty</td>
+            <td class="num">757</td>
+            <td class="num">157</td>
+            <td class="num">$414.3M</td>
+            <td class="num">$547K</td>
+            <td>Roslind Anton, Janna Syrene, Kimberly Tarbox</td>
+        </tr><tr>
+            <td class="num">12</td>
+            <td class="agent-name">Kennebunk Beach Realty</td>
+            <td class="num">750</td>
+            <td class="num">31</td>
+            <td class="num">$503.4M</td>
+            <td class="num">$671K</td>
+            <td>Helen Curry, Denise Hodsdon, Laura Ross</td>
+        </tr><tr>
+            <td class="num">13</td>
+            <td class="agent-name">RE/MAX Shoreline</td>
+            <td class="num">727</td>
+            <td class="num">70</td>
+            <td class="num">$379.6M</td>
+            <td class="num">$522K</td>
+            <td>Pamela Gray, Glenn Thibodeau, Thomas Ranello</td>
+        </tr><tr>
+            <td class="num">14</td>
+            <td class="agent-name">Signature Homes Real Estate Group, LLC</td>
+            <td class="num">703</td>
+            <td class="num">35</td>
+            <td class="num">$379.6M</td>
+            <td class="num">$540K</td>
+            <td>Carrie Scovi Amy Foley, Carrie Scoville Amy Foley, Ashley Lutko Donna Galluzzo</td>
+        </tr><tr>
+            <td class="num">15</td>
+            <td class="agent-name">Berkshire Hathaway HomeServices Verani Realty</td>
+            <td class="num">681</td>
+            <td class="num">81</td>
+            <td class="num">$390.8M</td>
+            <td class="num">$574K</td>
+            <td>Gregory Clou Christina Connell, Hylah Riley, Randal Simon</td>
+        </tr><tr>
+            <td class="num">16</td>
+            <td class="agent-name">The Aland Realty Group, LLC</td>
+            <td class="num">671</td>
+            <td class="num">58</td>
+            <td class="num">$525.6M</td>
+            <td class="num">$783K</td>
+            <td>Christopher Erikson, Tracy Jackson McCarty, Gail Bergeron</td>
+        </tr><tr>
+            <td class="num">17</td>
+            <td class="agent-name">Coldwell Banker Yorke Realty</td>
+            <td class="num">327</td>
+            <td class="num">20</td>
+            <td class="num">$213.6M</td>
+            <td class="num">$653K</td>
+            <td>Lorilyn Barrett, Margaret Mitchell, Aubrie Hall</td>
+        </tr><tr>
+            <td class="num">18</td>
+            <td class="agent-name">Century 21 North East</td>
+            <td class="num">299</td>
+            <td class="num">61</td>
+            <td class="num">$118.0M</td>
+            <td class="num">$395K</td>
+            <td>David Newson, Linda Pratt, Brian Samia Gary Samia</td>
+        </tr><tr>
+            <td class="num">19</td>
+            <td class="agent-name">Moody Maxon Real Estate</td>
+            <td class="num">293</td>
+            <td class="num">1</td>
+            <td class="num">$111.1M</td>
+            <td class="num">$379K</td>
+            <td>Pamela Moody-Maxon</td>
+        </tr><tr>
+            <td class="num">20</td>
+            <td class="agent-name">The Gove Group Real Estate, LLC</td>
+            <td class="num">251</td>
+            <td class="num">25</td>
+            <td class="num">$149.7M</td>
+            <td class="num">$596K</td>
+            <td>Lisa Macbride, Kenneth Bailey, Charlene Macdonald</td>
+        </tr><tr>
+            <td class="num">21</td>
+            <td class="agent-name">The Real Estate Store</td>
+            <td class="num">250</td>
+            <td class="num">20</td>
+            <td class="num">$135.0M</td>
+            <td class="num">$540K</td>
+            <td>Nancy Moreshead, John Murphy, Elizabeth Marks</td>
+        </tr><tr>
+            <td class="num">22</td>
+            <td class="agent-name">CENTURY 21 Atlantic Realty</td>
+            <td class="num">236</td>
+            <td class="num">21</td>
+            <td class="num">$159.2M</td>
+            <td class="num">$674K</td>
+            <td>Jeffrey Jellison, Terry Freeman-Pirini, Jason Clark</td>
+        </tr><tr>
+            <td class="num">23</td>
+            <td class="agent-name">Maine Real Estate Co</td>
+            <td class="num">230</td>
+            <td class="num">24</td>
+            <td class="num">$141.8M</td>
+            <td class="num">$617K</td>
+            <td>Adam Parent, Bailey Pate, Yulia Glasgow</td>
+        </tr><tr>
+            <td class="num">24</td>
+            <td class="agent-name">Landing Real Estate</td>
+            <td class="num">204</td>
+            <td class="num">46</td>
+            <td class="num">$97.0M</td>
+            <td class="num">$476K</td>
+            <td>Matthew DiBiase, Michelangelo Floridino, Katherine Kinney</td>
+        </tr><tr>
+            <td class="num">25</td>
+            <td class="agent-name">OceanView Properties</td>
+            <td class="num">195</td>
+            <td class="num">18</td>
+            <td class="num">$162.2M</td>
+            <td class="num">$832K</td>
+            <td>Celeste Lachance, Peter McPheeters, Joey Radford</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — Kittery</h2>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Agent</th>
+                <th>Office</th>
+                <th class="num">Total</th>
+                <th class="num">List</th>
+                <th class="num">Buy</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Primary Towns</th>
+                <th class="num">Most Recent</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Pamela Gray</td>
+            <td>RE/MAX Shoreline</td>
+            <td class="num">115</td>
+            <td class="num">82</td>
+            <td class="num">33</td>
+            <td class="num">$41.0M</td>
+            <td class="num">$356K</td>
+            <td>Kittery</td>
+            <td class="num">2025-10-15</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Lisa Macbride</td>
+            <td>The Gove Group Real Estate, LLC</td>
+            <td class="num">87</td>
+            <td class="num">52</td>
+            <td class="num">35</td>
+            <td class="num">$49.6M</td>
+            <td class="num">$570K</td>
+            <td>Kittery</td>
+            <td class="num">2025-11-11</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Troy Williams</td>
+            <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">81</td>
+            <td class="num">25</td>
+            <td class="num">56</td>
+            <td class="num">$48.3M</td>
+            <td class="num">$596K</td>
+            <td>Kittery</td>
+            <td class="num">2026-01-05</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Pam Gray</td>
+            <td>RE/MAX By The Bay</td>
+            <td class="num">60</td>
+            <td class="num">40</td>
+            <td class="num">20</td>
+            <td class="num">$16.1M</td>
+            <td class="num">$268K</td>
+            <td>Kittery</td>
+            <td class="num">2016-07-29</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Diane Wyman</td>
+            <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">58</td>
+            <td class="num">34</td>
+            <td class="num">24</td>
+            <td class="num">$21.7M</td>
+            <td class="num">$374K</td>
+            <td>Kittery</td>
+            <td class="num">2022-10-14</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">David Newson</td>
+            <td>Century 21 North East</td>
+            <td class="num">54</td>
+            <td class="num">40</td>
+            <td class="num">14</td>
+            <td class="num">$15.1M</td>
+            <td class="num">$280K</td>
+            <td>Kittery</td>
+            <td class="num">2026-01-20</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Elizabeth Levey-Pruyn</td>
+            <td>RE/MAX Shoreline</td>
+            <td class="num">48</td>
+            <td class="num">15</td>
+            <td class="num">33</td>
+            <td class="num">$36.4M</td>
+            <td class="num">$759K</td>
+            <td>Kittery</td>
+            <td class="num">2025-10-27</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Alicia Goodwin</td>
+            <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">45</td>
+            <td class="num">31</td>
+            <td class="num">14</td>
+            <td class="num">$36.9M</td>
+            <td class="num">$821K</td>
+            <td>Kittery</td>
+            <td class="num">2026-03-20</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Abigail Douris</td>
+            <td>RE/MAX Realty One</td>
+            <td class="num">43</td>
+            <td class="num">29</td>
+            <td class="num">14</td>
+            <td class="num">$26.9M</td>
+            <td class="num">$625K</td>
+            <td>Kittery</td>
+            <td class="num">2025-08-01</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Heidi Hayes</td>
+            <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">40</td>
+            <td class="num">38</td>
+            <td class="num">2</td>
+            <td class="num">$18.5M</td>
+            <td class="num">$463K</td>
+            <td>Kittery</td>
+            <td class="num">2022-04-15</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — Kittery</h2>
+        <p class="sub">Office branches kept separate (branches compete with each other).</p>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Brokerage</th>
+                <th class="num">Sides</th>
+                <th class="num">Agents</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Top Agents</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">672</td>
+            <td class="num">161</td>
+            <td class="num">$328.0M</td>
+            <td class="num">$488K</td>
+            <td>Troy Williams, Alicia Goodwin, Diane Wyman</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">RE/MAX Shoreline</td>
+            <td class="num">260</td>
+            <td class="num">22</td>
+            <td class="num">$120.4M</td>
+            <td class="num">$463K</td>
+            <td>Pamela Gray, Elizabeth Levey-Pruyn, Marcel Bartley</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Bean Group</td>
+            <td class="num">253</td>
+            <td class="num">84</td>
+            <td class="num">$125.3M</td>
+            <td class="num">$495K</td>
+            <td>Janna Syrene, Jane Morris, Cameron Avery</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Anne Erwin Sotheby&#x27;s International Realty</td>
+            <td class="num">220</td>
+            <td class="num">4</td>
+            <td class="num">$182.5M</td>
+            <td class="num">$830K</td>
+            <td>Anne Erwin Real Estate, Shannon Baker, Louise Ducharme</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">The Aland Realty Group, LLC</td>
+            <td class="num">176</td>
+            <td class="num">35</td>
+            <td class="num">$121.2M</td>
+            <td class="num">$689K</td>
+            <td>Christopher Erikson, Priscilla Ford, Tiffany Semprini</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — York</h2>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Agent</th>
+                <th>Office</th>
+                <th class="num">Total</th>
+                <th class="num">List</th>
+                <th class="num">Buy</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Primary Towns</th>
+                <th class="num">Most Recent</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Troy Williams</td>
+            <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">377</td>
+            <td class="num">155</td>
+            <td class="num">222</td>
+            <td class="num">$312.8M</td>
+            <td class="num">$830K</td>
+            <td>York</td>
+            <td class="num">2026-03-20</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Heidi Hayes</td>
+            <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">99</td>
+            <td class="num">99</td>
+            <td class="num">0</td>
+            <td class="num">$78.1M</td>
+            <td class="num">$789K</td>
+            <td>York</td>
+            <td class="num">2023-06-29</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Jeffrey Jellison</td>
+            <td>CENTURY 21 Atlantic Realty</td>
+            <td class="num">86</td>
+            <td class="num">64</td>
+            <td class="num">22</td>
+            <td class="num">$71.3M</td>
+            <td class="num">$829K</td>
+            <td>York</td>
+            <td class="num">2026-04-03</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Tracy Jackson McCarty</td>
+            <td>The Aland Realty Group, LLC</td>
+            <td class="num">77</td>
+            <td class="num">39</td>
+            <td class="num">38</td>
+            <td class="num">$76.7M</td>
+            <td class="num">$996K</td>
+            <td>York</td>
+            <td class="num">2026-03-24</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Nola Cady</td>
+            <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">73</td>
+            <td class="num">47</td>
+            <td class="num">26</td>
+            <td class="num">$51.6M</td>
+            <td class="num">$707K</td>
+            <td>York</td>
+            <td class="num">2026-04-14</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Janna Syrene</td>
+            <td>Bean Group</td>
+            <td class="num">55</td>
+            <td class="num">8</td>
+            <td class="num">47</td>
+            <td class="num">$45.7M</td>
+            <td class="num">$831K</td>
+            <td>York</td>
+            <td class="num">2026-01-20</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Jocelyn Chavez</td>
+            <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">47</td>
+            <td class="num">6</td>
+            <td class="num">41</td>
+            <td class="num">$49.4M</td>
+            <td class="num">$1.1M</td>
+            <td>York</td>
+            <td class="num">2026-04-10</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Margaret Mitchell</td>
+            <td>Coldwell Banker Yorke Realty</td>
+            <td class="num">43</td>
+            <td class="num">28</td>
+            <td class="num">15</td>
+            <td class="num">$51.4M</td>
+            <td class="num">$1.2M</td>
+            <td>York</td>
+            <td class="num">2026-03-11</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Donald Wunder</td>
+            <td>RE/MAX Realty One</td>
+            <td class="num">38</td>
+            <td class="num">22</td>
+            <td class="num">16</td>
+            <td class="num">$32.1M</td>
+            <td class="num">$846K</td>
+            <td>York</td>
+            <td class="num">2026-01-16</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Cynthia Mckenna</td>
+            <td>Portside Real Estate Group</td>
+            <td class="num">38</td>
+            <td class="num">21</td>
+            <td class="num">17</td>
+            <td class="num">$24.8M</td>
+            <td class="num">$653K</td>
+            <td>York</td>
+            <td class="num">2025-09-23</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — York</h2>
+        <p class="sub">Office branches kept separate (branches compete with each other).</p>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Brokerage</th>
+                <th class="num">Sides</th>
+                <th class="num">Agents</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Top Agents</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">983</td>
+            <td class="num">119</td>
+            <td class="num">$753.5M</td>
+            <td class="num">$766K</td>
+            <td>Troy Williams, Heidi Hayes, Nola Cady</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Anne Erwin Sotheby&#x27;s International Realty</td>
+            <td class="num">367</td>
+            <td class="num">4</td>
+            <td class="num">$426.5M</td>
+            <td class="num">$1.2M</td>
+            <td>Anne Erwin Real Estate, Anne Erwin Sothebys International Realty, Walter Kallenback Jr</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">The Aland Realty Group, LLC</td>
+            <td class="num">243</td>
+            <td class="num">35</td>
+            <td class="num">$224.3M</td>
+            <td class="num">$923K</td>
+            <td>Tracy Jackson McCarty, Mary Rockett, Christopher Erikson</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">RE/MAX Realty One</td>
+            <td class="num">221</td>
+            <td class="num">38</td>
+            <td class="num">$153.4M</td>
+            <td class="num">$694K</td>
+            <td>Donald Wunder, Joanne Stone, Abigail Douris</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">CENTURY 21 Atlantic Realty</td>
+            <td class="num">168</td>
+            <td class="num">13</td>
+            <td class="num">$125.1M</td>
+            <td class="num">$745K</td>
+            <td>Jeffrey Jellison, Jason Clark, Terry Freeman-Pirini</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — Ogunquit</h2>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Agent</th>
+                <th>Office</th>
+                <th class="num">Total</th>
+                <th class="num">List</th>
+                <th class="num">Buy</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Primary Towns</th>
+                <th class="num">Most Recent</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Donald Wunder</td>
+            <td>RE/MAX Realty One</td>
+            <td class="num">272</td>
+            <td class="num">159</td>
+            <td class="num">113</td>
+            <td class="num">$208.6M</td>
+            <td class="num">$767K</td>
+            <td>Ogunquit</td>
+            <td class="num">2026-02-27</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Gail Bergeron</td>
+            <td>RE/MAX Realty One</td>
+            <td class="num">67</td>
+            <td class="num">40</td>
+            <td class="num">27</td>
+            <td class="num">$49.6M</td>
+            <td class="num">$740K</td>
+            <td>Ogunquit</td>
+            <td class="num">2025-10-24</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Jennifer Walker</td>
+            <td>207 Prime Properties, LLC</td>
+            <td class="num">56</td>
+            <td class="num">17</td>
+            <td class="num">39</td>
+            <td class="num">$46.0M</td>
+            <td class="num">$821K</td>
+            <td>Ogunquit</td>
+            <td class="num">2026-02-27</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Carolyn Weller</td>
+            <td>RE/MAX Realty One</td>
+            <td class="num">51</td>
+            <td class="num">21</td>
+            <td class="num">30</td>
+            <td class="num">$34.6M</td>
+            <td class="num">$678K</td>
+            <td>Ogunquit</td>
+            <td class="num">2026-03-17</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Robert Coles Jr.</td>
+            <td>RE/MAX Realty One</td>
+            <td class="num">35</td>
+            <td class="num">14</td>
+            <td class="num">21</td>
+            <td class="num">$19.6M</td>
+            <td class="num">$561K</td>
+            <td>Ogunquit</td>
+            <td class="num">2025-10-01</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Christopher Erikson</td>
+            <td>The Aland Realty Group, LLC</td>
+            <td class="num">32</td>
+            <td class="num">16</td>
+            <td class="num">16</td>
+            <td class="num">$30.4M</td>
+            <td class="num">$950K</td>
+            <td>Ogunquit</td>
+            <td class="num">2025-03-18</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Debora Marathon</td>
+            <td>Marathon Real Estate LLC</td>
+            <td class="num">28</td>
+            <td class="num">21</td>
+            <td class="num">7</td>
+            <td class="num">$15.3M</td>
+            <td class="num">$547K</td>
+            <td>Ogunquit</td>
+            <td class="num">2025-10-17</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">George Wilson</td>
+            <td>RE/MAX Realty One</td>
+            <td class="num">26</td>
+            <td class="num">14</td>
+            <td class="num">12</td>
+            <td class="num">$14.3M</td>
+            <td class="num">$548K</td>
+            <td>Ogunquit</td>
+            <td class="num">2019-12-19</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Bob Davis</td>
+            <td>RE/MAX Realty One</td>
+            <td class="num">23</td>
+            <td class="num">15</td>
+            <td class="num">8</td>
+            <td class="num">$11.0M</td>
+            <td class="num">$479K</td>
+            <td>Ogunquit</td>
+            <td class="num">2015-11-12</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Michael Jones</td>
+            <td>Perkins Real Estate</td>
+            <td class="num">22</td>
+            <td class="num">11</td>
+            <td class="num">11</td>
+            <td class="num">$11.6M</td>
+            <td class="num">$527K</td>
+            <td>Ogunquit</td>
+            <td class="num">2024-10-04</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — Ogunquit</h2>
+        <p class="sub">Office branches kept separate (branches compete with each other).</p>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Brokerage</th>
+                <th class="num">Sides</th>
+                <th class="num">Agents</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Top Agents</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">RE/MAX Realty One</td>
+            <td class="num">566</td>
+            <td class="num">38</td>
+            <td class="num">$384.6M</td>
+            <td class="num">$680K</td>
+            <td>Donald Wunder, Carolyn Weller, Robert Coles Jr.</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Anne Erwin Sotheby&#x27;s International Realty</td>
+            <td class="num">195</td>
+            <td class="num">3</td>
+            <td class="num">$189.3M</td>
+            <td class="num">$971K</td>
+            <td>Anne Erwin Real Estate, Walter Kallenback Jr, Holly Breton</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">The Aland Realty Group, LLC</td>
+            <td class="num">100</td>
+            <td class="num">12</td>
+            <td class="num">$84.2M</td>
+            <td class="num">$842K</td>
+            <td>Gail Bergeron, Christopher Erikson, Shawn Curtis</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">74</td>
+            <td class="num">31</td>
+            <td class="num">$52.0M</td>
+            <td class="num">$703K</td>
+            <td>Troy Williams, Donna DuBois-Miller, Scott Blanchard</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Perkins Real Estate</td>
+            <td class="num">67</td>
+            <td class="num">11</td>
+            <td class="num">$39.7M</td>
+            <td class="num">$592K</td>
+            <td>Holly Breton, Michael Jones, Walter Kallenback</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — Wells</h2>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Agent</th>
+                <th>Office</th>
+                <th class="num">Total</th>
+                <th class="num">List</th>
+                <th class="num">Buy</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Primary Towns</th>
+                <th class="num">Most Recent</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Pamela Moody-Maxon</td>
+            <td>Moody Maxon Real Estate</td>
+            <td class="num">239</td>
+            <td class="num">135</td>
+            <td class="num">104</td>
+            <td class="num">$79.4M</td>
+            <td class="num">$332K</td>
+            <td>Wells</td>
+            <td class="num">2026-04-01</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Glenn Thibodeau</td>
+            <td>RE/MAX Shoreline</td>
+            <td class="num">96</td>
+            <td class="num">61</td>
+            <td class="num">35</td>
+            <td class="num">$36.1M</td>
+            <td class="num">$376K</td>
+            <td>Wells</td>
+            <td class="num">2026-04-02</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Janna Syrene</td>
+            <td>Bean Group</td>
+            <td class="num">77</td>
+            <td class="num">45</td>
+            <td class="num">32</td>
+            <td class="num">$34.2M</td>
+            <td class="num">$444K</td>
+            <td>Wells</td>
+            <td class="num">2026-03-27</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Lorilyn Barrett</td>
+            <td>Coldwell Banker Yorke Realty</td>
+            <td class="num">59</td>
+            <td class="num">45</td>
+            <td class="num">14</td>
+            <td class="num">$32.5M</td>
+            <td class="num">$551K</td>
+            <td>Wells</td>
+            <td class="num">2026-02-17</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Troy Williams</td>
+            <td>Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">58</td>
+            <td class="num">21</td>
+            <td class="num">37</td>
+            <td class="num">$38.5M</td>
+            <td class="num">$665K</td>
+            <td>Wells</td>
+            <td class="num">2026-04-02</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Catherine Bame</td>
+            <td>Coldwell Banker Realty</td>
+            <td class="num">57</td>
+            <td class="num">26</td>
+            <td class="num">31</td>
+            <td class="num">$38.6M</td>
+            <td class="num">$677K</td>
+            <td>Wells</td>
+            <td class="num">2026-03-27</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Angela Adrien</td>
+            <td>Heart &amp; Home Realty</td>
+            <td class="num">56</td>
+            <td class="num">55</td>
+            <td class="num">1</td>
+            <td class="num">$32.3M</td>
+            <td class="num">$576K</td>
+            <td>Wells</td>
+            <td class="num">2026-03-18</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Peter Larochelle</td>
+            <td>Better Homes &amp; Gardens Real Estate/The Masiello Group</td>
+            <td class="num">53</td>
+            <td class="num">40</td>
+            <td class="num">13</td>
+            <td class="num">$68.0M</td>
+            <td class="num">$1.3M</td>
+            <td>Wells</td>
+            <td class="num">2026-02-03</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Steven Weigel</td>
+            <td>Coldwell Banker Y-Gull &amp; Associates</td>
+            <td class="num">50</td>
+            <td class="num">35</td>
+            <td class="num">15</td>
+            <td class="num">$54.2M</td>
+            <td class="num">$1.1M</td>
+            <td>Wells</td>
+            <td class="num">2025-11-07</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Julie O&#x27;Connor</td>
+            <td>Coldwell Banker Realty</td>
+            <td class="num">45</td>
+            <td class="num">25</td>
+            <td class="num">20</td>
+            <td class="num">$16.1M</td>
+            <td class="num">$358K</td>
+            <td>Wells</td>
+            <td class="num">2026-03-17</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — Wells</h2>
+        <p class="sub">Office branches kept separate (branches compete with each other).</p>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Brokerage</th>
+                <th class="num">Sides</th>
+                <th class="num">Agents</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Top Agents</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Coldwell Banker Realty</td>
+            <td class="num">436</td>
+            <td class="num">94</td>
+            <td class="num">$217.4M</td>
+            <td class="num">$499K</td>
+            <td>Catherine Bame, Julienne MacKinnon, Adam Hedio</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Keller Williams Coastal and Lakes &amp; Mountains Realty</td>
+            <td class="num">286</td>
+            <td class="num">86</td>
+            <td class="num">$162.1M</td>
+            <td class="num">$567K</td>
+            <td>Troy Williams, Tanya Campbell, Deborah Bozworth</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Moody Maxon Real Estate</td>
+            <td class="num">239</td>
+            <td class="num">1</td>
+            <td class="num">$79.4M</td>
+            <td class="num">$332K</td>
+            <td>Pamela Moody-Maxon</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Better Homes &amp; Gardens Real Estate/The Masiello Group</td>
+            <td class="num">218</td>
+            <td class="num">41</td>
+            <td class="num">$160.9M</td>
+            <td class="num">$738K</td>
+            <td>Peter Larochelle, Heath Taylor, Christian Doyon</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">RE/MAX Realty One</td>
+            <td class="num">206</td>
+            <td class="num">33</td>
+            <td class="num">$107.3M</td>
+            <td class="num">$521K</td>
+            <td>Joshua Lagasse, Dawson Sibley, Kimberly Bohn</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — Kennebunk</h2>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Agent</th>
+                <th>Office</th>
+                <th class="num">Total</th>
+                <th class="num">List</th>
+                <th class="num">Buy</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Primary Towns</th>
+                <th class="num">Most Recent</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Grainne Archer</td>
+            <td>Portside Real Estate Group</td>
+            <td class="num">102</td>
+            <td class="num">100</td>
+            <td class="num">2</td>
+            <td class="num">$63.7M</td>
+            <td class="num">$625K</td>
+            <td>Kennebunk</td>
+            <td class="num">2026-01-16</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Jessica Girard</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">79</td>
+            <td class="num">43</td>
+            <td class="num">36</td>
+            <td class="num">$54.7M</td>
+            <td class="num">$693K</td>
+            <td>Kennebunk</td>
+            <td class="num">2026-03-04</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Victoria Benenti</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">70</td>
+            <td class="num">37</td>
+            <td class="num">33</td>
+            <td class="num">$76.9M</td>
+            <td class="num">$1.1M</td>
+            <td>Kennebunk</td>
+            <td class="num">2026-02-24</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Julie Barros</td>
+            <td>Coldwell Banker Realty</td>
+            <td class="num">62</td>
+            <td class="num">38</td>
+            <td class="num">24</td>
+            <td class="num">$37.7M</td>
+            <td class="num">$608K</td>
+            <td>Kennebunk</td>
+            <td class="num">2026-01-08</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Judith Andrews</td>
+            <td>Andrews Milligan Real Estate</td>
+            <td class="num">56</td>
+            <td class="num">37</td>
+            <td class="num">19</td>
+            <td class="num">$24.3M</td>
+            <td class="num">$434K</td>
+            <td>Kennebunk</td>
+            <td class="num">2025-05-12</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Elise Wyman</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">51</td>
+            <td class="num">21</td>
+            <td class="num">30</td>
+            <td class="num">$49.3M</td>
+            <td class="num">$966K</td>
+            <td>Kennebunk</td>
+            <td class="num">2026-03-27</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Rebecca Bassett</td>
+            <td>Portside Real Estate Group</td>
+            <td class="num">51</td>
+            <td class="num">0</td>
+            <td class="num">51</td>
+            <td class="num">$30.1M</td>
+            <td class="num">$590K</td>
+            <td>Kennebunk</td>
+            <td class="num">2026-03-04</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Julie Grady</td>
+            <td>Coldwell Banker Realty</td>
+            <td class="num">48</td>
+            <td class="num">31</td>
+            <td class="num">17</td>
+            <td class="num">$26.7M</td>
+            <td class="num">$557K</td>
+            <td>Kennebunk</td>
+            <td class="num">2025-11-24</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Helen Curry</td>
+            <td>Kennebunk Beach Realty</td>
+            <td class="num">46</td>
+            <td class="num">33</td>
+            <td class="num">13</td>
+            <td class="num">$27.7M</td>
+            <td class="num">$601K</td>
+            <td>Kennebunk</td>
+            <td class="num">2026-03-06</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Kathleen Roberts</td>
+            <td>Kennebunk Port &amp; Shore Realty</td>
+            <td class="num">46</td>
+            <td class="num">27</td>
+            <td class="num">19</td>
+            <td class="num">$24.4M</td>
+            <td class="num">$531K</td>
+            <td>Kennebunk</td>
+            <td class="num">2026-03-16</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — Kennebunk</h2>
+        <p class="sub">Office branches kept separate (branches compete with each other).</p>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Brokerage</th>
+                <th class="num">Sides</th>
+                <th class="num">Agents</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Top Agents</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Pack Maynard and Associates</td>
+            <td class="num">447</td>
+            <td class="num">20</td>
+            <td class="num">$401.1M</td>
+            <td class="num">$897K</td>
+            <td>Jessica Girard, Victoria Benenti, Elise Wyman</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Coldwell Banker Realty</td>
+            <td class="num">409</td>
+            <td class="num">114</td>
+            <td class="num">$208.8M</td>
+            <td class="num">$510K</td>
+            <td>Julie Barros, Keri Walker, Elizabeth Ames-Fitzgerald</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Kennebunk Beach Realty</td>
+            <td class="num">332</td>
+            <td class="num">21</td>
+            <td class="num">$204.9M</td>
+            <td class="num">$617K</td>
+            <td>Helen Curry, Denise Hodsdon, Mark Seeley</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Portside Real Estate Group</td>
+            <td class="num">306</td>
+            <td class="num">60</td>
+            <td class="num">$202.9M</td>
+            <td class="num">$663K</td>
+            <td>Grainne Archer, Jeffrey Rioux, Rebecca Bassett</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Keller Williams Realty</td>
+            <td class="num">274</td>
+            <td class="num">110</td>
+            <td class="num">$194.5M</td>
+            <td class="num">$710K</td>
+            <td>Maureen DeLeo, Jeffrey Mateja, Michael Thomas</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — Kennebunkport</h2>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Agent</th>
+                <th>Office</th>
+                <th class="num">Total</th>
+                <th class="num">List</th>
+                <th class="num">Buy</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Primary Towns</th>
+                <th class="num">Most Recent</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Corey Tracy</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">131</td>
+            <td class="num">113</td>
+            <td class="num">18</td>
+            <td class="num">$142.5M</td>
+            <td class="num">$1.1M</td>
+            <td>Kennebunkport</td>
+            <td class="num">2024-09-17</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Victoria Benenti</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">123</td>
+            <td class="num">65</td>
+            <td class="num">58</td>
+            <td class="num">$131.5M</td>
+            <td class="num">$1.1M</td>
+            <td>Kennebunkport</td>
+            <td class="num">2026-03-06</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Heidi Maynard</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">75</td>
+            <td class="num">17</td>
+            <td class="num">58</td>
+            <td class="num">$70.8M</td>
+            <td class="num">$944K</td>
+            <td>Kennebunkport</td>
+            <td class="num">2024-11-04</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Heather Motes</td>
+            <td>Sand Dollar Real Estate</td>
+            <td class="num">75</td>
+            <td class="num">42</td>
+            <td class="num">33</td>
+            <td class="num">$63.3M</td>
+            <td class="num">$845K</td>
+            <td>Kennebunkport</td>
+            <td class="num">2025-10-14</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Karen Schlegel</td>
+            <td>RE/MAX Realty One</td>
+            <td class="num">67</td>
+            <td class="num">29</td>
+            <td class="num">38</td>
+            <td class="num">$47.8M</td>
+            <td class="num">$713K</td>
+            <td>Kennebunkport</td>
+            <td class="num">2026-02-27</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Randal Simon</td>
+            <td>Berkshire Hathaway HomeServices Verani Realty</td>
+            <td class="num">60</td>
+            <td class="num">37</td>
+            <td class="num">23</td>
+            <td class="num">$56.0M</td>
+            <td class="num">$934K</td>
+            <td>Kennebunkport</td>
+            <td class="num">2025-06-20</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Helen Curry</td>
+            <td>Kennebunk Beach Realty</td>
+            <td class="num">57</td>
+            <td class="num">40</td>
+            <td class="num">17</td>
+            <td class="num">$35.9M</td>
+            <td class="num">$630K</td>
+            <td>Kennebunkport</td>
+            <td class="num">2025-08-01</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Rosane Hirschy</td>
+            <td>Legacy Properties Sotheby&#x27;s International Realty</td>
+            <td class="num">56</td>
+            <td class="num">48</td>
+            <td class="num">8</td>
+            <td class="num">$52.1M</td>
+            <td class="num">$931K</td>
+            <td>Kennebunkport</td>
+            <td class="num">2023-08-31</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Bette Schofield</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">55</td>
+            <td class="num">31</td>
+            <td class="num">24</td>
+            <td class="num">$40.4M</td>
+            <td class="num">$734K</td>
+            <td>Kennebunkport</td>
+            <td class="num">2025-07-17</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Frank Pack</td>
+            <td>Pack Maynard and Associates</td>
+            <td class="num">54</td>
+            <td class="num">40</td>
+            <td class="num">14</td>
+            <td class="num">$27.5M</td>
+            <td class="num">$509K</td>
+            <td>Kennebunkport</td>
+            <td class="num">2015-07-16</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — Kennebunkport</h2>
+        <p class="sub">Office branches kept separate (branches compete with each other).</p>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Brokerage</th>
+                <th class="num">Sides</th>
+                <th class="num">Agents</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Top Agents</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Pack Maynard and Associates</td>
+            <td class="num">672</td>
+            <td class="num">23</td>
+            <td class="num">$685.0M</td>
+            <td class="num">$1.0M</td>
+            <td>Corey Tracy, Victoria Benenti, Heidi Maynard</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Kennebunk Beach Realty</td>
+            <td class="num">365</td>
+            <td class="num">23</td>
+            <td class="num">$268.6M</td>
+            <td class="num">$736K</td>
+            <td>Helen Curry, Rebecca Bassett, Laura Ross</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Legacy Properties Sotheby&#x27;s International Realty</td>
+            <td class="num">198</td>
+            <td class="num">26</td>
+            <td class="num">$337.2M</td>
+            <td class="num">$1.7M</td>
+            <td>William Gaynor, Rosane Hirschy, Elizabeth Coughlan</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Coldwell Banker Realty</td>
+            <td class="num">170</td>
+            <td class="num">48</td>
+            <td class="num">$138.5M</td>
+            <td class="num">$815K</td>
+            <td>Elizabeth Ames-Fitzgerald, Kathryn Leffler, Julie Grady</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Berkshire Hathaway HomeServices Verani Realty</td>
+            <td class="num">170</td>
+            <td class="num">23</td>
+            <td class="num">$129.1M</td>
+            <td class="num">$759K</td>
+            <td>Randal Simon, Rosane Hirschy, Hylah Riley</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — Biddeford</h2>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Agent</th>
+                <th>Office</th>
+                <th class="num">Total</th>
+                <th class="num">List</th>
+                <th class="num">Buy</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Primary Towns</th>
+                <th class="num">Most Recent</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Anne McPheeters</td>
+            <td>OceanView Properties, Inc.</td>
+            <td class="num">78</td>
+            <td class="num">63</td>
+            <td class="num">15</td>
+            <td class="num">$119.0M</td>
+            <td class="num">$1.5M</td>
+            <td>Biddeford</td>
+            <td class="num">2026-01-29</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Stephen Foran</td>
+            <td>First Maine Real Estate</td>
+            <td class="num">76</td>
+            <td class="num">46</td>
+            <td class="num">30</td>
+            <td class="num">$73.1M</td>
+            <td class="num">$961K</td>
+            <td>Biddeford</td>
+            <td class="num">2026-03-09</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Peter McPheeters</td>
+            <td>OceanView Properties, Inc.</td>
+            <td class="num">55</td>
+            <td class="num">16</td>
+            <td class="num">39</td>
+            <td class="num">$85.6M</td>
+            <td class="num">$1.6M</td>
+            <td>Biddeford</td>
+            <td class="num">2025-11-17</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Robert Letellier</td>
+            <td>RE/MAX Realty One</td>
+            <td class="num">55</td>
+            <td class="num">31</td>
+            <td class="num">24</td>
+            <td class="num">$22.5M</td>
+            <td class="num">$408K</td>
+            <td>Biddeford</td>
+            <td class="num">2026-03-25</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Cynthia Dubois-Cote</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">54</td>
+            <td class="num">43</td>
+            <td class="num">11</td>
+            <td class="num">$18.4M</td>
+            <td class="num">$340K</td>
+            <td>Biddeford</td>
+            <td class="num">2024-11-22</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Daniel Letellier</td>
+            <td>RE/MAX Realty One</td>
+            <td class="num">53</td>
+            <td class="num">38</td>
+            <td class="num">15</td>
+            <td class="num">$21.4M</td>
+            <td class="num">$405K</td>
+            <td>Biddeford</td>
+            <td class="num">2026-02-23</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Adam Parent</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">46</td>
+            <td class="num">25</td>
+            <td class="num">21</td>
+            <td class="num">$16.9M</td>
+            <td class="num">$368K</td>
+            <td>Biddeford</td>
+            <td class="num">2026-02-20</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">David Trottier</td>
+            <td>Realty Sales Inc</td>
+            <td class="num">45</td>
+            <td class="num">41</td>
+            <td class="num">4</td>
+            <td class="num">$17.9M</td>
+            <td class="num">$398K</td>
+            <td>Biddeford</td>
+            <td class="num">2026-03-04</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Joshua Keller</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">38</td>
+            <td class="num">20</td>
+            <td class="num">18</td>
+            <td class="num">$12.2M</td>
+            <td class="num">$322K</td>
+            <td>Biddeford</td>
+            <td class="num">2021-10-22</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Roslind Anton</td>
+            <td>EXP Realty</td>
+            <td class="num">37</td>
+            <td class="num">18</td>
+            <td class="num">19</td>
+            <td class="num">$15.1M</td>
+            <td class="num">$409K</td>
+            <td>Biddeford</td>
+            <td class="num">2025-09-16</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — Biddeford</h2>
+        <p class="sub">Office branches kept separate (branches compete with each other).</p>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Brokerage</th>
+                <th class="num">Sides</th>
+                <th class="num">Agents</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Top Agents</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Keller Williams Realty</td>
+            <td class="num">433</td>
+            <td class="num">149</td>
+            <td class="num">$167.7M</td>
+            <td class="num">$387K</td>
+            <td>Cynthia Dubois-Cote, Joshua Keller, Adam Parent</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Coldwell Banker Realty</td>
+            <td class="num">393</td>
+            <td class="num">110</td>
+            <td class="num">$147.8M</td>
+            <td class="num">$376K</td>
+            <td>Leo Bourgeault, Robert Letellier, Margaret Mailman</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Portside Real Estate Group</td>
+            <td class="num">163</td>
+            <td class="num">74</td>
+            <td class="num">$78.5M</td>
+            <td class="num">$482K</td>
+            <td>Erin Oldham, Cady Toussaint, Nicholas Laverriere</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Bean Group</td>
+            <td class="num">156</td>
+            <td class="num">83</td>
+            <td class="num">$54.3M</td>
+            <td class="num">$348K</td>
+            <td>Stephen Erickson, Keith Nicely, John Harmon John Carroll</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">RE/MAX Realty One</td>
+            <td class="num">135</td>
+            <td class="num">23</td>
+            <td class="num">$47.6M</td>
+            <td class="num">$353K</td>
+            <td>Daniel Letellier, Robert Letellier, Elias Leland</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — Saco</h2>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Agent</th>
+                <th>Office</th>
+                <th class="num">Total</th>
+                <th class="num">List</th>
+                <th class="num">Buy</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Primary Towns</th>
+                <th class="num">Most Recent</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Adam Parent</td>
+            <td>Maine Real Estate Co</td>
+            <td class="num">82</td>
+            <td class="num">47</td>
+            <td class="num">35</td>
+            <td class="num">$50.1M</td>
+            <td class="num">$611K</td>
+            <td>Saco</td>
+            <td class="num">2026-03-30</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Clifford Santamore</td>
+            <td>Assist-2-Sell Home Team Advantage</td>
+            <td class="num">60</td>
+            <td class="num">49</td>
+            <td class="num">11</td>
+            <td class="num">$28.5M</td>
+            <td class="num">$474K</td>
+            <td>Saco</td>
+            <td class="num">2026-02-27</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Sandra Murray</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">51</td>
+            <td class="num">34</td>
+            <td class="num">17</td>
+            <td class="num">$73.6M</td>
+            <td class="num">$1.4M</td>
+            <td>Saco</td>
+            <td class="num">2025-10-30</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Angela Adrien</td>
+            <td>Heart &amp; Home Realty</td>
+            <td class="num">49</td>
+            <td class="num">48</td>
+            <td class="num">1</td>
+            <td class="num">$24.5M</td>
+            <td class="num">$501K</td>
+            <td>Saco</td>
+            <td class="num">2025-12-10</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Bailey Pate</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">47</td>
+            <td class="num">27</td>
+            <td class="num">20</td>
+            <td class="num">$24.7M</td>
+            <td class="num">$526K</td>
+            <td>Saco</td>
+            <td class="num">2026-02-24</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Katherine Scamman</td>
+            <td>Bean Group</td>
+            <td class="num">37</td>
+            <td class="num">25</td>
+            <td class="num">12</td>
+            <td class="num">$12.5M</td>
+            <td class="num">$338K</td>
+            <td>Saco</td>
+            <td class="num">2025-06-05</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Gregory Robert</td>
+            <td>Coldwell Banker Realty</td>
+            <td class="num">31</td>
+            <td class="num">22</td>
+            <td class="num">9</td>
+            <td class="num">$15.2M</td>
+            <td class="num">$491K</td>
+            <td>Saco</td>
+            <td class="num">2025-10-03</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Jonathan Safford</td>
+            <td>Better Homes &amp; Gardens Real Estate/The Masiello Group</td>
+            <td class="num">31</td>
+            <td class="num">20</td>
+            <td class="num">11</td>
+            <td class="num">$14.8M</td>
+            <td class="num">$478K</td>
+            <td>Saco</td>
+            <td class="num">2025-10-10</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Margaret Mailman</td>
+            <td>Coldwell Banker Realty</td>
+            <td class="num">29</td>
+            <td class="num">14</td>
+            <td class="num">15</td>
+            <td class="num">$13.4M</td>
+            <td class="num">$461K</td>
+            <td>Saco</td>
+            <td class="num">2024-12-27</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Timothy Madden</td>
+            <td>Assist-2-Sell Home Team Advantage</td>
+            <td class="num">28</td>
+            <td class="num">26</td>
+            <td class="num">2</td>
+            <td class="num">$10.9M</td>
+            <td class="num">$391K</td>
+            <td>Saco</td>
+            <td class="num">2025-03-31</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — Saco</h2>
+        <p class="sub">Office branches kept separate (branches compete with each other).</p>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Brokerage</th>
+                <th class="num">Sides</th>
+                <th class="num">Agents</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Top Agents</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Keller Williams Realty</td>
+            <td class="num">677</td>
+            <td class="num">178</td>
+            <td class="num">$355.4M</td>
+            <td class="num">$525K</td>
+            <td>Sandra Murray, Bailey Pate, Cynthia Dubois-Cote</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Coldwell Banker Realty</td>
+            <td class="num">428</td>
+            <td class="num">126</td>
+            <td class="num">$202.5M</td>
+            <td class="num">$473K</td>
+            <td>Gregory Robert, Margaret Mailman, Margaret Hill</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Bean Group</td>
+            <td class="num">222</td>
+            <td class="num">81</td>
+            <td class="num">$86.2M</td>
+            <td class="num">$388K</td>
+            <td>Katherine Scamman, Stephen Erickson, Jennifer Eri Susan Croteau</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Portside Real Estate Group</td>
+            <td class="num">197</td>
+            <td class="num">79</td>
+            <td class="num">$100.1M</td>
+            <td class="num">$508K</td>
+            <td>Daniel Reali, Alyssa Bouthot, Cady Toussaint</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">EXP Realty</td>
+            <td class="num">143</td>
+            <td class="num">60</td>
+            <td class="num">$71.3M</td>
+            <td class="num">$499K</td>
+            <td>Roslind Anton, Kimberly Tarbox, Donna Robert Christine Paul</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — Old Orchard Beach</h2>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Agent</th>
+                <th>Office</th>
+                <th class="num">Total</th>
+                <th class="num">List</th>
+                <th class="num">Buy</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Primary Towns</th>
+                <th class="num">Most Recent</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Nancy Moreshead</td>
+            <td>Best Maine Beach Properties</td>
+            <td class="num">226</td>
+            <td class="num">106</td>
+            <td class="num">120</td>
+            <td class="num">$109.4M</td>
+            <td class="num">$484K</td>
+            <td>Old Orchard Beach</td>
+            <td class="num">2025-10-01</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Gregory Clou Christina Connell</td>
+            <td>Berkshire Hathaway HomeServices Verani Realty</td>
+            <td class="num">61</td>
+            <td class="num">43</td>
+            <td class="num">18</td>
+            <td class="num">$29.1M</td>
+            <td class="num">$477K</td>
+            <td>Old Orchard Beach</td>
+            <td class="num">2025-01-13</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Stephen Erickson</td>
+            <td>Bean Group</td>
+            <td class="num">61</td>
+            <td class="num">61</td>
+            <td class="num">0</td>
+            <td class="num">$25.2M</td>
+            <td class="num">$414K</td>
+            <td>Old Orchard Beach</td>
+            <td class="num">2023-10-02</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Robert Magazu</td>
+            <td>Bean Group</td>
+            <td class="num">46</td>
+            <td class="num">39</td>
+            <td class="num">7</td>
+            <td class="num">$14.8M</td>
+            <td class="num">$322K</td>
+            <td>Old Orchard Beach</td>
+            <td class="num">2026-02-19</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Amanda Owens</td>
+            <td>Kre Brokerage Group</td>
+            <td class="num">44</td>
+            <td class="num">42</td>
+            <td class="num">2</td>
+            <td class="num">$19.3M</td>
+            <td class="num">$438K</td>
+            <td>Old Orchard Beach</td>
+            <td class="num">2025-07-29</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">Deja Lett</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">43</td>
+            <td class="num">35</td>
+            <td class="num">8</td>
+            <td class="num">$15.7M</td>
+            <td class="num">$365K</td>
+            <td>Old Orchard Beach</td>
+            <td class="num">2025-07-11</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">John Murphy</td>
+            <td>The Real Estate Store</td>
+            <td class="num">39</td>
+            <td class="num">37</td>
+            <td class="num">2</td>
+            <td class="num">$24.6M</td>
+            <td class="num">$631K</td>
+            <td>Old Orchard Beach</td>
+            <td class="num">2026-03-20</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Jennifer Eri Susan Croteau</td>
+            <td>Bean Group</td>
+            <td class="num">33</td>
+            <td class="num">1</td>
+            <td class="num">32</td>
+            <td class="num">$11.8M</td>
+            <td class="num">$359K</td>
+            <td>Old Orchard Beach</td>
+            <td class="num">2023-10-02</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Sandra Murray</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">31</td>
+            <td class="num">26</td>
+            <td class="num">5</td>
+            <td class="num">$24.1M</td>
+            <td class="num">$776K</td>
+            <td>Old Orchard Beach</td>
+            <td class="num">2025-10-01</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">Melissa Rioux</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">28</td>
+            <td class="num">5</td>
+            <td class="num">23</td>
+            <td class="num">$15.9M</td>
+            <td class="num">$567K</td>
+            <td>Old Orchard Beach</td>
+            <td class="num">2025-10-07</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — Old Orchard Beach</h2>
+        <p class="sub">Office branches kept separate (branches compete with each other).</p>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Brokerage</th>
+                <th class="num">Sides</th>
+                <th class="num">Agents</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Top Agents</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Keller Williams Realty</td>
+            <td class="num">695</td>
+            <td class="num">176</td>
+            <td class="num">$296.8M</td>
+            <td class="num">$427K</td>
+            <td>Deja Lett, Sandra Murray, Cynthia Dubois-Cote</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Bean Group</td>
+            <td class="num">327</td>
+            <td class="num">80</td>
+            <td class="num">$118.3M</td>
+            <td class="num">$362K</td>
+            <td>Stephen Erickson, Jennifer Eri Susan Croteau, Robert Magazu</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Coldwell Banker Realty</td>
+            <td class="num">293</td>
+            <td class="num">102</td>
+            <td class="num">$109.3M</td>
+            <td class="num">$373K</td>
+            <td>Margaret Mailman, Stephen Erickson Jennifer Erickson, Lisa Hughes</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">The Real Estate Store</td>
+            <td class="num">154</td>
+            <td class="num">8</td>
+            <td class="num">$90.8M</td>
+            <td class="num">$590K</td>
+            <td>Nancy Moreshead, John Murphy, David Dunn</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">EXP Realty</td>
+            <td class="num">153</td>
+            <td class="num">49</td>
+            <td class="num">$63.2M</td>
+            <td class="num">$413K</td>
+            <td>Robert Magazu, Kimberly Tarbox, Melissa Rioux</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Agents — Scarborough</h2>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Agent</th>
+                <th>Office</th>
+                <th class="num">Total</th>
+                <th class="num">List</th>
+                <th class="num">Buy</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Primary Towns</th>
+                <th class="num">Most Recent</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Carrie Scovi Amy Foley</td>
+            <td>Signature Homes Real Estate Group, LLC</td>
+            <td class="num">209</td>
+            <td class="num">147</td>
+            <td class="num">62</td>
+            <td class="num">$102.5M</td>
+            <td class="num">$490K</td>
+            <td>Scarborough</td>
+            <td class="num">2025-10-17</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Scott Townsend</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">164</td>
+            <td class="num">65</td>
+            <td class="num">99</td>
+            <td class="num">$131.9M</td>
+            <td class="num">$804K</td>
+            <td>Scarborough</td>
+            <td class="num">2026-04-03</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Carrie Scoville Amy Foley</td>
+            <td>Signature Homes Real Estate Group, LLC</td>
+            <td class="num">126</td>
+            <td class="num">83</td>
+            <td class="num">43</td>
+            <td class="num">$72.4M</td>
+            <td class="num">$575K</td>
+            <td>Scarborough</td>
+            <td class="num">2026-03-20</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Bridgette Vermette</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">100</td>
+            <td class="num">70</td>
+            <td class="num">30</td>
+            <td class="num">$67.3M</td>
+            <td class="num">$673K</td>
+            <td>Scarborough</td>
+            <td class="num">2024-08-29</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Jeffrey Walker</td>
+            <td>Bean Group</td>
+            <td class="num">81</td>
+            <td class="num">63</td>
+            <td class="num">18</td>
+            <td class="num">$62.8M</td>
+            <td class="num">$776K</td>
+            <td>Scarborough</td>
+            <td class="num">2025-12-12</td>
+        </tr><tr>
+            <td class="num">6</td>
+            <td class="agent-name">David Banks</td>
+            <td>RE/MAX By The Bay</td>
+            <td class="num">62</td>
+            <td class="num">33</td>
+            <td class="num">29</td>
+            <td class="num">$82.5M</td>
+            <td class="num">$1.3M</td>
+            <td>Scarborough</td>
+            <td class="num">2025-12-16</td>
+        </tr><tr>
+            <td class="num">7</td>
+            <td class="agent-name">Kathleen Foley</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">57</td>
+            <td class="num">57</td>
+            <td class="num">0</td>
+            <td class="num">$31.3M</td>
+            <td class="num">$549K</td>
+            <td>Scarborough</td>
+            <td class="num">2025-10-31</td>
+        </tr><tr>
+            <td class="num">8</td>
+            <td class="agent-name">Mary Dolloff</td>
+            <td>Chamberlain Realty</td>
+            <td class="num">43</td>
+            <td class="num">32</td>
+            <td class="num">11</td>
+            <td class="num">$28.4M</td>
+            <td class="num">$659K</td>
+            <td>Scarborough</td>
+            <td class="num">2023-06-23</td>
+        </tr><tr>
+            <td class="num">9</td>
+            <td class="agent-name">Deborah Meek</td>
+            <td>Keller Williams Realty</td>
+            <td class="num">41</td>
+            <td class="num">25</td>
+            <td class="num">16</td>
+            <td class="num">$30.9M</td>
+            <td class="num">$753K</td>
+            <td>Scarborough</td>
+            <td class="num">2026-01-29</td>
+        </tr><tr>
+            <td class="num">10</td>
+            <td class="agent-name">April Cohen</td>
+            <td>Bean Group</td>
+            <td class="num">37</td>
+            <td class="num">19</td>
+            <td class="num">18</td>
+            <td class="num">$23.2M</td>
+            <td class="num">$626K</td>
+            <td>Scarborough</td>
+            <td class="num">2025-06-23</td>
+        </tr></tbody>
+        </table></div>
+    </section>
+<section class="section">
+        <h2>Top Brokerages — Scarborough</h2>
+        <p class="sub">Office branches kept separate (branches compete with each other).</p>
+        <div class="table-wrap"><table class="sortable">
+            <thead><tr>
+                <th class="num">#</th>
+                <th>Brokerage</th>
+                <th class="num">Sides</th>
+                <th class="num">Agents</th>
+                <th class="num">Volume</th>
+                <th class="num">Avg</th>
+                <th>Top Agents</th>
+            </tr></thead>
+            <tbody><tr class="rank-1">
+            <td class="num">1</td>
+            <td class="agent-name">Keller Williams Realty</td>
+            <td class="num">993</td>
+            <td class="num">171</td>
+            <td class="num">$694.0M</td>
+            <td class="num">$699K</td>
+            <td>Scott Townsend, Bridgette Vermette, Kathleen Foley</td>
+        </tr><tr>
+            <td class="num">2</td>
+            <td class="agent-name">Signature Homes Real Estate Group, LLC</td>
+            <td class="num">441</td>
+            <td class="num">23</td>
+            <td class="num">$242.2M</td>
+            <td class="num">$549K</td>
+            <td>Carrie Scovi Amy Foley, Carrie Scoville Amy Foley, Micaela Sargent</td>
+        </tr><tr>
+            <td class="num">3</td>
+            <td class="agent-name">Portside Real Estate Group</td>
+            <td class="num">282</td>
+            <td class="num">86</td>
+            <td class="num">$192.2M</td>
+            <td class="num">$682K</td>
+            <td>Taylor McFarlane, James Mcfarlane Jr, Bridget King Jason Miller</td>
+        </tr><tr>
+            <td class="num">4</td>
+            <td class="agent-name">Bean Group</td>
+            <td class="num">196</td>
+            <td class="num">59</td>
+            <td class="num">$119.6M</td>
+            <td class="num">$610K</td>
+            <td>Jeffrey Walker, April Cohen, John Harmon John Carroll</td>
+        </tr><tr>
+            <td class="num">5</td>
+            <td class="agent-name">Coldwell Banker Realty</td>
+            <td class="num">142</td>
+            <td class="num">77</td>
+            <td class="num">$87.1M</td>
+            <td class="num">$614K</td>
+            <td>Julia Edwards, Karen Jones, Paula Broydrick</td>
+        </tr></tbody>
+        </table></div>
+    </section></main>
+        <footer class="footer">
+            Generated 2026-04-17 00:07 UTC &middot; Data source: MaineListings.com (MREIS MLS) &middot; gw-re-agent-scraper
+        </footer>
+    </div>
+<script>
+(function() {
+  function parseVal(text) {
+    var s = text.trim();
+    if (!s || s === 'N/A' || s === '—') return -Infinity;
+    // Currency: $1.3M -> 1300000, $807K -> 807000, $450,000 -> 450000
+    if (s.charAt(0) === '$') {
+      s = s.substring(1).replace(/,/g, '');
+      if (s.indexOf('M') !== -1) return parseFloat(s) * 1000000;
+      if (s.indexOf('K') !== -1) return parseFloat(s) * 1000;
+      return parseFloat(s) || 0;
+    }
+    // Plain number (sides, rank)
+    var n = parseFloat(s.replace(/,/g, ''));
+    if (!isNaN(n)) return n;
+    // Text — sort alphabetically
+    return s.toLowerCase();
+  }
+
+  document.querySelectorAll('thead th').forEach(function(th) {
+    // Add sort arrow span
+    var arrow = document.createElement('span');
+    arrow.className = 'sort-arrow';
+    arrow.textContent = '↕';
+    th.appendChild(arrow);
+
+    th.addEventListener('click', function() {
+      var table = th.closest('table');
+      var tbody = table.querySelector('tbody');
+      var rows = Array.from(tbody.querySelectorAll('tr'));
+      var idx = Array.from(th.parentNode.children).indexOf(th);
+      var asc = th.dataset.sortDir !== 'asc';
+      th.dataset.sortDir = asc ? 'asc' : 'desc';
+
+      // Clear other headers in this table
+      th.parentNode.querySelectorAll('th').forEach(function(h) {
+        h.classList.remove('sort-active');
+        var a = h.querySelector('.sort-arrow');
+        if (a) a.textContent = '↕';
+      });
+      th.classList.add('sort-active');
+      arrow.textContent = asc ? '▲' : '▼';
+
+      rows.sort(function(a, b) {
+        var va = parseVal(a.children[idx] ? a.children[idx].textContent : '');
+        var vb = parseVal(b.children[idx] ? b.children[idx].textContent : '');
+        if (typeof va === 'string' && typeof vb === 'string') {
+          return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+        }
+        return asc ? va - vb : vb - va;
+      });
+
+      rows.forEach(function(row) { tbody.appendChild(row); });
+    });
+  });
+})();
+</script>
+</body>
+</html>

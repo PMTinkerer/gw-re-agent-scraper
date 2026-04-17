@@ -27,6 +27,27 @@ _DEFAULT_OUTPUT = os.path.join(
 
 _SUCCESS = "enrichment_status = 'success'"
 
+# Placeholder / brokerage-as-agent values to exclude from agent leaderboards.
+# These are surface-level pollutants — the same agent's real sales are
+# separately attributed to an actual person, and these values should not rank.
+_AGENT_EXCLUSIONS = frozenset({
+    'non-mreis agent',
+    'anne erwin real estate',
+    'anchor real estate',
+    'comp sale / for sale by owner',
+    'comp sale \\u002f for sale by owner',  # pre-fix decoder rows
+})
+
+
+def _agent_exclusion_sql(col: str) -> str:
+    """SQL fragment to exclude placeholder agents, case-insensitive."""
+    placeholders = ', '.join(['?'] * len(_AGENT_EXCLUSIONS))
+    return f'AND LOWER({col}) NOT IN ({placeholders})'
+
+
+def _exclusion_params() -> list[str]:
+    return list(_AGENT_EXCLUSIONS)
+
 
 def format_currency(amount: int | float | None) -> str:
     if amount is None or amount == 0:
@@ -56,7 +77,7 @@ def query_top_agents(
 ) -> list[dict]:
     """Top agents for a role (listing or buyer)."""
     agent_col, office_col = _role_cols(role)
-    params: list = []
+    params: list = list(_exclusion_params())
     town_sql = ''
     if town:
         town_sql = 'AND LOWER(city) = LOWER(?)'
@@ -95,6 +116,7 @@ def query_top_agents(
         WHERE t.{agent_col} IS NOT NULL
           AND TRIM(t.{agent_col}) != ''
           AND {_SUCCESS}
+          {_agent_exclusion_sql('t.' + agent_col)}
           {town_sql}
         GROUP BY t.{agent_col}
         ORDER BY sides DESC, volume DESC
@@ -121,7 +143,9 @@ def query_top_combined_agents(
         town_sql = 'AND LOWER(city) = LOWER(?)'
         town_params = [town]
 
-    params = town_params + town_params + [limit]
+    # Each UNION half needs its own copy of town params.
+    half_params = town_params
+    params = half_params + half_params + list(_exclusion_params()) + [limit]
 
     rows = conn.execute(f'''
         WITH sides AS (
@@ -140,6 +164,8 @@ def query_top_combined_agents(
               AND TRIM(buyer_agent) != ''
               AND {_SUCCESS}
               {town_sql}
+        ), excluded(agent_lower) AS (
+            VALUES {','.join(['(?)'] * len(_AGENT_EXCLUSIONS))}
         )
         SELECT
             agent AS agent_name,
@@ -161,6 +187,7 @@ def query_top_combined_agents(
                 )
             ) AS towns
         FROM sides s
+        WHERE LOWER(s.agent) NOT IN (SELECT agent_lower FROM excluded)
         GROUP BY agent
         ORDER BY total_sides DESC, volume DESC
         LIMIT ?
@@ -425,6 +452,8 @@ def build_maine_search_index(conn: sqlite3.Connection) -> list[dict]:
             WHERE buyer_agent IS NOT NULL
               AND TRIM(buyer_agent) != ''
               AND {_SUCCESS}
+        ), excluded(agent_lower) AS (
+            VALUES {','.join(['(?)'] * len(_AGENT_EXCLUSIONS))}
         )
         SELECT
             agent AS name,
@@ -438,9 +467,10 @@ def build_maine_search_index(conn: sqlite3.Connection) -> list[dict]:
             MAX(close_date) AS most_recent,
             GROUP_CONCAT(DISTINCT city) AS towns
         FROM sides s
+        WHERE LOWER(s.agent) NOT IN (SELECT agent_lower FROM excluded)
         GROUP BY agent
         ORDER BY total_sides DESC
-    ''').fetchall()
+    ''', _exclusion_params()).fetchall()
 
     return [
         {
