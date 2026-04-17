@@ -87,6 +87,20 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 - Interactive features: Agent/Brokerage toggle, Town filter (caps to top 50 when set), Period selector (12mo/3yr/All-time — changes default sort), in-table name/office search, sortable columns, Biggest Movers banner (top 5 risers + fallers; auto-hides when < 10 qualifying).
 - Row click / mover-card click → detail modal with every period split.
 
+### Phase 7: Active Listings Pipeline — COMPLETE (2026-04-17)
+- Same DB (`maine_listings.db`), new `status` column on `maine_transactions`: `'Active' | 'Pending' | 'Closed' | 'Withdrawn'`.
+- Added columns for active workflows: `list_date`, `last_seen_at`, `year_built`, `lot_sqft`, `description`, `photo_url`.
+- New child table `maine_listing_history` captures change-detected snapshots of `(status, list_price)`. Watched fields exclude `days_on_market` deliberately (ticks daily — would spam the table).
+- Daily cron at 6:30am ET scrapes all 10 towns with `mls_status=Active`, runs a withdrawn-sweeper at the end (marks any Active/Pending not seen in 7+ days as `Withdrawn`), and fires a Pushover+Resend failure alert if zero new listings AND zero status changes were observed across all 10 towns (anomaly detector).
+- New `--max-credits N` CLI flag caps Firecrawl calls per run as a budget safety net.
+- Closed-focused queries (`maine_report`, `maine_kpis`) gated with `WHERE status = 'Closed'` so the leaderboard + KPI dashboards are semantically unchanged — Active/Pending/Withdrawn rows coexist in the same table but don't pollute rankings.
+- Downstream tools (separate repo — direct-mail to owners, listing-agent STR-projection outreach) consume `src/maine_active.py`:
+    - `query_active_listings(conn, *, towns=None, min_days_on_market=None, include_pending=False)`
+    - `query_listing_history(conn, detail_url)`
+    - `query_new_since(conn, *, since_iso)`
+    - `query_stale_listings(conn, *, min_dom=60)`
+- GitHub Actions workflow routes on cron schedule: Monday fires weekly closed pipeline; daily fires `daily-active` mode. Manual dispatch adds `daily-active`, `backfill-active`.
+
 ## Key Decisions
 - **Redfin CSV** for property data (reliable, structured, no browser needed)
 - **Playwright** for agent data (Redfin pages require real browser, show agent info when visited)
