@@ -429,60 +429,36 @@ def _append_summary(lines: list[str], stats: dict) -> None:
 
 
 def build_maine_search_index(conn: sqlite3.Connection) -> list[dict]:
-    """Build search records for integration into index_page.py.
+    """Build search records for index_page.py.
 
-    Returns one record per agent (across both listing + buyer roles)
-    with enough metadata for the client-side agent search UI.
+    Delegates to maine_kpis.query_agent_kpis so the master table, search
+    results, and detail modal all share one source of truth.
     """
     if conn is None:
         return []
-
-    rows = conn.execute(f'''
-        WITH sides AS (
-            SELECT listing_agent AS agent, listing_office AS office,
-                   sale_price, city, close_date, 'listing' AS role
-            FROM maine_transactions
-            WHERE listing_agent IS NOT NULL
-              AND TRIM(listing_agent) != ''
-              AND {_SUCCESS}
-            UNION ALL
-            SELECT buyer_agent AS agent, buyer_office AS office,
-                   sale_price, city, close_date, 'buyer' AS role
-            FROM maine_transactions
-            WHERE buyer_agent IS NOT NULL
-              AND TRIM(buyer_agent) != ''
-              AND {_SUCCESS}
-        ), excluded(agent_lower) AS (
-            VALUES {','.join(['(?)'] * len(_AGENT_EXCLUSIONS))}
-        )
-        SELECT
-            agent AS name,
-            (SELECT office FROM sides s2
-             WHERE s2.agent = s.agent AND s2.office IS NOT NULL
-             GROUP BY office ORDER BY COUNT(*) DESC LIMIT 1) AS office,
-            COUNT(*) AS total_sides,
-            SUM(CASE WHEN role = 'listing' THEN 1 ELSE 0 END) AS listing_sides,
-            SUM(CASE WHEN role = 'buyer' THEN 1 ELSE 0 END) AS buyer_sides,
-            SUM(COALESCE(sale_price, 0)) AS volume,
-            MAX(close_date) AS most_recent,
-            GROUP_CONCAT(DISTINCT city) AS towns
-        FROM sides s
-        WHERE LOWER(s.agent) NOT IN (SELECT agent_lower FROM excluded)
-        GROUP BY agent
-        ORDER BY total_sides DESC
-    ''', _exclusion_params()).fetchall()
-
+    # Import here to avoid import cycle at module load time.
+    from .maine_kpis import query_agent_kpis
+    rows = query_agent_kpis(conn)
     return [
         {
             'source': 'maine',
             'name': r['name'],
             'office': r['office'] or '',
-            'total_sides': r['total_sides'],
+            'total_sides': r['all_time_sides'],          # back-compat with existing consumers
             'listing_sides': r['listing_sides'],
             'buyer_sides': r['buyer_sides'],
-            'volume': int(r['volume'] or 0),
+            'volume': int(r['all_time_volume'] or 0),     # back-compat
             'most_recent': r['most_recent'] or '',
-            'towns': (r['towns'] or '').split(',') if r['towns'] else [],
+            'towns': (r['primary_towns'] or '').split(', ') if r['primary_towns'] else [],
+            # New period breakdowns used by the detail modal:
+            'current_12mo_volume': int(r['current_12mo_volume'] or 0),
+            'current_12mo_sides': r['current_12mo_sides'],
+            'prior_12mo_volume':  int(r['prior_12mo_volume'] or 0),
+            'prior_12mo_sides':   r['prior_12mo_sides'],
+            'three_yr_volume':    int(r['three_yr_volume'] or 0),
+            'three_yr_sides':     r['three_yr_sides'],
+            'all_time_volume':    int(r['all_time_volume'] or 0),
+            'all_time_sides':     r['all_time_sides'],
         }
         for r in rows
     ]

@@ -145,6 +145,18 @@ class TestPopulatedReport:
         names = {a['name'] for a in idx}
         assert {'Alice', 'Bob', 'Carol', 'Dan'}.issubset(names)
 
+    def test_search_index_has_period_fields(self, populated_conn):
+        idx = build_maine_search_index(populated_conn)
+        alice = next(a for a in idx if a['name'] == 'Alice')
+        # New fields the master table + detail modal rely on:
+        for field in (
+            'current_12mo_volume', 'current_12mo_sides',
+            'prior_12mo_volume',   'prior_12mo_sides',
+            'three_yr_volume',     'three_yr_sides',
+            'all_time_volume',     'all_time_sides',
+        ):
+            assert field in alice, f'missing field: {field}'
+
 
 # === Currency formatting ===
 
