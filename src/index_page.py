@@ -106,25 +106,22 @@ def _build_html(
         <iframe id="redfin" src="redfin.html"></iframe>
         <div id="master" class="master-tab">
             <div class="master-filters">
+                <div class="entity-toggle">
+                    <button class="pill active" data-entity="agent">Agents</button>
+                    <button class="pill" data-entity="brokerage">Brokerages</button>
+                </div>
                 <select id="filter-town"><option value="">All Towns</option></select>
-                <select id="filter-type"><option value="">All Types</option><option value="individual">Individual</option><option value="team">Team</option></select>
+                <select id="filter-period">
+                    <option value="current_12mo_volume" selected>12mo</option>
+                    <option value="three_yr_volume">3yr</option>
+                    <option value="all_time_volume">All-Time</option>
+                </select>
                 <input type="text" id="filter-name" placeholder="Filter by name or office...">
                 <span id="master-count" class="master-count"></span>
             </div>
+            <div id="movers-banner" class="movers-banner"></div>
             <div class="table-wrap"><table id="master-table">
-                <thead><tr>
-                    <th class="num">#</th>
-                    <th>Agent</th>
-                    <th>Office</th>
-                    <th class="num">Total Sides</th>
-                    <th class="num">Listing</th>
-                    <th class="num">Buyer</th>
-                    <th class="num">12-Mo</th>
-                    <th class="num">Avg Price</th>
-                    <th class="num">Total Volume</th>
-                    <th class="num">Most Recent</th>
-                    <th>Primary Towns</th>
-                </tr></thead>
+                <thead><tr id="master-head"></tr></thead>
                 <tbody id="master-body"></tbody>
             </table></div>
         </div>
@@ -338,6 +335,26 @@ def _css() -> str:
         display: flex; gap: 10px; align-items: center;
         margin-bottom: 16px; flex-wrap: wrap;
     }
+    .entity-toggle { display: inline-flex; background: var(--bg-elevated); border-radius: 20px; padding: 2px; margin-right: 12px; }
+    .entity-toggle .pill { padding: 4px 12px; font-size: 0.75rem; font-family: var(--mono);
+        background: transparent; border: none; color: var(--text-2); cursor: pointer; border-radius: 18px; }
+    .entity-toggle .pill.active { background: var(--accent); color: #1a1a1a; font-weight: 600; }
+    .movers-banner { margin: 12px 0; padding: 12px; background: var(--bg-surface); border-radius: 10px; }
+    .movers-banner.hidden { display: none; }
+    .movers-banner h3 { font-size: 0.78rem; margin-bottom: 8px; color: var(--text-2); letter-spacing: 0.04em; }
+    .movers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .movers-col-title { font-size: 0.7rem; text-transform: uppercase; color: var(--text-3); margin-bottom: 6px; }
+    .mover-card { padding: 8px 10px; background: var(--bg-elevated); border-radius: 6px; margin-bottom: 4px;
+        display: grid; grid-template-columns: 40px 1fr; gap: 2px 8px; font-size: 0.75rem; cursor: pointer; }
+    .mover-card:hover { background: var(--bg-hover); }
+    .mover-card .mover-delta { grid-row: span 2; align-self: center; font-family: var(--mono); font-weight: 600; text-align: center; }
+    .mover-card .mover-name { font-weight: 600; }
+    .mover-card .mover-office { font-size: 0.7rem; color: var(--text-2); }
+    .mover-card .mover-line { grid-column: 1 / -1; font-size: 0.68rem; color: var(--text-3); font-family: var(--mono); }
+    .delta-up { color: hsl(140, 60%, 60%); }
+    .delta-down { color: hsl(0, 60%, 62%); }
+    .delta-new { color: var(--accent); }
+    .delta-flat { color: var(--text-3); }
     .master-filters select, .master-filters input {
         padding: 8px 12px; border-radius: var(--radius);
         border: 1px solid rgba(255,255,255,0.08);
@@ -377,7 +394,278 @@ def _leaderboard_js() -> str:
     movers banner, and handles Agent/Brokerage toggle + Town filter +
     Period selector + in-table search.
     """
-    return '/* Leaderboard JS — implemented in Task C2+ */'
+    return r'''
+    (function(){
+        const agentRows = JSON.parse(document.getElementById("agent-kpis").textContent);
+        const brokerageRows = JSON.parse(document.getElementById("brokerage-kpis").textContent);
+        const head = document.getElementById("master-head");
+        const body = document.getElementById("master-body");
+        const count = document.getElementById("master-count");
+        const filterTown = document.getElementById("filter-town");
+        const filterPeriod = document.getElementById("filter-period");
+        const filterName = document.getElementById("filter-name");
+        const moversBanner = document.getElementById("movers-banner");
+
+        let entity = "agent";  // "agent" or "brokerage"
+        let sort = {col: "current_12mo_volume", asc: false};
+
+        // Column defs per entity
+        const COLS = {
+            agent: [
+                {key: null,                  label: "#",           num: true,  sortable: false},
+                {key: "name",                label: "Agent",       num: false, sortable: true},
+                {key: "office",              label: "Office",      num: false, sortable: true},
+                {key: "_delta",              label: "12mo \u0394", num: true,  sortable: true},
+                {key: "current_12mo_volume", label: "12mo Vol",    num: true,  sortable: true, fmt: "cur"},
+                {key: "current_12mo_sides",  label: "12mo Sides",  num: true,  sortable: true},
+                {key: "three_yr_volume",     label: "3yr Vol",     num: true,  sortable: true, fmt: "cur"},
+                {key: "all_time_volume",     label: "All-Time Vol", num: true, sortable: true, fmt: "cur"},
+                {key: "all_time_sides",      label: "All-Time",    num: true,  sortable: true},
+                {key: "_lb",                 label: "L / B",       num: true,  sortable: false},
+                {key: "_avg3",               label: "Avg (3yr)",   num: true,  sortable: true, fmt: "cur"},
+                {key: "most_recent",         label: "Most Recent", num: true,  sortable: true},
+            ],
+            brokerage: [
+                {key: null,                  label: "#",           num: true,  sortable: false},
+                {key: "name",                label: "Brokerage",   num: false, sortable: true},
+                {key: "agent_count",         label: "Agents",      num: true,  sortable: true},
+                {key: "_delta",              label: "12mo \u0394", num: true,  sortable: true},
+                {key: "current_12mo_volume", label: "12mo Vol",    num: true,  sortable: true, fmt: "cur"},
+                {key: "current_12mo_sides",  label: "12mo Sides",  num: true,  sortable: true},
+                {key: "three_yr_volume",     label: "3yr Vol",     num: true,  sortable: true, fmt: "cur"},
+                {key: "all_time_volume",     label: "All-Time Vol", num: true, sortable: true, fmt: "cur"},
+                {key: "all_time_sides",      label: "All-Time",    num: true,  sortable: true},
+                {key: "_lb",                 label: "L / B",       num: true,  sortable: false},
+                {key: "_avg3",               label: "Avg (3yr)",   num: true,  sortable: true, fmt: "cur"},
+                {key: "most_recent",         label: "Most Recent", num: true,  sortable: true},
+            ],
+        };
+
+        // Populate town filter from agent rows' primary_towns
+        const towns = new Set();
+        agentRows.forEach(r => {
+            if (r.primary_towns) r.primary_towns.split(",").forEach(t => towns.add(t.trim()));
+        });
+        [...towns].filter(Boolean).sort().forEach(t => {
+            const opt = document.createElement("option");
+            opt.value = t; opt.textContent = t;
+            filterTown.appendChild(opt);
+        });
+
+        function fmtCur(n) {
+            n = Math.round(n || 0);
+            if (n >= 1e6) return "$" + (n/1e6).toFixed(1) + "M";
+            if (n >= 1e3) return "$" + Math.round(n/1e3) + "K";
+            if (n === 0) return "\u2014";
+            return "$" + n.toLocaleString();
+        }
+        function esc(s) { const d = document.createElement("div"); d.textContent = s == null ? "" : s; return d.innerHTML; }
+
+        function enrichRow(r) {
+            const threeSides = r.three_yr_sides || 0;
+            const threeVol = r.three_yr_volume || 0;
+            return Object.assign({}, r, {
+                _avg3: threeSides > 0 ? threeVol / threeSides : 0,
+                _lb: (r.listing_sides || 0) + " : " + (r.buyer_sides || 0),
+            });
+        }
+
+        function computeMovers(rows) {
+            // Rank by current 12mo sides
+            const currentSorted = [...rows].sort((a,b) => (b.current_12mo_sides||0) - (a.current_12mo_sides||0));
+            const currentRank = {}; currentSorted.forEach((r,i) => currentRank[r.name] = i+1);
+
+            const prior = rows.filter(r => (r.prior_12mo_sides||0) > 0);
+            const priorSorted = [...prior].sort((a,b) => (b.prior_12mo_sides||0) - (a.prior_12mo_sides||0));
+            const priorRank = {}; priorSorted.forEach((r,i) => priorRank[r.name] = i+1);
+
+            const deltas = {};
+            const risers = [], fallers = [], news = [];
+            rows.forEach(r => {
+                if ((r.current_12mo_sides||0) < 5) return;
+                const pr = priorRank[r.name];
+                if (pr == null) { deltas[r.name] = null; news.push(r); return; }
+                const d = pr - currentRank[r.name];
+                deltas[r.name] = d;
+                if (d > 0) risers.push({...r, delta: d});
+                else if (d < 0) fallers.push({...r, delta: d});
+            });
+            news.sort((a,b) => (b.current_12mo_volume||0) - (a.current_12mo_volume||0));
+            risers.sort((a,b) => b.delta - a.delta);
+            fallers.sort((a,b) => a.delta - b.delta);
+            return {
+                deltas,
+                risers: [...news.map(r => ({...r, delta: null})), ...risers].slice(0, 5),
+                fallers: fallers.slice(0, 5),
+                qualifying: rows.filter(r => (r.current_12mo_sides||0) >= 5).length,
+            };
+        }
+
+        function fmtDelta(d) {
+            if (d == null) return '<span class="delta-new">NEW</span>';
+            if (d > 0)   return '<span class="delta-up">\u25b2' + d + '</span>';
+            if (d < 0)   return '<span class="delta-down">\u25bc' + Math.abs(d) + '</span>';
+            return '<span class="delta-flat">\u2014</span>';
+        }
+
+        function renderMovers(movers) {
+            if (movers.qualifying < 10) {
+                moversBanner.classList.add("hidden");
+                return;
+            }
+            moversBanner.classList.remove("hidden");
+            function card(m, dir) {
+                const pct = (m.prior_12mo_volume > 0)
+                    ? Math.round((m.current_12mo_volume - m.prior_12mo_volume) / m.prior_12mo_volume * 100)
+                    : null;
+                const pctStr = pct == null ? "" : (pct > 0 ? "+" + pct + "%" : pct + "%");
+                return '<div class="mover-card" data-name="' + esc(m.name) + '">' +
+                    '<span class="mover-delta">' + fmtDelta(m.delta) + '</span>' +
+                    '<span class="mover-name">' + esc(m.name) + '</span>' +
+                    '<span class="mover-office">' + esc(m.office || "") + '</span>' +
+                    '<span class="mover-line">12mo: ' + fmtCur(m.current_12mo_volume) +
+                    ' (vs ' + fmtCur(m.prior_12mo_volume) + ')  ' + pctStr + '</span>' +
+                    '</div>';
+            }
+            moversBanner.innerHTML =
+                '<h3>\ud83d\udd25 Biggest Movers \u2014 12mo vs prior 12mo</h3>' +
+                '<div class="movers-grid">' +
+                '<div><div class="movers-col-title">\u25b2 Risers</div>' +
+                (movers.risers.map(m => card(m, "up")).join("") || '<p class="no-data">No qualifying risers.</p>') +
+                '</div>' +
+                '<div><div class="movers-col-title">\u25bc Fallers</div>' +
+                (movers.fallers.map(m => card(m, "down")).join("") || '<p class="no-data">No qualifying fallers.</p>') +
+                '</div></div>';
+        }
+
+        function renderHead() {
+            const cols = COLS[entity];
+            head.innerHTML = cols.map((c, idx) => {
+                const cls = (c.num ? "num " : "") + (c.sortable ? "sortable " : "") + (sort.col === c.key ? "sort-active" : "");
+                const arrow = sort.col === c.key ? (sort.asc ? "\u25b2" : "\u25bc") : (c.sortable ? "\u2195" : "");
+                return '<th class="' + cls.trim() + '" data-col="' + (c.key || "") + '">' +
+                    esc(c.label) + ' <span class="sort-arrow">' + arrow + '</span></th>';
+            }).join("");
+            head.querySelectorAll("th.sortable").forEach(th => {
+                th.addEventListener("click", () => {
+                    const k = th.dataset.col;
+                    sort = {col: k, asc: sort.col === k ? !sort.asc : false};
+                    render();
+                });
+            });
+        }
+
+        function render() {
+            const raw = entity === "agent" ? agentRows : brokerageRows;
+            let rows = raw.map(enrichRow);
+
+            // Town filter
+            const townVal = filterTown.value.toLowerCase();
+            if (townVal) rows = rows.filter(r => (r.primary_towns||"").toLowerCase().includes(townVal));
+
+            // Name/office filter
+            const nameVal = filterName.value.toLowerCase().trim();
+            if (nameVal) rows = rows.filter(r =>
+                (r.name||"").toLowerCase().includes(nameVal) ||
+                (r.office||"").toLowerCase().includes(nameVal));
+
+            // Compute movers on filtered set
+            const movers = computeMovers(rows);
+            renderMovers(movers);
+
+            // Attach delta to rows
+            rows = rows.map(r => ({...r, _delta: movers.deltas[r.name]}));
+
+            // Sort
+            const col = sort.col;
+            if (col) {
+                rows.sort((a, b) => {
+                    const va = a[col], vb = b[col];
+                    if (va == null && vb == null) return 0;
+                    if (va == null) return 1;
+                    if (vb == null) return -1;
+                    if (typeof va === "string") return sort.asc ? va.localeCompare(vb) : vb.localeCompare(va);
+                    return sort.asc ? va - vb : vb - va;
+                });
+            }
+
+            // Town filter triggers top-50 cap
+            if (townVal) rows = rows.slice(0, 50);
+
+            // Render body
+            const cols = COLS[entity];
+            body.innerHTML = rows.map((r, i) => {
+                const cells = cols.map(c => {
+                    let v;
+                    if (c.key === null) v = i + 1;
+                    else if (c.key === "_delta") v = fmtDelta(r._delta);
+                    else if (c.key === "_lb") v = r._lb;
+                    else if (c.key === "_avg3") v = fmtCur(r._avg3);
+                    else if (c.fmt === "cur") v = fmtCur(r[c.key]);
+                    else if (c.key === "office") v = esc(r.office || "");
+                    else if (c.key === "name") v = esc(r.name || "");
+                    else if (c.key === "most_recent") v = esc(r.most_recent || "");
+                    else v = r[c.key] != null ? r[c.key].toLocaleString() : "\u2014";
+                    return '<td class="' + (c.num ? "num" : "") + '">' + v + '</td>';
+                }).join("");
+                return '<tr data-name="' + esc(r.name) + '">' + cells + '</tr>';
+            }).join("");
+            count.textContent = rows.length + (townVal ? " (top 50 of " + townVal + ")" : " of " + raw.length);
+
+            // Row click -> existing detail modal (reuses showDetail from search JS)
+            body.querySelectorAll("tr").forEach(tr => {
+                tr.addEventListener("click", () => {
+                    if (typeof window.__showDetailByName === "function") {
+                        window.__showDetailByName(tr.dataset.name);
+                    }
+                });
+            });
+        }
+
+        // Wire up filters
+        document.querySelectorAll(".entity-toggle .pill").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".entity-toggle .pill").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                entity = btn.dataset.entity;
+                renderHead();
+                render();
+            });
+        });
+        filterTown.addEventListener("change", render);
+        filterPeriod.addEventListener("change", () => {
+            sort = {col: filterPeriod.value, asc: false};
+            render();
+        });
+        let t; filterName.addEventListener("input", () => { clearTimeout(t); t = setTimeout(render, 180); });
+
+        // Mover card clicks
+        document.addEventListener("click", e => {
+            const card = e.target.closest(".mover-card");
+            if (!card) return;
+            const name = card.dataset.name;
+            if (typeof window.__showDetailByName === "function") window.__showDetailByName(name);
+        });
+
+        // Lazy render when tab first opens
+        let rendered = false;
+        document.querySelectorAll(".tab").forEach(btn => {
+            btn.addEventListener("click", () => {
+                if (btn.dataset.tab === "master" && !rendered) {
+                    renderHead();
+                    render();
+                    rendered = true;
+                }
+            });
+        });
+        // If the master tab is the default, render now.
+        if (document.querySelector('.tab.active').dataset.tab === "master") {
+            renderHead();
+            render();
+            rendered = true;
+        }
+    })();
+    '''
 
 
 def _search_js() -> str:
@@ -464,6 +752,21 @@ def _search_js() -> str:
             });
         });
     }
+
+    window.__showDetailByName = function(name) {
+        const ql = (name || "").toLowerCase();
+        const matches = [];
+        [redfin, zillow, maine].forEach((arr, idx) => {
+            const src = ["redfin","zillow","maine"][idx];
+            arr.forEach(a => {
+                if ((a.name || "").toLowerCase() === ql) matches.push({...a, _src: src});
+            });
+        });
+        if (!matches.length) return;
+        const g = {name: matches[0].name, office: matches[0].office, sources: [], data: {}};
+        matches.forEach(m => { g.sources.push(m._src); g.data[m._src] = m; if (m.office) g.office = m.office; });
+        showDetail(g);
+    };
 
     function showDetail(g) {
         results.classList.add("hidden");
@@ -581,162 +884,4 @@ def _search_js() -> str:
         return "$" + n.toLocaleString();
     }
     function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
-
-    // === MASTER TABLE ===
-    const masterBody = document.getElementById("master-body");
-    const filterTown = document.getElementById("filter-town");
-    const filterType = document.getElementById("filter-type");
-    const filterName = document.getElementById("filter-name");
-    const masterCount = document.getElementById("master-count");
-
-    // Build master dataset from Maine MLS (authoritative source of truth),
-    // optionally enriched with Zillow data on exact name match (case-insensitive)
-    // for team badge and 12-month recency indicator.
-    const zillowByName = {};
-    zillow.forEach(a => {
-        if (a.name) zillowByName[a.name.toLowerCase().trim()] = a;
-    });
-    const masterData = maine.map(a => {
-        const key = (a.name || "").toLowerCase().trim();
-        const z = zillowByName[key];
-        const totalSides = a.total_sides || 0;
-        const volume = a.volume || 0;
-        const avg = totalSides > 0 ? volume / totalSides : 0;
-        return {
-            name: a.name || "",
-            office: a.office || "",
-            type: z ? (z.type || "") : "",
-            totalSides: totalSides,
-            listing: a.listing_sides || 0,
-            buyer: a.buyer_sides || 0,
-            mo12: z ? (z.sales_12mo || 0) : 0,
-            avg: avg,
-            volume: volume,
-            mostRecent: a.most_recent || "",
-            towns: (a.towns || []).join(", "),
-            townList: a.towns || [],
-            _maine: a,
-            _zillow: z,
-        };
-    });
-
-    // Populate town filter
-    const allTowns = new Set();
-    masterData.forEach(a => a.townList.forEach(t => allTowns.add(t)));
-    [...allTowns].sort().forEach(t => {
-        const opt = document.createElement("option");
-        opt.value = t; opt.textContent = t;
-        filterTown.appendChild(opt);
-    });
-
-    function renderMaster() {
-        const townVal = filterTown.value.toLowerCase();
-        const typeVal = filterType.value.toLowerCase();
-        const nameVal = filterName.value.toLowerCase().trim();
-
-        let filtered = masterData.filter(a => {
-            if (townVal && !a.townList.some(t => t.toLowerCase() === townVal)) return false;
-            if (typeVal && a.type.toLowerCase() !== typeVal) return false;
-            if (nameVal && !a.name.toLowerCase().includes(nameVal) && !a.office.toLowerCase().includes(nameVal)) return false;
-            return true;
-        });
-
-        // Apply current sort
-        if (masterSort.col >= 0) {
-            filtered.sort((a, b) => {
-                const va = masterSortVal(a, masterSort.col);
-                const vb = masterSortVal(b, masterSort.col);
-                if (typeof va === "string" && typeof vb === "string")
-                    return masterSort.asc ? va.localeCompare(vb) : vb.localeCompare(va);
-                return masterSort.asc ? va - vb : vb - va;
-            });
-        }
-
-        let html = "";
-        filtered.forEach((a, i) => {
-            const teamBadge = a.type === "team" ? ' <span class="sr-badge zillow">team</span>' : "";
-            html += '<tr data-idx="' + i + '">' +
-                '<td class="num">' + (i+1) + '</td>' +
-                '<td>' + esc(a.name) + teamBadge + '</td>' +
-                '<td>' + esc(a.office) + '</td>' +
-                '<td class="num">' + a.totalSides.toLocaleString() + '</td>' +
-                '<td class="num">' + a.listing.toLocaleString() + '</td>' +
-                '<td class="num">' + a.buyer.toLocaleString() + '</td>' +
-                '<td class="num">' + (a.mo12 ? a.mo12 : "&mdash;") + '</td>' +
-                '<td class="num">' + fmtCur(a.avg) + '</td>' +
-                '<td class="num">' + fmtCur(a.volume) + '</td>' +
-                '<td class="num">' + esc(a.mostRecent || "") + '</td>' +
-                '<td>' + esc(a.towns) + '</td>' +
-                '</tr>';
-        });
-        masterBody.innerHTML = html;
-        masterCount.textContent = filtered.length + " of " + masterData.length + " agents";
-
-        // Click row to show detail
-        masterBody.querySelectorAll("tr").forEach(tr => {
-            tr.addEventListener("click", () => {
-                const idx = parseInt(tr.dataset.idx);
-                const a = filtered[idx];
-                if (!a) return;
-                const sources = ["maine"];
-                const data = {maine: a._maine};
-                if (a._zillow) { sources.push("zillow"); data.zillow = a._zillow; }
-                showDetail({name: a.name, office: a.office, sources: sources, data: data});
-            });
-        });
-    }
-
-    const masterSort = {col: 3, asc: false}; // Default: total sides desc
-    function masterSortVal(a, col) {
-        switch(col) {
-            case 1: return a.name.toLowerCase();
-            case 2: return a.office.toLowerCase();
-            case 3: return a.totalSides || 0;
-            case 4: return a.listing || 0;
-            case 5: return a.buyer || 0;
-            case 6: return a.mo12 || 0;
-            case 7: return a.avg || 0;
-            case 8: return a.volume || 0;
-            case 9: return a.mostRecent || "";
-            case 10: return a.towns.toLowerCase();
-            default: return 0;
-        }
-    }
-
-    // Sort headers
-    document.querySelectorAll("#master-table thead th").forEach((th, idx) => {
-        const arrow = document.createElement("span");
-        arrow.className = "sort-arrow";
-        arrow.textContent = idx === 3 ? "\u25BC" : "\u2195";
-        th.appendChild(arrow);
-        if (idx === 3) th.classList.add("sort-active");
-
-        th.addEventListener("click", () => {
-            const asc = masterSort.col === idx ? !masterSort.asc : false;
-            masterSort.col = idx; masterSort.asc = asc;
-            document.querySelectorAll("#master-table thead th").forEach(h => {
-                h.classList.remove("sort-active");
-                h.querySelector(".sort-arrow").textContent = "\u2195";
-            });
-            th.classList.add("sort-active");
-            arrow.textContent = asc ? "\u25B2" : "\u25BC";
-            renderMaster();
-        });
-    });
-
-    filterTown.addEventListener("change", renderMaster);
-    filterType.addEventListener("change", renderMaster);
-    let nameTimer;
-    filterName.addEventListener("input", () => { clearTimeout(nameTimer); nameTimer = setTimeout(renderMaster, 200); });
-
-    // Initial render when tab is first shown
-    let masterRendered = false;
-    document.querySelectorAll(".tab").forEach(btn => {
-        btn.addEventListener("click", () => {
-            if (btn.dataset.tab === "master" && !masterRendered) {
-                renderMaster();
-                masterRendered = true;
-            }
-        });
-    });
     '''
