@@ -92,7 +92,7 @@ def _build_html(
     <nav class="tab-bar">
         <div class="logo">Southern Coastal <span>Maine</span></div>
         <button class="tab active" data-tab="maine">Maine MLS</button>
-        <button class="tab" data-tab="master">All Agents</button>
+        <button class="tab" data-tab="master">Leaderboard</button>
         <button class="tab" data-tab="zillow">Zillow <span class="archived-pill">archive</span></button>
         <button class="tab" data-tab="redfin">Redfin <span class="archived-pill">archive</span></button>
         <div class="search-wrap">
