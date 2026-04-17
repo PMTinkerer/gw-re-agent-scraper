@@ -35,17 +35,29 @@ def generate_index_html(
     zillow_index = build_zillow_search_index(zillow_conn) if zillow_conn else []
     maine_index = build_maine_search_index(maine_conn) if maine_conn else []
 
+    # KPI rollups for the Leaderboard tab.
+    agent_kpis: list = []
+    brokerage_kpis: list = []
+    if maine_conn is not None:
+        from .maine_kpis import query_agent_kpis, query_brokerage_kpis
+        agent_kpis = query_agent_kpis(maine_conn)
+        brokerage_kpis = query_brokerage_kpis(maine_conn)
+
     redfin_json = json.dumps(redfin_index, separators=(',', ':'))
     zillow_json = json.dumps(zillow_index, separators=(',', ':'))
     maine_json = json.dumps(maine_index, separators=(',', ':'))
+    agent_json = json.dumps(agent_kpis, separators=(',', ':'), default=str)
+    brokerage_json = json.dumps(brokerage_kpis, separators=(',', ':'), default=str)
 
-    html = _build_html(redfin_json, zillow_json, maine_json)
+    html = _build_html(redfin_json, zillow_json, maine_json, agent_json, brokerage_json)
 
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(html)
     logger.info(
-        'Index page written to %s (%d Redfin, %d Zillow, %d Maine agents)',
+        'Index page written to %s (%d Redfin, %d Zillow, %d Maine; '
+        '%d agent KPIs, %d brokerage KPIs)',
         output_path, len(redfin_index), len(zillow_index), len(maine_index),
+        len(agent_kpis), len(brokerage_kpis),
     )
     return output_path
 
@@ -59,7 +71,13 @@ def _fmt_currency(amount: int | float) -> str:
     return f'${amount:,}'
 
 
-def _build_html(redfin_json: str, zillow_json: str, maine_json: str) -> str:
+def _build_html(
+    redfin_json: str,
+    zillow_json: str,
+    maine_json: str,
+    agent_json: str,
+    brokerage_json: str,
+) -> str:
     return f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -115,7 +133,10 @@ def _build_html(redfin_json: str, zillow_json: str, maine_json: str) -> str:
     <script id="redfin-index" type="application/json">{redfin_json}</script>
     <script id="zillow-index" type="application/json">{zillow_json}</script>
     <script id="maine-index" type="application/json">{maine_json}</script>
+    <script id="agent-kpis" type="application/json">{agent_json}</script>
+    <script id="brokerage-kpis" type="application/json">{brokerage_json}</script>
     <script>{_search_js()}</script>
+    <script>{_leaderboard_js()}</script>
 </body>
 </html>'''
 
@@ -347,6 +368,16 @@ def _css() -> str:
     #master-table .sort-arrow { margin-left: 4px; font-size: 0.65rem; color: var(--text-3); }
     #master-table th.sort-active .sort-arrow { color: var(--accent); }
     '''
+
+
+def _leaderboard_js() -> str:
+    """JS for the redesigned Leaderboard tab (Maine KPI-driven).
+
+    Consumes #agent-kpis and #brokerage-kpis JSON, renders the master table,
+    movers banner, and handles Agent/Brokerage toggle + Town filter +
+    Period selector + in-table search.
+    """
+    return '/* Leaderboard JS — implemented in Task C2+ */'
 
 
 def _search_js() -> str:
