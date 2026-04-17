@@ -9,42 +9,68 @@ import re
 
 # === Search Results Parsing ===
 
-_CARD_RE = re.compile(
-    r'\$\s*([\d,]+)\s*Closed\\\\\s*\\\\\s*'
-    r'\*\*([^*]+)\*\*\s+\*\*([^*]+)\*\*\\\\\s*\\\\\s*'
-    r'(\d+)\s+Beds?\\\\\s*\\\\\s*'
-    r'(\d+)\s+Baths?\\\\\s*\\\\\s*'
-    r'([\d,]+)\s+sqft\\\\\s*\\\\\s*'
-    r'Brought to you by\s+([^\]]+?)\]'
-    r'\((https://mainelistings\.com/listings/[^)]+)\)',
-    re.DOTALL,
-)
+def _make_card_re(status_pattern: str) -> re.Pattern:
+    """Build a regex matching search-result cards for the given status.
+
+    status_pattern is a regex fragment (e.g. 'Closed' or 'Active|New Listing').
+    The resulting regex captures nine groups:
+        1=price  2=status  3=address  4=city+state+zip
+        5=beds   6=baths   7=sqft     8=listing_office  9=detail_url
+    """
+    return re.compile(
+        r'\$\s*([\d,]+)\s*(' + status_pattern + r')\\\\\s*\\\\\s*'
+        r'\*\*([^*]+)\*\*\s+\*\*([^*]+)\*\*\\\\\s*\\\\\s*'
+        r'(\d+)\s+Beds?\\\\\s*\\\\\s*'
+        r'(\d+)\s+Baths?\\\\\s*\\\\\s*'
+        r'([\d,]+)\s+sqft\\\\\s*\\\\\s*'
+        r'Brought to you by\s+([^\]]+?)\]'
+        r'\((https://mainelistings\.com/listings/[^)]+)\)',
+        re.DOTALL,
+    )
+
+
+_CLOSED_CARD_RE = _make_card_re(r'Closed')
+# "Active" and "New Listing" are both active-state badges. "Pending" can
+# show up on active-search pages when a listing goes under contract.
+_ACTIVE_CARD_RE = _make_card_re(r'Active|New Listing|Pending')
 
 _PAGINATION_RE = re.compile(r'(\d+)\s+of\s+(\d+)')
 _TOTAL_RESULTS_RE = re.compile(r'([\d,]+)\s+Results')
 
 
-def parse_search_cards(markdown: str) -> list[dict]:
-    """Parse listing cards from search results markdown."""
-    cards = []
-    for m in _CARD_RE.finditer(markdown):
-        price_str = m.group(1).replace(',', '')
-        address = m.group(2).strip()
-        city_state_zip = m.group(3).strip()
+def parse_search_cards(markdown: str, status: str = 'Closed') -> list[dict]:
+    """Parse listing cards from search results markdown.
 
+    Args:
+        markdown: markdown response from a mainelistings.com search page.
+        status: 'Closed' parses sold cards (price → sale_price).
+                'Active' parses live cards (price → list_price).
+                Cards badged 'Pending' get status='Pending'.
+    """
+    card_re = _CLOSED_CARD_RE if status == 'Closed' else _ACTIVE_CARD_RE
+
+    cards: list[dict] = []
+    for m in card_re.finditer(markdown):
+        price_str = m.group(1).replace(',', '')
+        price = int(price_str) if price_str else None
+        badge = m.group(2).strip()
+        address = m.group(3).strip()
+        city_state_zip = m.group(4).strip()
         city, state, zip_code = _parse_city_state_zip(city_state_zip)
 
         cards.append({
-            'sale_price': int(price_str) if price_str else None,
+            'status': 'Active' if badge == 'New Listing' else badge,
+            'sale_price': price if status == 'Closed' else None,
+            'list_price': price if status != 'Closed' else None,
             'address': address,
             'city': city,
             'state': state,
             'zip': zip_code,
-            'beds': int(m.group(4)),
-            'baths': int(m.group(5)),
-            'sqft': int(m.group(6).replace(',', '')),
-            'listing_office': m.group(7).strip(),
-            'detail_url': m.group(8).strip(),
+            'beds': int(m.group(5)),
+            'baths': int(m.group(6)),
+            'sqft': int(m.group(7).replace(',', '')),
+            'listing_office': m.group(8).strip(),
+            'detail_url': m.group(9).strip(),
         })
     return cards
 

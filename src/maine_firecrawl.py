@@ -41,6 +41,14 @@ _BLOCK_STRINGS = ['unexpected occurred', 'access denied', 'captcha']
 _DB_LOCK_RETRIES = 5
 
 
+def build_search_url(*, town: str, page: int, status: str = 'Closed') -> str:
+    """Compose a mainelistings.com search URL for one town + status + page."""
+    url = f'{_SEARCH_URL}?city={town}&mls_status={status}'
+    if page > 1:
+        url += f'&page={page}'
+    return url
+
+
 def _get_client():
     from firecrawl import Firecrawl
     return Firecrawl(api_key=require_firecrawl_key())
@@ -189,9 +197,7 @@ def _discover_town(
     town_count = 0
 
     for page_num in range(1, max_pages + 1):
-        url = f'{_SEARCH_URL}?city={town}&mls_status=Closed'
-        if page_num > 1:
-            url += f'&page={page_num}'
+        url = build_search_url(town=town, page=page_num, status='Closed')
 
         logger.info('Discovering %s page %d...', town, page_num)
         try:
