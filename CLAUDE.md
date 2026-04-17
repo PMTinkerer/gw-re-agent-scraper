@@ -59,18 +59,33 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 - CLI: `python -m src.zillow_main --enrich-profiles --enrich-batch 50`
 - Data stored in `zillow_sold_transactions` table + enrichment columns on `zillow_profiles`
 
-### Phase 5: Maine Listings (MREIS MLS) (BUILT — PHASE 1 COMPLETE, PHASE 2 PENDING UPGRADE)
-- **This is the primary transaction source going forward.** Redfin misses buyer agents; Zillow paginates to only 5 sold rows. MaineListings.com (the Maine MLS public portal) provides BOTH listing and buyer agents on every closed transaction.
-- Architecture: Two-phase scraping
-  - **Phase 1 (discovery — DONE)**: Scrape `/listings?city={town}&mls_status=Closed&page={N}` search pages. Extract listing URL, price, address, beds/baths/sqft, listing office. 10,587 closed listings discovered across all 10 towns (~600 Firecrawl credits).
-  - **Phase 2 (enrichment — PENDING)**: Visit each detail page, extract data from embedded NUXT JavaScript blob. Fields: MLS#, listing_agent + MLS ID + email, buyer_agent + MLS ID + email, listing_office, buyer_office, close_date, sale_price, list_price, property_type, days_on_market.
-- Full enrichment cost: ~10,587 credits (needs Standard plan at $99/mo for one-time backfill)
-- Weekly incremental (`--recent-only`): ~50-100 credits/week (fits Hobby plan)
-- Key technical detail: Detail page has TWO `list_agent` objects in NUXT — first is `co_list_agent` (usually null), second has real data. Parser finds the one where `list_agent_email` is a quoted string, not minified `a`.
+### Phase 5: Maine Listings (MREIS MLS) — COMPLETE (2026-04-16)
+- **This is the primary transaction source.** MaineListings.com (the public MREIS portal operated by Maine Association of REALTORS) provides BOTH listing and buyer agents on every closed transaction, going back to 2011.
+- Two-phase architecture:
+  - **Phase 1 (discovery — DONE)**: Scrape `/listings?city={town}&mls_status=Closed&page={N}` search pages. Extract listing URL, price, address, beds/baths/sqft, listing office. 16,029 closed listings across all 10 towns.
+  - **Phase 2 (enrichment — DONE)**: Visit each detail page, extract from embedded NUXT JavaScript blob. Fields: MLS#, listing_agent + MLS ID + email, buyer_agent + MLS ID + email, listing_office, buyer_office, close_date, sale_price, list_price, property_type, days_on_market. 16,024 enriched (99.97% success; 5 Firecrawl 500 errors will retry next run).
+- **Concurrent enrichment**: `ThreadPoolExecutor` with `--workers 25` + circuit breaker (aborts at 5 consecutive or 20 total failures). Thread-safe SQLite writes via shared `db_lock` + retry on lock contention (WAL mode).
+- **Alerting**: Pushover + Resend on circuit-breaker abort, unexpected exception, and run summary. Reads `~/.env` shared secrets. See `src/maine_notifier.py`.
+- **DB backup**: Before every mutating run, the DB is copied to `data/maine_listings.db.bak_<timestamp>` (last 3 retained).
+- **Town canonicalization**: Users can pass `--towns old_orchard_beach` or `--towns "Old Orchard Beach"` or `OLD-ORCHARD-BEACH`; `_canonicalize_town` in `src/maine_main.py` maps to the human-readable form mainelistings.com expects.
+- **Escape decoding**: NUXT blob embeds `\u002F` style escapes; decoded in `src/maine_parser.py::_decode_escapes` after regex extraction.
+- Weekly incremental (`--recent-only`): ~50-100 credits/week (fits Hobby plan). GitHub Actions cron Mondays 6:30am ET.
+- **Key technical detail**: Detail page has TWO `list_agent` objects in NUXT — first is `co_list_agent` (usually null), second has real data. Parser finds the one where `list_agent_email` is a quoted string.
 - Separate DB: `data/maine_listings.db`, state: `data/maine_scrape_state.json`
-- Modules: `src/maine_database.py`, `src/maine_state.py`, `src/maine_parser.py`, `src/maine_firecrawl.py`, `src/maine_main.py`
-- CLI: `python -m src.maine_main --discover --max-pages 90` then `python -m src.maine_main --enrich --batch-size 50`
-- Weekly: `python -m src.maine_main --discover --recent-only --enrich --batch-size 50`
+- Modules: `src/maine_database.py`, `src/maine_state.py`, `src/maine_parser.py`, `src/maine_firecrawl.py`, `src/maine_main.py`, `src/maine_notifier.py`, `src/maine_kpis.py`, `src/maine_report.py`, `src/maine_dashboard.py`
+- CLI: `python -m src.maine_main --discover --max-pages 90 --workers 3` then `python -m src.maine_main --enrich --batch-size 16500 --workers 25`
+- Weekly: `python -m src.maine_main --discover --recent-only --enrich --batch-size 200 --workers 10`
+
+### Phase 6: Interactive Leaderboard — COMPLETE (2026-04-17)
+- Renamed "All Agents" tab to **"Leaderboard"**; made Maine MLS the default landing tab.
+- Data layer (`src/maine_kpis.py`):
+  - `compute_cutoffs(today)` returns ISO date strings for current-12mo / prior-12mo / 3yr windows.
+  - `query_agent_kpis(conn, *, town=None, limit=None, today=None)` — one row per agent with all period sums + listing/buyer split + primary_towns.
+  - `query_brokerage_kpis(...)` — same shape aggregated by `listing_office` + `buyer_office` union (branches stay separate).
+  - `compute_rank_movers(rows, ...)` — pure-Python rank-delta computation. NEW entities (no prior-period activity) get delta=None and land in risers.
+- Static dashboard (`src/maine_dashboard.py`) and interactive tab (`src/index_page.py`) both consume the KPI helpers.
+- Interactive features: Agent/Brokerage toggle, Town filter (caps to top 50 when set), Period selector (12mo/3yr/All-time — changes default sort), in-table name/office search, sortable columns, Biggest Movers banner (top 5 risers + fallers; auto-hides when < 10 qualifying).
+- Row click / mover-card click → detail modal with every period split.
 
 ## Key Decisions
 - **Redfin CSV** for property data (reliable, structured, no browser needed)
