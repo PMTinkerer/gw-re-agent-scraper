@@ -78,7 +78,50 @@ def compute_rank_movers(
 ) -> dict:
     """Given KPI rows, compute rank deltas and return risers/fallers.
 
-    Returns {'risers': [...], 'fallers': [...], 'deltas': {name: int_or_None}}.
-    A None delta means the entity was NEW (no prior-period activity).
+    Rank is 1-based on the respective period's sides descending. Delta is
+    prior_rank - current_rank (positive = moved up).
+
+    NEW entities (prior sides = 0) get delta = None and are placed in risers.
+    Entities with current_sides < min_sides are excluded from both lists.
+
+    Returns {'risers': [...], 'fallers': [...]}.
     """
-    raise NotImplementedError  # Task A2
+    if not rows:
+        return {'risers': [], 'fallers': []}
+
+    # Rank by current period (desc)
+    current_sorted = sorted(rows, key=lambda r: r.get(current_field) or 0, reverse=True)
+    current_rank = {r['name']: i + 1 for i, r in enumerate(current_sorted)}
+
+    # Rank by prior period (desc), but only among entities with prior > 0
+    prior_eligible = [r for r in rows if (r.get(prior_field) or 0) > 0]
+    prior_sorted = sorted(prior_eligible, key=lambda r: r.get(prior_field) or 0, reverse=True)
+    prior_rank = {r['name']: i + 1 for i, r in enumerate(prior_sorted)}
+
+    enriched = []
+    for r in rows:
+        name = r['name']
+        current_sides = r.get(current_field) or 0
+        prior_sides = r.get(prior_field) or 0
+        if current_sides < min_sides:
+            continue
+        if name in prior_rank:
+            delta = prior_rank[name] - current_rank[name]
+        else:
+            delta = None  # NEW
+        enriched.append({**r, 'delta': delta, 'current_rank': current_rank[name]})
+
+    # NEW entities go to risers (sorted by current sides desc as tiebreaker)
+    news = [e for e in enriched if e['delta'] is None]
+    news.sort(key=lambda e: e.get(current_field) or 0, reverse=True)
+
+    # Positive deltas = risers, negative = fallers
+    positive = [e for e in enriched if e['delta'] is not None and e['delta'] > 0]
+    negative = [e for e in enriched if e['delta'] is not None and e['delta'] < 0]
+    positive.sort(key=lambda e: e['delta'], reverse=True)
+    negative.sort(key=lambda e: e['delta'])  # most negative first
+
+    risers = (news + positive)[:top_n]
+    fallers = negative[:top_n]
+
+    return {'risers': risers, 'fallers': fallers}
