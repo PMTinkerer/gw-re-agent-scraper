@@ -27,8 +27,91 @@ def get_connection(db_path: str | None = None) -> sqlite3.Connection:
     return conn
 
 
+_NEW_COLUMNS_ON_TRANSACTIONS = [
+    # (column_name, type_clause)
+    ('status', 'TEXT'),
+    ('list_date', 'TEXT'),
+    ('last_seen_at', 'TEXT'),
+    ('year_built', 'INTEGER'),
+    ('lot_sqft', 'INTEGER'),
+    ('description', 'TEXT'),
+    ('photo_url', 'TEXT'),
+]
+
+
+def _existing_columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    return {
+        r[1] for r in conn.execute(f'PRAGMA table_info({table})').fetchall()
+    }
+
+
+def _apply_additive_migration(conn: sqlite3.Connection) -> None:
+    """Add new columns to maine_transactions if they don't already exist.
+
+    SQLite lacks `ADD COLUMN IF NOT EXISTS`, so we inspect PRAGMA table_info
+    and skip existing columns. Safe to run repeatedly.
+    """
+    existing = _existing_columns(conn, 'maine_transactions')
+    for col, typ in _NEW_COLUMNS_ON_TRANSACTIONS:
+        if col not in existing:
+            conn.execute(f'ALTER TABLE maine_transactions ADD COLUMN {col} {typ}')
+    conn.commit()
+
+    # Backfill: any legacy row with close_date IS NOT NULL and status IS NULL
+    # is a pre-migration closed transaction. Mark it explicitly.
+    conn.execute('''
+        UPDATE maine_transactions
+        SET status = 'Closed'
+        WHERE status IS NULL AND close_date IS NOT NULL
+    ''')
+    conn.commit()
+
+
+_MAINE_TRANSACTIONS_INDEXES = [
+    # (index_name, column)
+    ('idx_maine_city', 'city'),
+    ('idx_maine_close_date', 'close_date'),
+    ('idx_maine_listing_agent', 'listing_agent'),
+    ('idx_maine_buyer_agent', 'buyer_agent'),
+    ('idx_maine_enrichment', 'enrichment_status'),
+    ('idx_maine_mls', 'mls_number'),
+    ('idx_maine_status', 'status'),
+    ('idx_maine_last_seen', 'last_seen_at'),
+]
+
+
+def _create_indexes(conn: sqlite3.Connection) -> None:
+    """Create indexes on maine_transactions for columns that exist.
+
+    Runs after additive migration so legacy DBs don't fail on missing columns.
+    Skips silently if the column isn't present yet (shouldn't happen after
+    migration, but defensive).
+    """
+    existing_cols = _existing_columns(conn, 'maine_transactions')
+    for idx_name, col in _MAINE_TRANSACTIONS_INDEXES:
+        if col in existing_cols:
+            conn.execute(
+                f'CREATE INDEX IF NOT EXISTS {idx_name} '
+                f'ON maine_transactions({col})'
+            )
+    # History table indexes are always safe — table created with full schema.
+    conn.execute(
+        'CREATE INDEX IF NOT EXISTS idx_history_url '
+        'ON maine_listing_history(detail_url)'
+    )
+    conn.execute(
+        'CREATE INDEX IF NOT EXISTS idx_history_date '
+        'ON maine_listing_history(snapshot_date)'
+    )
+    conn.commit()
+
+
 def init_db(conn: sqlite3.Connection) -> None:
-    """Create the maine_transactions table and indexes."""
+    """Create tables + indexes. Idempotent.
+
+    - maine_transactions: one row per MLS listing (any status).
+    - maine_listing_history: change-detected snapshots of (status, list_price).
+    """
     conn.executescript('''
         CREATE TABLE IF NOT EXISTS maine_transactions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,23 +142,31 @@ def init_db(conn: sqlite3.Connection) -> None:
             enrichment_attempts INTEGER DEFAULT 0,
             discovered_at TEXT NOT NULL,
             enriched_at TEXT,
-            scraped_at TEXT NOT NULL
+            scraped_at TEXT NOT NULL,
+            status TEXT,
+            list_date TEXT,
+            last_seen_at TEXT,
+            year_built INTEGER,
+            lot_sqft INTEGER,
+            description TEXT,
+            photo_url TEXT
         );
 
-        CREATE INDEX IF NOT EXISTS idx_maine_city
-            ON maine_transactions(city);
-        CREATE INDEX IF NOT EXISTS idx_maine_close_date
-            ON maine_transactions(close_date);
-        CREATE INDEX IF NOT EXISTS idx_maine_listing_agent
-            ON maine_transactions(listing_agent);
-        CREATE INDEX IF NOT EXISTS idx_maine_buyer_agent
-            ON maine_transactions(buyer_agent);
-        CREATE INDEX IF NOT EXISTS idx_maine_enrichment
-            ON maine_transactions(enrichment_status);
-        CREATE INDEX IF NOT EXISTS idx_maine_mls
-            ON maine_transactions(mls_number);
+        CREATE TABLE IF NOT EXISTS maine_listing_history (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            detail_url     TEXT NOT NULL,
+            snapshot_date  TEXT NOT NULL,
+            status         TEXT,
+            list_price     INTEGER,
+            FOREIGN KEY (detail_url) REFERENCES maine_transactions(detail_url)
+        );
     ''')
     conn.commit()
+
+    # Apply additive migration first so legacy columns are present before
+    # we try to create indexes on them.
+    _apply_additive_migration(conn)
+    _create_indexes(conn)
 
 
 def upsert_listing(conn: sqlite3.Connection, record: dict) -> bool:
