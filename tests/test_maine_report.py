@@ -41,8 +41,8 @@ def populated_conn(conn):
                 detail_url, listing_agent, listing_office,
                 buyer_agent, buyer_office, city,
                 sale_price, close_date,
-                enrichment_status, discovered_at, scraped_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'success', ?, ?)
+                enrichment_status, status, discovered_at, scraped_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'success', 'Closed', ?, ?)
         ''', (detail_url, la, lo, ba, bo, city, price, close, close, close))
     conn.commit()
     return conn
