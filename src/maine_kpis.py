@@ -51,9 +51,91 @@ def query_agent_kpis(
     limit: Optional[int] = None,
     today: Optional[str] = None,
 ) -> list[dict]:
-    """One row per agent with all period metrics. Agents = both listing and
-    buyer sides unioned together."""
-    raise NotImplementedError  # Task A3
+    """One row per unique agent name with all period metrics."""
+    cutoffs = compute_cutoffs(today)
+    exclusions = list(_AGENT_EXCLUSIONS)
+    excl_placeholders = ','.join(['(?)'] * len(exclusions))
+
+    town_sql_listing = ''
+    town_sql_buyer = ''
+    town_params: list = []
+    if town:
+        town_sql_listing = 'AND LOWER(city) = LOWER(?)'
+        town_sql_buyer = 'AND LOWER(city) = LOWER(?)'
+        town_params = [town, town]
+
+    # Build a union of listing-side and buyer-side rows so each appearance
+    # of an agent counts once. Then aggregate all period metrics in one pass.
+    sql = f'''
+        WITH sides AS (
+            SELECT listing_agent AS agent,
+                   listing_office AS office,
+                   'listing' AS role,
+                   sale_price, city, close_date
+            FROM maine_transactions
+            WHERE enrichment_status = 'success'
+              AND listing_agent IS NOT NULL AND TRIM(listing_agent) != ''
+              {town_sql_listing}
+            UNION ALL
+            SELECT buyer_agent AS agent,
+                   buyer_office AS office,
+                   'buyer' AS role,
+                   sale_price, city, close_date
+            FROM maine_transactions
+            WHERE enrichment_status = 'success'
+              AND buyer_agent IS NOT NULL AND TRIM(buyer_agent) != ''
+              {town_sql_buyer}
+        ),
+        excluded(agent_lower) AS (VALUES {excl_placeholders})
+        SELECT
+            s.agent AS name,
+            (
+                SELECT office FROM sides s2
+                WHERE s2.agent = s.agent AND s2.office IS NOT NULL
+                GROUP BY office ORDER BY COUNT(*) DESC LIMIT 1
+            ) AS office,
+            SUM(CASE WHEN s.close_date >= ? THEN 1 ELSE 0 END) AS current_12mo_sides,
+            SUM(CASE WHEN s.close_date >= ? THEN COALESCE(s.sale_price, 0) ELSE 0 END) AS current_12mo_volume,
+            SUM(CASE WHEN s.close_date >= ? AND s.close_date < ? THEN 1 ELSE 0 END) AS prior_12mo_sides,
+            SUM(CASE WHEN s.close_date >= ? AND s.close_date < ? THEN COALESCE(s.sale_price, 0) ELSE 0 END) AS prior_12mo_volume,
+            SUM(CASE WHEN s.close_date >= ? THEN 1 ELSE 0 END) AS three_yr_sides,
+            SUM(CASE WHEN s.close_date >= ? THEN COALESCE(s.sale_price, 0) ELSE 0 END) AS three_yr_volume,
+            COUNT(*) AS all_time_sides,
+            SUM(COALESCE(s.sale_price, 0)) AS all_time_volume,
+            SUM(CASE WHEN s.role = 'listing' THEN 1 ELSE 0 END) AS listing_sides,
+            SUM(CASE WHEN s.role = 'buyer' THEN 1 ELSE 0 END) AS buyer_sides,
+            MAX(s.close_date) AS most_recent,
+            (
+                SELECT GROUP_CONCAT(city, ', ') FROM (
+                    SELECT city, COUNT(*) AS cnt FROM sides s3
+                    WHERE s3.agent = s.agent AND s3.city IS NOT NULL
+                    GROUP BY city ORDER BY cnt DESC LIMIT 3
+                )
+            ) AS primary_towns
+        FROM sides s
+        WHERE LOWER(s.agent) NOT IN (SELECT agent_lower FROM excluded)
+        GROUP BY s.agent
+        ORDER BY current_12mo_volume DESC, all_time_volume DESC
+    '''
+
+    # town_params is [town, town] when town is set (one value per UNION half),
+    # else empty. Exclusions fill the VALUES clause. Cutoffs feed the
+    # CASE WHEN aggregations in column order.
+    params = town_params + exclusions + [
+        cutoffs.current_12mo_start,                                  # current sides
+        cutoffs.current_12mo_start,                                  # current volume
+        cutoffs.prior_12mo_start, cutoffs.current_12mo_start,        # prior sides window
+        cutoffs.prior_12mo_start, cutoffs.current_12mo_start,        # prior volume window
+        cutoffs.three_year_start,                                    # 3yr sides
+        cutoffs.three_year_start,                                    # 3yr volume
+    ]
+
+    if limit is not None:
+        sql += ' LIMIT ?'
+        params.append(limit)
+
+    rows = conn.execute(sql, params).fetchall()
+    return [dict(r) for r in rows]
 
 
 def query_brokerage_kpis(

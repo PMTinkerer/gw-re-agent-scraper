@@ -98,3 +98,120 @@ class TestComputeRankMovers:
         movers = compute_rank_movers(rows, top_n=3)
         assert len(movers['risers']) <= 3
         assert len(movers['fallers']) <= 3
+
+
+# === Shared fixture for KPI queries ===
+
+@pytest.fixture
+def kpi_conn(tmp_path):
+    """A DB seeded with transactions across all periods for KPI testing.
+
+    Anchor: today = 2026-04-16. Rows placed at offsets relative to that.
+    """
+    c = get_connection(str(tmp_path / 'kpi.db'))
+    init_db(c)
+
+    anchor = date(2026, 4, 16)
+
+    def _insert(days_ago, listing_agent, listing_office, buyer_agent, buyer_office, price, city, url_suffix):
+        close_date = (anchor - timedelta(days=days_ago)).isoformat()
+        c.execute('''
+            INSERT INTO maine_transactions (
+                detail_url, listing_agent, listing_office,
+                buyer_agent, buyer_office, city,
+                sale_price, close_date,
+                enrichment_status, discovered_at, scraped_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'success', ?, ?)
+        ''', (f'/l/{url_suffix}', listing_agent, listing_office,
+              buyer_agent, buyer_office, city, price, close_date,
+              close_date, close_date))
+
+    # Alice: 3 listing sides last 12mo + 1 prior 12mo + 1 older
+    _insert(30,  'Alice', 'Acme', 'Bob',     'BBrok', 500_000, 'Kittery', 1)
+    _insert(100, 'Alice', 'Acme', 'Carol',   'CBrok', 700_000, 'York', 2)
+    _insert(200, 'Alice', 'Acme', 'Dan',     'DBrok', 600_000, 'York', 3)
+    _insert(400, 'Alice', 'Acme', 'Eve',     'EBrok', 300_000, 'Kittery', 4)
+    _insert(900, 'Alice', 'Acme', 'Frank',   'FBrok', 200_000, 'Kittery', 5)
+
+    # Bob: 2 buyer sides last 12mo + 2 prior 12mo
+    _insert(50,  'Gina',  'GBrok', 'Bob', 'BBrok', 450_000, 'Saco', 6)
+    _insert(200, 'Hank',  'HBrok', 'Bob', 'BBrok', 550_000, 'Saco', 7)
+    _insert(500, 'Iris',  'IBrok', 'Bob', 'BBrok', 350_000, 'Saco', 8)
+    _insert(600, 'Jake',  'JBrok', 'Bob', 'BBrok', 400_000, 'Saco', 9)
+
+    # Charlie: only older activity (all-time but not 3yr or 12mo)
+    _insert(2000, 'Charlie', 'CBrok', 'Zed', 'ZBrok', 100_000, 'Wells', 10)
+
+    c.commit()
+    return c, '2026-04-16'
+
+
+class TestQueryAgentKPIs:
+    def test_returns_rows_per_unique_agent(self, kpi_conn):
+        conn, today = kpi_conn
+        rows = query_agent_kpis(conn, today=today)
+        names = {r['name'] for r in rows}
+        # Alice + Bob + Gina/Hank/Iris/Jake (listing) + Bob + Carol/Dan/Eve/Frank/Zed (buyer) + Charlie
+        assert 'Alice' in names
+        assert 'Bob' in names
+        assert 'Charlie' in names
+
+    def test_alice_period_totals(self, kpi_conn):
+        conn, today = kpi_conn
+        rows = query_agent_kpis(conn, today=today)
+        alice = next(r for r in rows if r['name'] == 'Alice')
+        # Last 12mo: 3 listing sides (days 30, 100, 200) = 1_800_000
+        assert alice['current_12mo_sides'] == 3
+        assert alice['current_12mo_volume'] == 1_800_000
+        # Prior 12mo: 1 side (day 400) = 300_000
+        assert alice['prior_12mo_sides'] == 1
+        assert alice['prior_12mo_volume'] == 300_000
+        # 3yr: 5 sides — day 900 = 2023-10-29 is within 3yr window (>= 2023-04-17)
+        # days 30, 100, 200, 400, 900 → 500k+700k+600k+300k+200k = 2_300_000
+        assert alice['three_yr_sides'] == 5
+        assert alice['three_yr_volume'] == 2_300_000
+        # All-time: 5 sides, 2_300_000
+        assert alice['all_time_sides'] == 5
+        assert alice['all_time_volume'] == 2_300_000
+        # Alice is all listing-side
+        assert alice['listing_sides'] == 5
+        assert alice['buyer_sides'] == 0
+        assert alice['office'] == 'Acme'
+        assert alice['most_recent'] == (date.fromisoformat(today) - timedelta(days=30)).isoformat()
+
+    def test_bob_all_buyer(self, kpi_conn):
+        conn, today = kpi_conn
+        rows = query_agent_kpis(conn, today=today)
+        bob = next(r for r in rows if r['name'] == 'Bob')
+        assert bob['listing_sides'] == 0
+        # Bob appears as buyer in 5 transactions:
+        # day 30 (Kittery), day 50/200/500/600 (Saco)
+        assert bob['buyer_sides'] == 5
+
+    def test_town_filter(self, kpi_conn):
+        conn, today = kpi_conn
+        rows = query_agent_kpis(conn, town='Saco', today=today)
+        names = {r['name'] for r in rows}
+        # Only Bob (buyer) and Gina/Hank/Iris/Jake (listing) should be in Saco
+        assert 'Alice' not in names  # Alice's transactions are in Kittery/York
+        assert 'Bob' in names
+
+    def test_limit_applied(self, kpi_conn):
+        conn, today = kpi_conn
+        rows = query_agent_kpis(conn, limit=3, today=today)
+        assert len(rows) <= 3
+
+    def test_exclusions_respected(self, kpi_conn):
+        """Placeholder names like NON-MREIS AGENT should not appear."""
+        conn, today = kpi_conn
+        conn.execute('''
+            INSERT INTO maine_transactions (
+                detail_url, listing_agent, listing_office, city, sale_price, close_date,
+                enrichment_status, discovered_at, scraped_at
+            ) VALUES ('/l/99', 'NON-MREIS AGENT', 'X', 'Wells', 500000, '2025-06-01',
+                'success', '2025-06-01', '2025-06-01')
+        ''')
+        conn.commit()
+        rows = query_agent_kpis(conn, today=today)
+        names = {r['name'] for r in rows}
+        assert 'NON-MREIS AGENT' not in names
