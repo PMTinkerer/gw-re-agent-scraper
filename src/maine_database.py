@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 import os
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -344,3 +344,37 @@ def url_exists(conn: sqlite3.Connection, detail_url: str) -> bool:
         (detail_url,),
     ).fetchone()
     return row is not None
+
+
+def mark_withdrawn_stale(
+    conn: sqlite3.Connection, *, stale_days: int = 7,
+) -> int:
+    """Mark Active/Pending listings not seen in more than `stale_days` days
+    as status='Withdrawn', and write a history row for each.
+
+    Returns the count of listings marked.
+    """
+    cutoff = (datetime.utcnow() - timedelta(days=stale_days)).isoformat()
+    rows = conn.execute('''
+        SELECT detail_url, list_price FROM maine_transactions
+        WHERE status IN ('Active', 'Pending')
+          AND last_seen_at IS NOT NULL
+          AND last_seen_at < ?
+    ''', (cutoff,)).fetchall()
+
+    urls = [(r[0], r[1]) for r in rows]
+    if not urls:
+        return 0
+
+    placeholders = ','.join(['?'] * len(urls))
+    conn.execute(f'''
+        UPDATE maine_transactions
+        SET status = 'Withdrawn'
+        WHERE detail_url IN ({placeholders})
+    ''', [u for u, _ in urls])
+    conn.commit()
+
+    for url, price in urls:
+        write_history_if_changed(conn, url, 'Withdrawn', price)
+
+    return len(urls)

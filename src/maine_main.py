@@ -138,6 +138,11 @@ def main() -> int:
                         help='Generate leaderboard markdown + HTML dashboard')
     parser.add_argument('--update-index', action='store_true',
                         help='Regenerate the unified index.html with all three sources')
+    parser.add_argument('--sweep', action='store_true',
+                        help='Mark active listings not seen in 7 days as Withdrawn '
+                             '(run at end of daily-active cycle)')
+    parser.add_argument('--sweep-days', type=int, default=7,
+                        help='Age threshold (days) for withdrawn sweep')
     parser.add_argument('--towns', type=str, default=None,
                         help='Comma-separated town names')
     parser.add_argument('--max-pages', type=int, default=90,
@@ -158,7 +163,7 @@ def main() -> int:
     if args.workers < 1 or args.workers > 50:
         parser.error('--workers must be between 1 and 50')
 
-    if not (args.discover or args.enrich or args.report or args.update_index):
+    if not (args.discover or args.enrich or args.report or args.update_index or args.sweep):
         parser.print_help()
         return 0
 
@@ -183,6 +188,11 @@ def main() -> int:
                      result['towns'], result['listings'],
                      result.get('new_listings', 0),
                      result.get('status_changes', 0))
+
+    if args.sweep:
+        from .maine_database import mark_withdrawn_stale
+        marked = mark_withdrawn_stale(conn, stale_days=args.sweep_days)
+        logger.info('Withdrawn sweep: %d listings marked', marked)
 
     if args.enrich:
         _backup_db(args.db)
