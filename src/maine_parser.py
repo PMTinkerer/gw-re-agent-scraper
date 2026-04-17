@@ -152,20 +152,35 @@ DETAIL_EXTRACT_JS = '''(function(){
             if (oname && oname[1]) { result.listing_office = oname[1]; break; }
         }
 
-        // Transaction details
+        // Transaction details (extended for active-listings pipeline)
         var cp = /close_price:"([^"]*)"/.exec(txt);
         var lp = /list_price:"([^"]*)"/.exec(txt);
         var cd = /close_date:"([^"]*)"/.exec(txt);
+        var ld = /list_date:"([^"]*)"/.exec(txt);
         var li = /listing_id:"([^"]*)"/.exec(txt);
         var dom = /days_on_market:(\\d+)/.exec(txt);
         var pst = /property_sub_type:"([^"]*)"/.exec(txt);
+        var ms = /mls_status:"([^"]*)"/.exec(txt);
 
-        result.sale_price = cp ? parseInt(cp[1]) : null;
-        result.list_price = lp ? parseInt(lp[1]) : null;
-        result.close_date = cd ? cd[1].split('T')[0] : null;
+        result.sale_price = cp && cp[1] ? parseInt(cp[1]) : null;
+        result.list_price = lp && lp[1] ? parseInt(lp[1]) : null;
+        result.close_date = cd && cd[1] ? cd[1].split('T')[0] : null;
+        result.list_date  = ld && ld[1] ? ld[1].split('T')[0] : null;
         result.mls_number = li ? li[1] : null;
         result.days_on_market = dom ? parseInt(dom[1]) : null;
         result.property_type = pst ? pst[1] : null;
+        result.status = ms ? ms[1] : null;
+
+        // Property attributes (for active-listings downstream tools)
+        var yb = /year_built:(\\d+)/.exec(txt);
+        var lsqft = /lot_sqft:(\\d+)/.exec(txt);
+        var pr = /public_remarks:"((?:[^"\\\\]|\\\\.)*)"/.exec(txt);
+        var ph = /photo:"([^"]*)"/.exec(txt);
+
+        result.year_built = yb ? parseInt(yb[1]) : null;
+        result.lot_sqft = lsqft ? parseInt(lsqft[1]) : null;
+        result.description = pr ? pr[1] : null;
+        result.photo_url = ph ? ph[1] : null;
 
         break;
     }

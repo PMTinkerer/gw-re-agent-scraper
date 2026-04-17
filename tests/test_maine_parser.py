@@ -41,3 +41,56 @@ class TestParseDetailResponse:
     def test_accepts_dict_value(self):
         parsed = parse_detail_response({'value': {'listing_agent': 'Jane'}})
         assert parsed == {'listing_agent': 'Jane'}
+
+
+# What the browser-side JS returns after extracting from the NUXT blob.
+# Covers the new fields the active-listings pipeline depends on.
+ACTIVE_JS_RETURN = (
+    '{"mls_status":"Active",'
+    '"status":"Active",'
+    '"mls_number":"1580001",'
+    '"list_price":850000,'
+    '"sale_price":null,'
+    '"close_date":null,'
+    '"list_date":"2026-03-15",'
+    '"days_on_market":33,'
+    '"property_type":"Single Family Residence",'
+    '"year_built":1987,'
+    '"lot_sqft":15000,'
+    '"description":"Stunning oceanfront retreat with private dock.",'
+    '"photo_url":"https://photos.mainelistings.com/abc/hero.jpg",'
+    '"listing_agent":"Jane Agent",'
+    '"listing_agent_id":"12345",'
+    '"listing_agent_email":"jane@example.com",'
+    '"listing_office":"Beach Realty",'
+    '"buyer_agent":null,'
+    '"buyer_agent_id":null,'
+    '"buyer_agent_email":null,'
+    '"buyer_office":null}'
+)
+
+
+class TestParseActiveListingFields:
+    def test_extracts_list_date(self):
+        parsed = parse_detail_response(ACTIVE_JS_RETURN)
+        assert parsed['list_date'] == '2026-03-15'
+
+    def test_extracts_year_built(self):
+        parsed = parse_detail_response(ACTIVE_JS_RETURN)
+        assert parsed['year_built'] == 1987
+
+    def test_extracts_lot_sqft(self):
+        parsed = parse_detail_response(ACTIVE_JS_RETURN)
+        assert parsed['lot_sqft'] == 15000
+
+    def test_extracts_description(self):
+        parsed = parse_detail_response(ACTIVE_JS_RETURN)
+        assert parsed['description'] == 'Stunning oceanfront retreat with private dock.'
+
+    def test_extracts_photo_url(self):
+        parsed = parse_detail_response(ACTIVE_JS_RETURN)
+        assert parsed['photo_url'] == 'https://photos.mainelistings.com/abc/hero.jpg'
+
+    def test_extracts_status(self):
+        parsed = parse_detail_response(ACTIVE_JS_RETURN)
+        assert parsed['status'] == 'Active'
