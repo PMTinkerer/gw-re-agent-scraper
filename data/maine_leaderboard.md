@@ -1,6 +1,6 @@
 # Maine MLS Agent Leaderboard -- Southern Coastal Maine
-_Generated: 2026-04-17 01:55 UTC | Source: MaineListings.com (MREIS MLS) | Date range: 2011-02-23 to 2026-04-16_
-_Enriched: 16,024 / 16,029 closed transactions | Listing agent: 16,024 | Buyer agent: 16,022_
+_Generated: 2026-04-21 15:55 UTC | Source: MaineListings.com (MREIS MLS) | Date range: 2011-02-23 to 2026-04-16_
+_Enriched: 16,021 / 16,021 closed transactions | Listing agent: 16,021 | Buyer agent: 16,019_
 
 > Unique to MLS data: every transaction includes both listing and buyer agent, so buyer-side performance is visible.
 
@@ -117,13 +117,13 @@ _Office branches kept separate (branches compete with each other)._
 |------|-----------|-------|--------|--------|-----|------------|
 | 1 | Keller Williams Realty | 3366 | 378 | $1928.7M | $573K | Scott Townsend, Jeffrey Mateja, Cynthia Dubois-Cote |
 | 2 | Coldwell Banker Realty | 2465 | 285 | $1232.7M | $500K | Julie Barros, Catherine Bame, Margaret Mailman |
-| 3 | Keller Williams Coastal and Lakes & Mountains Realty | 2279 | 255 | $1450.1M | $636K | Troy Williams, Heidi Hayes, Nola Cady |
+| 3 | Keller Williams Coastal and Lakes & Mountains Realty | 2278 | 255 | $1449.2M | $636K | Troy Williams, Heidi Hayes, Nola Cady |
 | 4 | RE/MAX Realty One | 1576 | 96 | $913.3M | $580K | Donald Wunder, Abigail Douris, Carolyn Weller |
 | 5 | Bean Group | 1510 | 253 | $697.6M | $462K | Janna Syrene, Stephen Erickson, Jeffrey Walker |
 | 6 | Portside Real Estate Group | 1398 | 169 | $866.5M | $620K | Grainne Archer, Jeffrey Rioux, Rebecca Bassett |
 | 7 | Pack Maynard and Associates | 1270 | 25 | $1220.0M | $961K | Victoria Benenti, Corey Tracy, Jessica Girard |
 | 8 | Better Homes & Gardens Real Estate/The Masiello Group | 974 | 168 | $561.0M | $576K | Jonathan Safford, Peter Larochelle, Cindy Donnell |
-| 9 | Anne Erwin Sotheby's International Realty | 901 | 8 | $895.4M | $994K | Anne Erwin Real Estate, Walter Kallenback Jr, Louise Ducharme |
+| 9 | Anne Erwin Sotheby's International Realty | 900 | 8 | $895.2M | $995K | Anne Erwin Real Estate, Walter Kallenback Jr, Louise Ducharme |
 | 10 | Legacy Properties Sotheby's International Realty | 816 | 70 | $962.5M | $1.2M | Elizabeth Coughlan, William Gaynor, Rosane Hirschy |
 | 11 | EXP Realty | 757 | 157 | $414.3M | $547K | Roslind Anton, Janna Syrene, Kimberly Tarbox |
 | 12 | Kennebunk Beach Realty | 750 | 31 | $503.4M | $671K | Helen Curry, Denise Hodsdon, Laura Ross |
@@ -240,19 +240,19 @@ _Office branches kept separate (branches compete with each other)._
 
 ## Data Summary
 
-- **Total closed transactions discovered:** 16,029
-- **Successfully enriched:** 16,024
-- **With listing agent:** 16,024
-- **With buyer agent:** 16,022
+- **Total closed transactions discovered:** 16,021
+- **Successfully enriched:** 16,021
+- **With listing agent:** 16,021
+- **With buyer agent:** 16,019
 - **Date range:** 2011-02-23 to 2026-04-16
 - **Per-town breakdown:**
-  - Scarborough: 1,985 sales
+  - Scarborough: 1,984 sales
   - Kennebunk: 1,871 sales
   - Saco: 1,789 sales
   - Kittery: 1,770 sales
   - York: 1,744 sales
   - Old Orchard Beach: 1,743 sales
-  - Wells: 1,672 sales
+  - Wells: 1,670 sales
   - Biddeford: 1,461 sales
   - Kennebunkport: 1,257 sales
   - Ogunquit: 729 sales
