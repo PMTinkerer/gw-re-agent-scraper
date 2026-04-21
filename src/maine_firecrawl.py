@@ -41,6 +41,32 @@ _BLOCK_STRINGS = ['unexpected occurred', 'access denied', 'captcha']
 _DB_LOCK_RETRIES = 5
 
 
+_credit_counter = {
+    'count': 0,
+    'limit': None,
+    'lock': threading.Lock(),
+}
+
+
+def set_credit_limit(limit: int | None) -> None:
+    """Configure a hard cap on Firecrawl scrape calls for this process.
+
+    Subsequent calls that exceed the limit raise RuntimeError, aborting the
+    current run. Pass None to disable the cap. Resets the counter to zero.
+    """
+    with _credit_counter['lock']:
+        _credit_counter['count'] = 0
+        _credit_counter['limit'] = limit
+
+
+def build_search_url(*, town: str, page: int, status: str = 'Closed') -> str:
+    """Compose a mainelistings.com search URL for one town + status + page."""
+    url = f'{_SEARCH_URL}?city={town}&mls_status={status}'
+    if page > 1:
+        url += f'&page={page}'
+    return url
+
+
 def _get_client():
     from firecrawl import Firecrawl
     return Firecrawl(api_key=require_firecrawl_key())
@@ -63,6 +89,16 @@ def _open_threadsafe_conn(db_path: str | None = None) -> sqlite3.Connection:
 
 def _scrape(client, url: str, fmt: str = 'markdown'):
     """Scrape a page and return the result object. Raises on blocked pages."""
+    with _credit_counter['lock']:
+        limit = _credit_counter['limit']
+        count = _credit_counter['count']
+        if limit is not None and count >= limit:
+            raise RuntimeError(
+                f'Credit cap hit: {count} / {limit} Firecrawl calls. '
+                'Aborting run.'
+            )
+        _credit_counter['count'] = count + 1
+
     kwargs = {'formats': [fmt], 'wait_for': 8000}
     if fmt == 'rawHtml':
         kwargs['actions'] = [
@@ -102,77 +138,91 @@ def discover_listings(
     recent_only: bool = False,
     state_path: str | None = None,
     workers: int = 1,
+    status: str = 'Closed',
 ) -> dict:
-    """Phase 1: Discover closed listings from search result pages.
+    """Phase 1: Discover listings from search result pages.
 
     Towns are independent, so each worker processes one town end-to-end.
+    `status` selects which mls_status filter to apply ('Closed' or 'Active').
     """
     towns_to_process = towns or list(TOWNS)
     total_listings = 0
+    total_new = 0
+    total_status_changes = 0
     towns_done = 0
     state_lock = threading.Lock()
     db_lock = threading.Lock()
 
+    def _accumulate(summary):
+        nonlocal total_listings, total_new, total_status_changes, towns_done
+        if summary is None:
+            return
+        towns_done += 1
+        total_listings += summary.get('listings', 0)
+        total_new += summary.get('new_listings', 0)
+        total_status_changes += summary.get('status_changes', 0)
+
     if workers <= 1:
         client = _get_client()
         for town in towns_to_process:
-            count = _run_town(
+            summary = _run_town(
                 client, conn, state, town, max_pages, recent_only,
-                state_path, state_lock, db_lock,
+                state_path, state_lock, db_lock, status,
             )
-            if count is not None:
-                towns_done += 1
-                total_listings += count
-        return {'towns': towns_done, 'listings': total_listings}
+            _accumulate(summary)
+    else:
+        thread_conn = _open_threadsafe_conn()
+        try:
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                futures = {}
+                for town in towns_to_process:
+                    client = _get_client()
+                    fut = pool.submit(
+                        _run_town, client, thread_conn, state, town, max_pages,
+                        recent_only, state_path, state_lock, db_lock, status,
+                    )
+                    futures[fut] = town
 
-    # Concurrent path needs a thread-safe connection; the caller's `conn`
-    # was opened on the main thread and would raise on cross-thread use.
-    thread_conn = _open_threadsafe_conn()
-    try:
-        with ThreadPoolExecutor(max_workers=workers) as pool:
-            futures = {}
-            for town in towns_to_process:
-                client = _get_client()
-                fut = pool.submit(
-                    _run_town, client, thread_conn, state, town, max_pages,
-                    recent_only, state_path, state_lock, db_lock,
-                )
-                futures[fut] = town
+                for fut in as_completed(futures):
+                    town = futures[fut]
+                    try:
+                        summary = fut.result()
+                    except Exception as exc:
+                        logger.error('Town %s crashed: %s', town, exc)
+                        continue
+                    _accumulate(summary)
+        finally:
+            thread_conn.close()
 
-            for fut in as_completed(futures):
-                town = futures[fut]
-                try:
-                    count = fut.result()
-                except Exception as exc:
-                    logger.error('Town %s crashed: %s', town, exc)
-                    continue
-                if count is not None:
-                    towns_done += 1
-                    total_listings += count
-    finally:
-        thread_conn.close()
-
-    return {'towns': towns_done, 'listings': total_listings}
+    return {
+        'towns': towns_done,
+        'towns_scraped': towns_done,
+        'listings': total_listings,
+        'new_listings': total_new,
+        'status_changes': total_status_changes,
+    }
 
 
 def _run_town(
     client, conn, state, town, max_pages, recent_only,
-    state_path, state_lock, db_lock,
-) -> int | None:
-    """Discover one town. Returns listing count or None on failure."""
+    state_path, state_lock, db_lock, status='Closed',
+) -> dict | None:
+    """Discover one town. Returns a summary dict or None on failure."""
     with state_lock:
         mark_started(state, town)
         save_state(state, state_path)
 
     try:
-        count = _discover_town(
-            client, conn, town, max_pages, recent_only, db_lock,
+        summary = _discover_town(
+            client, conn, town, max_pages, recent_only, db_lock, status,
         )
         with state_lock:
-            mark_complete(state, town, listings_found=count)
+            mark_complete(state, town, listings_found=summary['listings'])
             save_state(state, state_path)
-        logger.info('Town %s: %d listings discovered', town, count)
-        return count
+        logger.info('Town %s: %d listings discovered (new=%d, status_changes=%d)',
+                    town, summary['listings'], summary['new_listings'],
+                    summary['status_changes'])
+        return summary
     except Exception as exc:
         with state_lock:
             mark_failed(state, town, str(exc))
@@ -183,17 +233,17 @@ def _run_town(
 
 def _discover_town(
     client, conn, town: str, max_pages: int, recent_only: bool,
-    db_lock: threading.Lock,
-) -> int:
-    """Scrape search pages for one town."""
+    db_lock: threading.Lock, status: str = 'Closed',
+) -> dict:
+    """Scrape search pages for one town. Returns counts: listings, new, status_changes."""
     town_count = 0
+    town_new = 0
+    town_status_changes = 0
 
     for page_num in range(1, max_pages + 1):
-        url = f'{_SEARCH_URL}?city={town}&mls_status=Closed'
-        if page_num > 1:
-            url += f'&page={page_num}'
+        url = build_search_url(town=town, page=page_num, status=status)
 
-        logger.info('Discovering %s page %d...', town, page_num)
+        logger.info('Discovering %s page %d (%s)...', town, page_num, status)
         try:
             result = _scrape(client, url, 'markdown')
         except Exception as exc:
@@ -203,21 +253,30 @@ def _discover_town(
             break
 
         markdown = getattr(result, 'markdown', '') or ''
-        cards = parse_search_cards(markdown)
+        cards = parse_search_cards(markdown, status=status)
         if not cards and page_num > 1:
             logger.info('No cards on page %d for %s, stopping', page_num, town)
             break
 
-        new_count = 0
+        page_new = 0
         with db_lock:
             for card in cards:
-                if not url_exists(conn, card['detail_url']):
-                    new_count += 1
+                existed = url_exists(conn, card['detail_url'])
+                if not existed:
+                    page_new += 1
+                elif card.get('status'):
+                    prior = conn.execute(
+                        'SELECT status FROM maine_transactions WHERE detail_url = ?',
+                        (card['detail_url'],),
+                    ).fetchone()
+                    if prior and prior[0] != card['status']:
+                        town_status_changes += 1
                 upsert_listing(conn, card)
 
         town_count += len(cards)
+        town_new += page_new
 
-        if recent_only and new_count == 0 and page_num > 1:
+        if recent_only and page_new == 0 and page_num > 1:
             logger.info('All %d cards on page %d already known, stopping',
                         len(cards), page_num)
             break
@@ -227,7 +286,11 @@ def _discover_town(
             logger.info('Reached last page (%d of %d)', page_num, page_info[1])
             break
 
-    return town_count
+    return {
+        'listings': town_count,
+        'new_listings': town_new,
+        'status_changes': town_status_changes,
+    }
 
 
 # === Phase 2: Enrichment ===

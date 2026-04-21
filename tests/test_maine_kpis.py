@@ -120,8 +120,8 @@ def kpi_conn(tmp_path):
                 detail_url, listing_agent, listing_office,
                 buyer_agent, buyer_office, city,
                 sale_price, close_date,
-                enrichment_status, discovered_at, scraped_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'success', ?, ?)
+                enrichment_status, status, discovered_at, scraped_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'success', 'Closed', ?, ?)
         ''', (f'/l/{url_suffix}', listing_agent, listing_office,
               buyer_agent, buyer_office, city, price, close_date,
               close_date, close_date))
@@ -207,9 +207,9 @@ class TestQueryAgentKPIs:
         conn.execute('''
             INSERT INTO maine_transactions (
                 detail_url, listing_agent, listing_office, city, sale_price, close_date,
-                enrichment_status, discovered_at, scraped_at
+                enrichment_status, status, discovered_at, scraped_at
             ) VALUES ('/l/99', 'NON-MREIS AGENT', 'X', 'Wells', 500000, '2025-06-01',
-                'success', '2025-06-01', '2025-06-01')
+                'success', 'Closed', '2025-06-01', '2025-06-01')
         ''')
         conn.commit()
         rows = query_agent_kpis(conn, today=today)
@@ -249,3 +249,49 @@ class TestQueryBrokerageKPIs:
         rows = query_brokerage_kpis(conn, today=today)
         acme = next(r for r in rows if r['name'] == 'Acme')
         assert 'Alice' in (acme['top_agents'] or '')
+
+
+class TestKPIQueriesIgnoreActiveRows:
+    """KPI queries should only count closed transactions."""
+
+    def test_active_listing_excluded_from_agent_kpis(self, kpi_conn):
+        conn, today = kpi_conn
+        conn.execute('''
+            INSERT INTO maine_transactions (
+                detail_url, listing_agent, listing_office, city,
+                list_price, close_date,
+                enrichment_status, status,
+                discovered_at, scraped_at
+            ) VALUES (
+                '/l/active-alice', 'Alice', 'Acme', 'Kittery',
+                999999999, NULL,
+                'success', 'Active',
+                '2026-04-16', '2026-04-16'
+            )
+        ''')
+        conn.commit()
+        rows = query_agent_kpis(conn, today=today)
+        alice = next(r for r in rows if r['name'] == 'Alice')
+        # Alice's closed all-time volume is still 2_300_000 — Active row excluded.
+        assert alice['all_time_volume'] == 2_300_000
+        assert alice['all_time_sides'] == 5
+
+    def test_active_row_excluded_from_brokerage_kpis(self, kpi_conn):
+        conn, today = kpi_conn
+        conn.execute('''
+            INSERT INTO maine_transactions (
+                detail_url, listing_office, listing_agent, city,
+                list_price, close_date,
+                enrichment_status, status,
+                discovered_at, scraped_at
+            ) VALUES (
+                '/l/active-acme', 'Acme', 'Alice', 'Kittery',
+                999999999, NULL,
+                'success', 'Active',
+                '2026-04-16', '2026-04-16'
+            )
+        ''')
+        conn.commit()
+        rows = query_brokerage_kpis(conn, today=today)
+        acme = next(r for r in rows if r['name'] == 'Acme')
+        assert acme['all_time_sides'] == 5

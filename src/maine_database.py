@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 import os
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +27,91 @@ def get_connection(db_path: str | None = None) -> sqlite3.Connection:
     return conn
 
 
+_NEW_COLUMNS_ON_TRANSACTIONS = [
+    # (column_name, type_clause)
+    ('status', 'TEXT'),
+    ('list_date', 'TEXT'),
+    ('last_seen_at', 'TEXT'),
+    ('year_built', 'INTEGER'),
+    ('lot_sqft', 'INTEGER'),
+    ('description', 'TEXT'),
+    ('photo_url', 'TEXT'),
+]
+
+
+def _existing_columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    return {
+        r[1] for r in conn.execute(f'PRAGMA table_info({table})').fetchall()
+    }
+
+
+def _apply_additive_migration(conn: sqlite3.Connection) -> None:
+    """Add new columns to maine_transactions if they don't already exist.
+
+    SQLite lacks `ADD COLUMN IF NOT EXISTS`, so we inspect PRAGMA table_info
+    and skip existing columns. Safe to run repeatedly.
+    """
+    existing = _existing_columns(conn, 'maine_transactions')
+    for col, typ in _NEW_COLUMNS_ON_TRANSACTIONS:
+        if col not in existing:
+            conn.execute(f'ALTER TABLE maine_transactions ADD COLUMN {col} {typ}')
+    conn.commit()
+
+    # Backfill: any legacy row with close_date IS NOT NULL and status IS NULL
+    # is a pre-migration closed transaction. Mark it explicitly.
+    conn.execute('''
+        UPDATE maine_transactions
+        SET status = 'Closed'
+        WHERE status IS NULL AND close_date IS NOT NULL
+    ''')
+    conn.commit()
+
+
+_MAINE_TRANSACTIONS_INDEXES = [
+    # (index_name, column)
+    ('idx_maine_city', 'city'),
+    ('idx_maine_close_date', 'close_date'),
+    ('idx_maine_listing_agent', 'listing_agent'),
+    ('idx_maine_buyer_agent', 'buyer_agent'),
+    ('idx_maine_enrichment', 'enrichment_status'),
+    ('idx_maine_mls', 'mls_number'),
+    ('idx_maine_status', 'status'),
+    ('idx_maine_last_seen', 'last_seen_at'),
+]
+
+
+def _create_indexes(conn: sqlite3.Connection) -> None:
+    """Create indexes on maine_transactions for columns that exist.
+
+    Runs after additive migration so legacy DBs don't fail on missing columns.
+    Skips silently if the column isn't present yet (shouldn't happen after
+    migration, but defensive).
+    """
+    existing_cols = _existing_columns(conn, 'maine_transactions')
+    for idx_name, col in _MAINE_TRANSACTIONS_INDEXES:
+        if col in existing_cols:
+            conn.execute(
+                f'CREATE INDEX IF NOT EXISTS {idx_name} '
+                f'ON maine_transactions({col})'
+            )
+    # History table indexes are always safe — table created with full schema.
+    conn.execute(
+        'CREATE INDEX IF NOT EXISTS idx_history_url '
+        'ON maine_listing_history(detail_url)'
+    )
+    conn.execute(
+        'CREATE INDEX IF NOT EXISTS idx_history_date '
+        'ON maine_listing_history(snapshot_date)'
+    )
+    conn.commit()
+
+
 def init_db(conn: sqlite3.Connection) -> None:
-    """Create the maine_transactions table and indexes."""
+    """Create tables + indexes. Idempotent.
+
+    - maine_transactions: one row per MLS listing (any status).
+    - maine_listing_history: change-detected snapshots of (status, list_price).
+    """
     conn.executescript('''
         CREATE TABLE IF NOT EXISTS maine_transactions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,54 +142,121 @@ def init_db(conn: sqlite3.Connection) -> None:
             enrichment_attempts INTEGER DEFAULT 0,
             discovered_at TEXT NOT NULL,
             enriched_at TEXT,
-            scraped_at TEXT NOT NULL
+            scraped_at TEXT NOT NULL,
+            status TEXT,
+            list_date TEXT,
+            last_seen_at TEXT,
+            year_built INTEGER,
+            lot_sqft INTEGER,
+            description TEXT,
+            photo_url TEXT
         );
 
-        CREATE INDEX IF NOT EXISTS idx_maine_city
-            ON maine_transactions(city);
-        CREATE INDEX IF NOT EXISTS idx_maine_close_date
-            ON maine_transactions(close_date);
-        CREATE INDEX IF NOT EXISTS idx_maine_listing_agent
-            ON maine_transactions(listing_agent);
-        CREATE INDEX IF NOT EXISTS idx_maine_buyer_agent
-            ON maine_transactions(buyer_agent);
-        CREATE INDEX IF NOT EXISTS idx_maine_enrichment
-            ON maine_transactions(enrichment_status);
-        CREATE INDEX IF NOT EXISTS idx_maine_mls
-            ON maine_transactions(mls_number);
+        CREATE TABLE IF NOT EXISTS maine_listing_history (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            detail_url     TEXT NOT NULL,
+            snapshot_date  TEXT NOT NULL,
+            status         TEXT,
+            list_price     INTEGER,
+            FOREIGN KEY (detail_url) REFERENCES maine_transactions(detail_url)
+        );
     ''')
     conn.commit()
 
+    # Apply additive migration first so legacy columns are present before
+    # we try to create indexes on them.
+    _apply_additive_migration(conn)
+    _create_indexes(conn)
+
+
+def write_history_if_changed(
+    conn: sqlite3.Connection,
+    detail_url: str,
+    status: str | None,
+    list_price: int | None,
+) -> bool:
+    """Append a history row iff (status, list_price) differ from the most
+    recent history row for this detail_url. No-op if nothing relevant known.
+
+    Returns True if a row was written, False otherwise.
+    """
+    if not detail_url or (status is None and list_price is None):
+        return False
+
+    prev = conn.execute('''
+        SELECT status, list_price FROM maine_listing_history
+        WHERE detail_url = ?
+        ORDER BY id DESC LIMIT 1
+    ''', (detail_url,)).fetchone()
+
+    if prev is not None:
+        prev_status, prev_price = prev[0], prev[1]
+        if prev_status == status and prev_price == list_price:
+            return False
+
+    now = datetime.utcnow().isoformat()
+    conn.execute('''
+        INSERT INTO maine_listing_history
+            (detail_url, snapshot_date, status, list_price)
+        VALUES (?, ?, ?, ?)
+    ''', (detail_url, now, status, list_price))
+    conn.commit()
+    return True
+
 
 def upsert_listing(conn: sqlite3.Connection, record: dict) -> bool:
-    """Insert or update a listing discovered from search pages."""
+    """Insert or update a listing discovered from search pages.
+
+    Accepts `status` and `list_price` in the record. Always stamps
+    last_seen_at = now. Writes a history row if (status, list_price)
+    changed vs. the previous snapshot.
+    """
     now = datetime.utcnow().isoformat()
     try:
         conn.execute('''
             INSERT INTO maine_transactions (
-                address, city, state, zip, sale_price,
+                address, city, state, zip,
+                sale_price, list_price,
                 beds, baths, sqft, listing_office,
-                detail_url, discovered_at, scraped_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                detail_url, status,
+                discovered_at, scraped_at, last_seen_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(detail_url) DO UPDATE SET
                 sale_price = COALESCE(excluded.sale_price, maine_transactions.sale_price),
-                listing_office = COALESCE(excluded.listing_office, maine_transactions.listing_office)
+                list_price = COALESCE(excluded.list_price, maine_transactions.list_price),
+                listing_office = COALESCE(excluded.listing_office, maine_transactions.listing_office),
+                status = COALESCE(excluded.status, maine_transactions.status),
+                last_seen_at = excluded.last_seen_at
         ''', (
             record.get('address'), record.get('city'), record.get('state', 'ME'),
-            record.get('zip'), record.get('sale_price'),
+            record.get('zip'),
+            record.get('sale_price'), record.get('list_price'),
             record.get('beds'), record.get('baths'), record.get('sqft'),
             record.get('listing_office'), record.get('detail_url'),
-            now, now,
+            record.get('status'),
+            now, now, now,
         ))
         conn.commit()
-        return True
     except sqlite3.IntegrityError as e:
         logger.debug('Insert failed for %s: %s', record.get('detail_url'), e)
         return False
 
+    write_history_if_changed(
+        conn,
+        record.get('detail_url'),
+        record.get('status'),
+        record.get('list_price'),
+    )
+    return True
+
 
 def enrich_listing(conn: sqlite3.Connection, detail_url: str, data: dict) -> bool:
-    """Update a listing with agent data from detail page scraping."""
+    """Update a listing with agent + attribute data from detail page scraping.
+
+    Accepts the extended NUXT fields (status, list_date, year_built,
+    lot_sqft, description, photo_url) in addition to the existing ones.
+    Writes a history row if status/list_price changed.
+    """
     now = datetime.utcnow().isoformat()
     conn.execute('''
         UPDATE maine_transactions SET
@@ -121,12 +271,19 @@ def enrich_listing(conn: sqlite3.Connection, detail_url: str, data: dict) -> boo
             buyer_office = ?,
             close_date = ?,
             sale_price = COALESCE(?, sale_price),
-            list_price = ?,
+            list_price = COALESCE(?, list_price),
             property_type = ?,
             days_on_market = ?,
+            status = COALESCE(?, status),
+            list_date = COALESCE(?, list_date),
+            year_built = COALESCE(?, year_built),
+            lot_sqft = COALESCE(?, lot_sqft),
+            description = COALESCE(?, description),
+            photo_url = COALESCE(?, photo_url),
             enrichment_status = 'success',
             enrichment_attempts = enrichment_attempts + 1,
-            enriched_at = ?
+            enriched_at = ?,
+            last_seen_at = ?
         WHERE detail_url = ?
     ''', (
         data.get('mls_number'),
@@ -137,9 +294,17 @@ def enrich_listing(conn: sqlite3.Connection, detail_url: str, data: dict) -> boo
         data.get('close_date'), data.get('sale_price'),
         data.get('list_price'), data.get('property_type'),
         data.get('days_on_market'),
-        now, detail_url,
+        data.get('status'),
+        data.get('list_date'),
+        data.get('year_built'), data.get('lot_sqft'),
+        data.get('description'), data.get('photo_url'),
+        now, now, detail_url,
     ))
     conn.commit()
+
+    write_history_if_changed(
+        conn, detail_url, data.get('status'), data.get('list_price'),
+    )
     return True
 
 
@@ -179,3 +344,37 @@ def url_exists(conn: sqlite3.Connection, detail_url: str) -> bool:
         (detail_url,),
     ).fetchone()
     return row is not None
+
+
+def mark_withdrawn_stale(
+    conn: sqlite3.Connection, *, stale_days: int = 7,
+) -> int:
+    """Mark Active/Pending listings not seen in more than `stale_days` days
+    as status='Withdrawn', and write a history row for each.
+
+    Returns the count of listings marked.
+    """
+    cutoff = (datetime.utcnow() - timedelta(days=stale_days)).isoformat()
+    rows = conn.execute('''
+        SELECT detail_url, list_price FROM maine_transactions
+        WHERE status IN ('Active', 'Pending')
+          AND last_seen_at IS NOT NULL
+          AND last_seen_at < ?
+    ''', (cutoff,)).fetchall()
+
+    urls = [(r[0], r[1]) for r in rows]
+    if not urls:
+        return 0
+
+    placeholders = ','.join(['?'] * len(urls))
+    conn.execute(f'''
+        UPDATE maine_transactions
+        SET status = 'Withdrawn'
+        WHERE detail_url IN ({placeholders})
+    ''', [u for u, _ in urls])
+    conn.commit()
+
+    for url, price in urls:
+        write_history_if_changed(conn, url, 'Withdrawn', price)
+
+    return len(urls)

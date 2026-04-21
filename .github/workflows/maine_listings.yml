@@ -2,17 +2,21 @@ name: Maine Listings (MREIS MLS)
 
 on:
   schedule:
-    # Weekly: Mondays at 11:30 UTC (6:30am ET)
+    # Weekly: Mondays at 11:30 UTC (6:30am ET) — closed transactions
     - cron: '30 11 * * 1'
+    # Daily: every day at 11:30 UTC (6:30am ET) — active listings
+    - cron: '30 11 * * *'
   workflow_dispatch:
     inputs:
       mode:
-        description: 'Run mode: weekly (incremental) | backfill (full) | report-only'
+        description: 'Run mode'
         default: 'weekly'
         type: choice
         options:
           - weekly
           - backfill
+          - daily-active
+          - backfill-active
           - report-only
       workers:
         description: 'Concurrent workers for enrichment (1-50)'
@@ -23,6 +27,9 @@ on:
       max_pages:
         description: 'Max search pages per town (discovery)'
         default: '90'
+      max_credits:
+        description: 'Hard cap on Firecrawl calls this run (empty = no cap)'
+        default: ''
 
 permissions:
   contents: write
@@ -53,15 +60,39 @@ jobs:
           pip install pip-audit
           pip-audit -r requirements.txt
 
+      - name: Determine effective mode
+        id: pickmode
+        run: |
+          # Manual dispatch wins. Otherwise derive from cron schedule.
+          if [ -n "${{ github.event.inputs.mode }}" ]; then
+            MODE="${{ github.event.inputs.mode }}"
+          elif [ "${{ github.event.schedule }}" = "30 11 * * 1" ]; then
+            MODE="weekly"
+          elif [ "${{ github.event.schedule }}" = "30 11 * * *" ]; then
+            MODE="daily-active"
+          else
+            MODE="weekly"
+          fi
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "Effective mode: $MODE"
+
       - name: Run Maine Listings pipeline
         env:
           CI: 'true'
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+          PUSHOVER_API_TOKEN: ${{ secrets.PUSHOVER_API_TOKEN }}
+          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         run: |
-          MODE="${{ github.event.inputs.mode || 'weekly' }}"
+          MODE="${{ steps.pickmode.outputs.mode }}"
           WORKERS="${{ github.event.inputs.workers || '10' }}"
           BATCH="${{ github.event.inputs.batch_size || '200' }}"
           MAX_PAGES="${{ github.event.inputs.max_pages || '90' }}"
+          MAX_CREDITS="${{ github.event.inputs.max_credits }}"
+          CREDITS_ARG=""
+          if [ -n "$MAX_CREDITS" ]; then
+            CREDITS_ARG="--max-credits $MAX_CREDITS"
+          fi
 
           if [ -z "$FIRECRAWL_API_KEY" ]; then
             echo "FIRECRAWL_API_KEY secret is required"
@@ -72,18 +103,35 @@ jobs:
             weekly)
               echo "Weekly incremental: discover new closings + enrich"
               python -m src.maine_main \
-                --discover --recent-only \
+                --discover --recent-only --status Closed \
                 --enrich --batch-size "$BATCH" \
-                --workers "$WORKERS" \
-                --max-pages "$MAX_PAGES"
+                --workers "$WORKERS" --max-pages "$MAX_PAGES" \
+                $CREDITS_ARG
               ;;
             backfill)
               echo "Full backfill: discover all + enrich all pending"
               python -m src.maine_main \
-                --discover \
+                --discover --status Closed \
                 --enrich --batch-size "$BATCH" \
-                --workers "$WORKERS" \
-                --max-pages "$MAX_PAGES"
+                --workers "$WORKERS" --max-pages "$MAX_PAGES" \
+                $CREDITS_ARG
+              ;;
+            daily-active)
+              echo "Daily active: discover actives + enrich + sweep withdrawn"
+              python -m src.maine_main \
+                --discover --recent-only --status Active \
+                --enrich --batch-size "$BATCH" \
+                --sweep --sweep-days 7 \
+                --workers "$WORKERS" --max-pages "$MAX_PAGES" \
+                $CREDITS_ARG
+              ;;
+            backfill-active)
+              echo "Backfill active: full discovery of all current actives + enrich"
+              python -m src.maine_main \
+                --discover --status Active \
+                --enrich --batch-size "$BATCH" \
+                --workers "$WORKERS" --max-pages "$MAX_PAGES" \
+                $CREDITS_ARG
               ;;
             report-only)
               echo "Report-only: regenerate dashboards from existing data"

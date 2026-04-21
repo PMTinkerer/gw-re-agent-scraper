@@ -9,42 +9,68 @@ import re
 
 # === Search Results Parsing ===
 
-_CARD_RE = re.compile(
-    r'\$\s*([\d,]+)\s*Closed\\\\\s*\\\\\s*'
-    r'\*\*([^*]+)\*\*\s+\*\*([^*]+)\*\*\\\\\s*\\\\\s*'
-    r'(\d+)\s+Beds?\\\\\s*\\\\\s*'
-    r'(\d+)\s+Baths?\\\\\s*\\\\\s*'
-    r'([\d,]+)\s+sqft\\\\\s*\\\\\s*'
-    r'Brought to you by\s+([^\]]+?)\]'
-    r'\((https://mainelistings\.com/listings/[^)]+)\)',
-    re.DOTALL,
-)
+def _make_card_re(status_pattern: str) -> re.Pattern:
+    """Build a regex matching search-result cards for the given status.
+
+    status_pattern is a regex fragment (e.g. 'Closed' or 'Active|New Listing').
+    The resulting regex captures nine groups:
+        1=price  2=status  3=address  4=city+state+zip
+        5=beds   6=baths   7=sqft     8=listing_office  9=detail_url
+    """
+    return re.compile(
+        r'\$\s*([\d,]+)\s*(' + status_pattern + r')\\\\\s*\\\\\s*'
+        r'\*\*([^*]+)\*\*\s+\*\*([^*]+)\*\*\\\\\s*\\\\\s*'
+        r'(\d+)\s+Beds?\\\\\s*\\\\\s*'
+        r'(\d+)\s+Baths?\\\\\s*\\\\\s*'
+        r'([\d,]+)\s+sqft\\\\\s*\\\\\s*'
+        r'Brought to you by\s+([^\]]+?)\]'
+        r'\((https://mainelistings\.com/listings/[^)]+)\)',
+        re.DOTALL,
+    )
+
+
+_CLOSED_CARD_RE = _make_card_re(r'Closed')
+# "Active" and "New Listing" are both active-state badges. "Pending" can
+# show up on active-search pages when a listing goes under contract.
+_ACTIVE_CARD_RE = _make_card_re(r'Active|New Listing|Pending')
 
 _PAGINATION_RE = re.compile(r'(\d+)\s+of\s+(\d+)')
 _TOTAL_RESULTS_RE = re.compile(r'([\d,]+)\s+Results')
 
 
-def parse_search_cards(markdown: str) -> list[dict]:
-    """Parse listing cards from search results markdown."""
-    cards = []
-    for m in _CARD_RE.finditer(markdown):
-        price_str = m.group(1).replace(',', '')
-        address = m.group(2).strip()
-        city_state_zip = m.group(3).strip()
+def parse_search_cards(markdown: str, status: str = 'Closed') -> list[dict]:
+    """Parse listing cards from search results markdown.
 
+    Args:
+        markdown: markdown response from a mainelistings.com search page.
+        status: 'Closed' parses sold cards (price → sale_price).
+                'Active' parses live cards (price → list_price).
+                Cards badged 'Pending' get status='Pending'.
+    """
+    card_re = _CLOSED_CARD_RE if status == 'Closed' else _ACTIVE_CARD_RE
+
+    cards: list[dict] = []
+    for m in card_re.finditer(markdown):
+        price_str = m.group(1).replace(',', '')
+        price = int(price_str) if price_str else None
+        badge = m.group(2).strip()
+        address = m.group(3).strip()
+        city_state_zip = m.group(4).strip()
         city, state, zip_code = _parse_city_state_zip(city_state_zip)
 
         cards.append({
-            'sale_price': int(price_str) if price_str else None,
+            'status': 'Active' if badge == 'New Listing' else badge,
+            'sale_price': price if status == 'Closed' else None,
+            'list_price': price if status != 'Closed' else None,
             'address': address,
             'city': city,
             'state': state,
             'zip': zip_code,
-            'beds': int(m.group(4)),
-            'baths': int(m.group(5)),
-            'sqft': int(m.group(6).replace(',', '')),
-            'listing_office': m.group(7).strip(),
-            'detail_url': m.group(8).strip(),
+            'beds': int(m.group(5)),
+            'baths': int(m.group(6)),
+            'sqft': int(m.group(7).replace(',', '')),
+            'listing_office': m.group(8).strip(),
+            'detail_url': m.group(9).strip(),
         })
     return cards
 
@@ -83,63 +109,71 @@ DETAIL_EXTRACT_JS = '''(function(){
     var scripts = document.querySelectorAll('script');
     var result = {error: null};
 
+    // Photo URL lives in og:image meta, not in the NUXT blob
+    var og = document.querySelector('meta[property="og:image"]');
+    result.photo_url = og ? og.getAttribute('content') : null;
+
+    // Pick the first match whose quoted value is non-empty — the NUXT blob
+    // double-declares several fields (the first is a minified 'a' placeholder).
+    function pickQuoted(txt, field) {
+        var re = new RegExp(field + ':"([^"]*)"', 'g');
+        var m;
+        while ((m = re.exec(txt)) !== null) {
+            if (m[1]) return m[1];
+        }
+        return null;
+    }
+    // Same idea for numeric fields — NUXT uses both bare (e.g. `year_built:2026`)
+    // and quoted (e.g. `lot_size_square_feet:"94525.2"`) forms, depending on field.
+    // The minified 'a' placeholders don't satisfy the digit pattern so they're skipped.
+    function pickNumeric(txt, field) {
+        var re = new RegExp(field + ':"?(-?\\\\d+(?:\\\\.\\\\d+)?)"?', 'g');
+        var m;
+        while ((m = re.exec(txt)) !== null) {
+            var v = parseFloat(m[1]);
+            if (!isNaN(v)) return v;
+        }
+        return null;
+    }
+
     for (var i = 0; i < scripts.length; i++) {
         var txt = scripts[i].textContent;
         if (txt.indexOf('buyer_agent_full_name') < 0) continue;
 
-        // Buyer agent
-        var ba = /buyer_agent_full_name:"([^"]*)"/.exec(txt);
-        var baId = /buyer_agent_mls_id:"([^"]*)"/.exec(txt);
-        var baEmail = /buyer_agent_email:"([^"]*)"/.exec(txt);
-        result.buyer_agent = ba ? ba[1] : null;
-        result.buyer_agent_id = baId ? baId[1] : null;
-        result.buyer_agent_email = baEmail ? baEmail[1] : null;
-
-        // Buyer office
-        var bo = /buyer_office_name:"([^"]*)"/.exec(txt);
-        result.buyer_office = bo ? bo[1] : null;
-
-        // Listing agent — find the one with a real email (not minified 'a')
-        var laMatches = txt.match(/list_agent_full_name:"([^"]*)"/g) || [];
-        for (var j = 0; j < laMatches.length; j++) {
-            var name = /"([^"]*)"/.exec(laMatches[j]);
-            if (name && name[1]) {
-                result.listing_agent = name[1];
-                break;
-            }
-        }
-        var laId = txt.match(/list_agent_mls_id:"([^"]*)"/g) || [];
-        for (var k = 0; k < laId.length; k++) {
-            var id = /"([^"]*)"/.exec(laId[k]);
-            if (id && id[1]) { result.listing_agent_id = id[1]; break; }
-        }
-        var laEmail = txt.match(/list_agent_email:"([^"]*)"/g) || [];
-        for (var m = 0; m < laEmail.length; m++) {
-            var em = /"([^"]*)"/.exec(laEmail[m]);
-            if (em && em[1]) { result.listing_agent_email = em[1]; break; }
-        }
-
-        // Listing office
-        var loMatches = txt.match(/list_office_name:"([^"]*)"/g) || [];
-        for (var n = 0; n < loMatches.length; n++) {
-            var oname = /"([^"]*)"/.exec(loMatches[n]);
-            if (oname && oname[1]) { result.listing_office = oname[1]; break; }
-        }
+        // Agents + offices
+        result.listing_agent       = pickQuoted(txt, 'list_agent_full_name');
+        result.listing_agent_id    = pickQuoted(txt, 'list_agent_mls_id');
+        result.listing_agent_email = pickQuoted(txt, 'list_agent_email');
+        result.listing_office      = pickQuoted(txt, 'list_office_name');
+        result.buyer_agent         = pickQuoted(txt, 'buyer_agent_full_name');
+        result.buyer_agent_id      = pickQuoted(txt, 'buyer_agent_mls_id');
+        result.buyer_agent_email   = pickQuoted(txt, 'buyer_agent_email');
+        result.buyer_office        = pickQuoted(txt, 'buyer_office_name');
 
         // Transaction details
-        var cp = /close_price:"([^"]*)"/.exec(txt);
-        var lp = /list_price:"([^"]*)"/.exec(txt);
-        var cd = /close_date:"([^"]*)"/.exec(txt);
-        var li = /listing_id:"([^"]*)"/.exec(txt);
-        var dom = /days_on_market:(\\d+)/.exec(txt);
-        var pst = /property_sub_type:"([^"]*)"/.exec(txt);
+        var cp = pickQuoted(txt, 'close_price');
+        var lp = pickQuoted(txt, 'list_price');
+        var cd = pickQuoted(txt, 'close_date');
+        var ld = pickQuoted(txt, 'listing_contract_date');
+        result.sale_price  = cp ? parseInt(cp) : null;
+        result.list_price  = lp ? parseInt(lp) : null;
+        result.close_date  = cd ? cd.split('T')[0] : null;
+        result.list_date   = ld ? ld.split('T')[0] : null;
+        result.mls_number  = pickQuoted(txt, 'listing_id');
+        result.property_type = pickQuoted(txt, 'property_sub_type');
+        result.status      = pickQuoted(txt, 'mls_status');
 
-        result.sale_price = cp ? parseInt(cp[1]) : null;
-        result.list_price = lp ? parseInt(lp[1]) : null;
-        result.close_date = cd ? cd[1].split('T')[0] : null;
-        result.mls_number = li ? li[1] : null;
-        result.days_on_market = dom ? parseInt(dom[1]) : null;
-        result.property_type = pst ? pst[1] : null;
+        var dom = pickNumeric(txt, 'days_on_market');
+        result.days_on_market = dom !== null ? Math.round(dom) : null;
+
+        // Property attributes (for active-listings downstream tools)
+        var yb = pickNumeric(txt, 'year_built');
+        var lsqft = pickNumeric(txt, 'lot_size_square_feet');
+        result.year_built = yb !== null ? Math.round(yb) : null;
+        result.lot_sqft   = lsqft !== null ? Math.round(lsqft) : null;
+
+        var pr = /public_remarks:"((?:[^"\\\\]|\\\\.)*)"/.exec(txt);
+        result.description = pr ? pr[1] : null;
 
         break;
     }

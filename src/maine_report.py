@@ -25,7 +25,7 @@ _DEFAULT_OUTPUT = os.path.join(
     os.path.dirname(__file__), '..', 'data', 'maine_leaderboard.md',
 )
 
-_SUCCESS = "enrichment_status = 'success'"
+_SUCCESS = "enrichment_status = 'success' AND status = 'Closed'"
 
 # Placeholder / brokerage-as-agent values to exclude from agent leaderboards.
 # These are surface-level pollutants — the same agent's real sales are
@@ -266,12 +266,15 @@ def _get_stats(conn: sqlite3.Connection) -> dict:
             MIN(close_date) AS date_min,
             MAX(close_date) AS date_max
         FROM maine_transactions
+        WHERE status = 'Closed'
     ''').fetchone()
 
     town_rows = conn.execute('''
         SELECT city, COUNT(*) AS n
         FROM maine_transactions
-        WHERE enrichment_status = 'success' AND city IS NOT NULL
+        WHERE enrichment_status = 'success'
+          AND status = 'Closed'
+          AND city IS NOT NULL
         GROUP BY city ORDER BY n DESC
     ''').fetchall()
 

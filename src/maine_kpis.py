@@ -74,6 +74,7 @@ def query_agent_kpis(
                    sale_price, city, close_date
             FROM maine_transactions
             WHERE enrichment_status = 'success'
+              AND status = 'Closed'
               AND listing_agent IS NOT NULL AND TRIM(listing_agent) != ''
               {town_sql_listing}
             UNION ALL
@@ -83,6 +84,7 @@ def query_agent_kpis(
                    sale_price, city, close_date
             FROM maine_transactions
             WHERE enrichment_status = 'success'
+              AND status = 'Closed'
               AND buyer_agent IS NOT NULL AND TRIM(buyer_agent) != ''
               {town_sql_buyer}
         ),
@@ -169,6 +171,7 @@ def query_brokerage_kpis(
                    sale_price, city, close_date
             FROM maine_transactions
             WHERE enrichment_status = 'success'
+              AND status = 'Closed'
               AND listing_office IS NOT NULL AND TRIM(listing_office) != ''
               {town_sql_listing}
             UNION ALL
@@ -178,6 +181,7 @@ def query_brokerage_kpis(
                    sale_price, city, close_date
             FROM maine_transactions
             WHERE enrichment_status = 'success'
+              AND status = 'Closed'
               AND buyer_office IS NOT NULL AND TRIM(buyer_office) != ''
               {town_sql_buyer}
         )
