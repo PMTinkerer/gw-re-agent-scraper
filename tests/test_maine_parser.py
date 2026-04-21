@@ -1,7 +1,7 @@
 """Tests for src/maine_parser.py escape decoding and detail response parsing."""
 from __future__ import annotations
 
-from src.maine_parser import _decode_escapes, parse_detail_response
+from src.maine_parser import DETAIL_EXTRACT_JS, _decode_escapes, parse_detail_response
 
 
 class TestDecodeEscapes:
@@ -94,3 +94,29 @@ class TestParseActiveListingFields:
     def test_extracts_status(self):
         parsed = parse_detail_response(ACTIVE_JS_RETURN)
         assert parsed['status'] == 'Active'
+
+
+class TestDetailExtractJsFieldNames:
+    """Guard against silent regressions to wrong NUXT field names.
+
+    Verified 2026-04-21 against a real active-listing NUXT payload: the
+    MLS field is `listing_contract_date`, lot size is `lot_size_square_feet`
+    (a float), and photo URL lives only in og:image meta (not NUXT).
+    """
+
+    def test_uses_listing_contract_date(self):
+        assert 'listing_contract_date' in DETAIL_EXTRACT_JS
+        assert "'list_date'" not in DETAIL_EXTRACT_JS
+        assert '"list_date"' not in DETAIL_EXTRACT_JS
+
+    def test_uses_lot_size_square_feet(self):
+        assert 'lot_size_square_feet' in DETAIL_EXTRACT_JS
+
+    def test_photo_from_og_image(self):
+        assert "meta[property=\"og:image\"]" in DETAIL_EXTRACT_JS
+
+    def test_handles_double_occurrence_via_pickQuoted(self):
+        """Several NUXT fields are declared twice (first = minified 'a',
+        second = real value). The extraction must iterate matches."""
+        assert 'pickQuoted' in DETAIL_EXTRACT_JS
+        assert 'while ((m = re.exec(txt))' in DETAIL_EXTRACT_JS

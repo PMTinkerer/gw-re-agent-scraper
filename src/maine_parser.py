@@ -109,78 +109,71 @@ DETAIL_EXTRACT_JS = '''(function(){
     var scripts = document.querySelectorAll('script');
     var result = {error: null};
 
+    // Photo URL lives in og:image meta, not in the NUXT blob
+    var og = document.querySelector('meta[property="og:image"]');
+    result.photo_url = og ? og.getAttribute('content') : null;
+
+    // Pick the first match whose quoted value is non-empty — the NUXT blob
+    // double-declares several fields (the first is a minified 'a' placeholder).
+    function pickQuoted(txt, field) {
+        var re = new RegExp(field + ':"([^"]*)"', 'g');
+        var m;
+        while ((m = re.exec(txt)) !== null) {
+            if (m[1]) return m[1];
+        }
+        return null;
+    }
+    // Same idea for numeric fields — NUXT uses both bare (e.g. `year_built:2026`)
+    // and quoted (e.g. `lot_size_square_feet:"94525.2"`) forms, depending on field.
+    // The minified 'a' placeholders don't satisfy the digit pattern so they're skipped.
+    function pickNumeric(txt, field) {
+        var re = new RegExp(field + ':"?(-?\\\\d+(?:\\\\.\\\\d+)?)"?', 'g');
+        var m;
+        while ((m = re.exec(txt)) !== null) {
+            var v = parseFloat(m[1]);
+            if (!isNaN(v)) return v;
+        }
+        return null;
+    }
+
     for (var i = 0; i < scripts.length; i++) {
         var txt = scripts[i].textContent;
         if (txt.indexOf('buyer_agent_full_name') < 0) continue;
 
-        // Buyer agent
-        var ba = /buyer_agent_full_name:"([^"]*)"/.exec(txt);
-        var baId = /buyer_agent_mls_id:"([^"]*)"/.exec(txt);
-        var baEmail = /buyer_agent_email:"([^"]*)"/.exec(txt);
-        result.buyer_agent = ba ? ba[1] : null;
-        result.buyer_agent_id = baId ? baId[1] : null;
-        result.buyer_agent_email = baEmail ? baEmail[1] : null;
+        // Agents + offices
+        result.listing_agent       = pickQuoted(txt, 'list_agent_full_name');
+        result.listing_agent_id    = pickQuoted(txt, 'list_agent_mls_id');
+        result.listing_agent_email = pickQuoted(txt, 'list_agent_email');
+        result.listing_office      = pickQuoted(txt, 'list_office_name');
+        result.buyer_agent         = pickQuoted(txt, 'buyer_agent_full_name');
+        result.buyer_agent_id      = pickQuoted(txt, 'buyer_agent_mls_id');
+        result.buyer_agent_email   = pickQuoted(txt, 'buyer_agent_email');
+        result.buyer_office        = pickQuoted(txt, 'buyer_office_name');
 
-        // Buyer office
-        var bo = /buyer_office_name:"([^"]*)"/.exec(txt);
-        result.buyer_office = bo ? bo[1] : null;
+        // Transaction details
+        var cp = pickQuoted(txt, 'close_price');
+        var lp = pickQuoted(txt, 'list_price');
+        var cd = pickQuoted(txt, 'close_date');
+        var ld = pickQuoted(txt, 'listing_contract_date');
+        result.sale_price  = cp ? parseInt(cp) : null;
+        result.list_price  = lp ? parseInt(lp) : null;
+        result.close_date  = cd ? cd.split('T')[0] : null;
+        result.list_date   = ld ? ld.split('T')[0] : null;
+        result.mls_number  = pickQuoted(txt, 'listing_id');
+        result.property_type = pickQuoted(txt, 'property_sub_type');
+        result.status      = pickQuoted(txt, 'mls_status');
 
-        // Listing agent — find the one with a real email (not minified 'a')
-        var laMatches = txt.match(/list_agent_full_name:"([^"]*)"/g) || [];
-        for (var j = 0; j < laMatches.length; j++) {
-            var name = /"([^"]*)"/.exec(laMatches[j]);
-            if (name && name[1]) {
-                result.listing_agent = name[1];
-                break;
-            }
-        }
-        var laId = txt.match(/list_agent_mls_id:"([^"]*)"/g) || [];
-        for (var k = 0; k < laId.length; k++) {
-            var id = /"([^"]*)"/.exec(laId[k]);
-            if (id && id[1]) { result.listing_agent_id = id[1]; break; }
-        }
-        var laEmail = txt.match(/list_agent_email:"([^"]*)"/g) || [];
-        for (var m = 0; m < laEmail.length; m++) {
-            var em = /"([^"]*)"/.exec(laEmail[m]);
-            if (em && em[1]) { result.listing_agent_email = em[1]; break; }
-        }
-
-        // Listing office
-        var loMatches = txt.match(/list_office_name:"([^"]*)"/g) || [];
-        for (var n = 0; n < loMatches.length; n++) {
-            var oname = /"([^"]*)"/.exec(loMatches[n]);
-            if (oname && oname[1]) { result.listing_office = oname[1]; break; }
-        }
-
-        // Transaction details (extended for active-listings pipeline)
-        var cp = /close_price:"([^"]*)"/.exec(txt);
-        var lp = /list_price:"([^"]*)"/.exec(txt);
-        var cd = /close_date:"([^"]*)"/.exec(txt);
-        var ld = /list_date:"([^"]*)"/.exec(txt);
-        var li = /listing_id:"([^"]*)"/.exec(txt);
-        var dom = /days_on_market:(\\d+)/.exec(txt);
-        var pst = /property_sub_type:"([^"]*)"/.exec(txt);
-        var ms = /mls_status:"([^"]*)"/.exec(txt);
-
-        result.sale_price = cp && cp[1] ? parseInt(cp[1]) : null;
-        result.list_price = lp && lp[1] ? parseInt(lp[1]) : null;
-        result.close_date = cd && cd[1] ? cd[1].split('T')[0] : null;
-        result.list_date  = ld && ld[1] ? ld[1].split('T')[0] : null;
-        result.mls_number = li ? li[1] : null;
-        result.days_on_market = dom ? parseInt(dom[1]) : null;
-        result.property_type = pst ? pst[1] : null;
-        result.status = ms ? ms[1] : null;
+        var dom = pickNumeric(txt, 'days_on_market');
+        result.days_on_market = dom !== null ? Math.round(dom) : null;
 
         // Property attributes (for active-listings downstream tools)
-        var yb = /year_built:(\\d+)/.exec(txt);
-        var lsqft = /lot_sqft:(\\d+)/.exec(txt);
-        var pr = /public_remarks:"((?:[^"\\\\]|\\\\.)*)"/.exec(txt);
-        var ph = /photo:"([^"]*)"/.exec(txt);
+        var yb = pickNumeric(txt, 'year_built');
+        var lsqft = pickNumeric(txt, 'lot_size_square_feet');
+        result.year_built = yb !== null ? Math.round(yb) : null;
+        result.lot_sqft   = lsqft !== null ? Math.round(lsqft) : null;
 
-        result.year_built = yb ? parseInt(yb[1]) : null;
-        result.lot_sqft = lsqft ? parseInt(lsqft[1]) : null;
+        var pr = /public_remarks:"((?:[^"\\\\]|\\\\.)*)"/.exec(txt);
         result.description = pr ? pr[1] : null;
-        result.photo_url = ph ? ph[1] : null;
 
         break;
     }
