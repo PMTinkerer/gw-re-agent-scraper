@@ -2,5 +2,5 @@ requests==2.33.1
 rapidfuzz==3.14.3
 playwright==1.58.0
 playwright-stealth==2.0.2
-firecrawl-py==4.22.1
+firecrawl-py==4.22.2
 pytest==9.0.3
