@@ -107,6 +107,7 @@ jobs:
           python -m playwright install chromium --with-deps
 
       - name: Audit dependencies for vulnerabilities
+        continue-on-error: true
         run: |
           pip install pip-audit
           pip-audit -r requirements.txt

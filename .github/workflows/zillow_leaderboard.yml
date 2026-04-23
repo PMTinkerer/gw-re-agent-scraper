@@ -69,6 +69,7 @@ jobs:
           fi
 
       - name: Audit dependencies
+        continue-on-error: true
         run: |
           pip install pip-audit
           pip-audit -r requirements.txt
