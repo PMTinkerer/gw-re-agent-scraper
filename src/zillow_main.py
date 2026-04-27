@@ -165,9 +165,16 @@ def main() -> int:
 
         from .database import get_connection
         from .index_page import generate_index_html
+        from .maine_database import get_connection as get_maine_connection
         redfin_conn = get_connection()
-        generate_index_html(redfin_conn=redfin_conn, zillow_conn=conn)
+        maine_conn = get_maine_connection()
+        generate_index_html(
+            redfin_conn=redfin_conn,
+            zillow_conn=conn,
+            maine_conn=maine_conn,
+        )
         redfin_conn.close()
+        maine_conn.close()
 
     save_state(state, args.state)
     conn.close()

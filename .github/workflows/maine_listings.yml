@@ -178,24 +178,33 @@ jobs:
           }
 
       - name: Prepare Pages artifact
-        if: always()
         run: |
           mkdir -p _site
           [ -f data/index.html ] && cp data/index.html _site/index.html
-          [ -f data/dashboard.html ] && cp data/dashboard.html _site/redfin.html
+          if [ -f data/dashboard.html ]; then
+            cp data/dashboard.html _site/dashboard.html
+            cp data/dashboard.html _site/redfin.html
+          fi
           if [ -f data/zillow_directory_dashboard.html ]; then
+            cp data/zillow_directory_dashboard.html _site/zillow_directory_dashboard.html
             cp data/zillow_directory_dashboard.html _site/zillow.html
           elif [ -f data/zillow_dashboard.html ]; then
+            cp data/zillow_dashboard.html _site/zillow_dashboard.html
             cp data/zillow_dashboard.html _site/zillow.html
           fi
-          [ -f data/maine_dashboard.html ] && cp data/maine_dashboard.html _site/maine.html
+          if [ -f data/maine_dashboard.html ]; then
+            cp data/maine_dashboard.html _site/maine_dashboard.html
+            cp data/maine_dashboard.html _site/maine.html
+          fi
+          if grep -R -n -E '^(<<<<<<<|=======|>>>>>>>)' _site; then
+            echo "Conflict markers found in Pages artifact"
+            exit 1
+          fi
 
       - name: Upload Pages artifact
-        if: always()
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
         with:
           path: _site/
 
       - name: Deploy to GitHub Pages
-        if: always()
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

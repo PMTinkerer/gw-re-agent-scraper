@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+from html import escape
 
 from .maine_report import build_maine_search_index
 from .report import build_agent_search_index
@@ -49,7 +50,27 @@ def generate_index_html(
     agent_json = json.dumps(agent_kpis, separators=(',', ':'), default=str)
     brokerage_json = json.dumps(brokerage_kpis, separators=(',', ':'), default=str)
 
-    html = _build_html(redfin_json, zillow_json, maine_json, agent_json, brokerage_json)
+    output_dir = os.path.dirname(os.path.abspath(output_path))
+    maine_src = _first_existing_dashboard(
+        output_dir,
+        ('maine_dashboard.html', 'maine.html'),
+        'maine_dashboard.html',
+    )
+    zillow_src = _first_existing_dashboard(
+        output_dir,
+        ('zillow_directory_dashboard.html', 'zillow_dashboard.html', 'zillow.html'),
+        'zillow_directory_dashboard.html',
+    )
+    redfin_src = _first_existing_dashboard(
+        output_dir,
+        ('dashboard.html', 'redfin.html'),
+        'dashboard.html',
+    )
+
+    html = _build_html(
+        redfin_json, zillow_json, maine_json, agent_json, brokerage_json,
+        maine_src=maine_src, zillow_src=zillow_src, redfin_src=redfin_src,
+    )
 
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(html)
@@ -60,6 +81,18 @@ def generate_index_html(
         len(agent_kpis), len(brokerage_kpis),
     )
     return output_path
+
+
+def _first_existing_dashboard(
+    output_dir: str,
+    candidates: tuple[str, ...],
+    fallback: str,
+) -> str:
+    """Return the first dashboard artifact present beside index.html."""
+    for filename in candidates:
+        if os.path.exists(os.path.join(output_dir, filename)):
+            return filename
+    return fallback
 
 
 def _fmt_currency(amount: int | float) -> str:
@@ -77,6 +110,9 @@ def _build_html(
     maine_json: str,
     agent_json: str,
     brokerage_json: str,
+    maine_src: str = 'maine_dashboard.html',
+    zillow_src: str = 'zillow_directory_dashboard.html',
+    redfin_src: str = 'dashboard.html',
 ) -> str:
     return f'''<!DOCTYPE html>
 <html lang="en">
@@ -101,9 +137,9 @@ def _build_html(
         </div>
     </nav>
     <div class="tab-content">
-        <iframe id="maine" class="active" src="maine.html"></iframe>
-        <iframe id="zillow" src="zillow.html"></iframe>
-        <iframe id="redfin" src="redfin.html"></iframe>
+        <iframe id="maine" class="active" src="{escape(maine_src, quote=True)}"></iframe>
+        <iframe id="zillow" src="{escape(zillow_src, quote=True)}"></iframe>
+        <iframe id="redfin" src="{escape(redfin_src, quote=True)}"></iframe>
         <div id="master" class="master-tab">
             <div class="master-filters">
                 <div class="entity-toggle">
@@ -681,7 +717,7 @@ def _search_js() -> str:
     document.querySelectorAll(".tab").forEach(btn => {
         btn.addEventListener("click", () => {
             document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
-            document.querySelectorAll(".tab-content iframe").forEach(f => f.classList.remove("active"));
+            document.querySelectorAll(".tab-content iframe, .tab-content .master-tab").forEach(p => p.classList.remove("active"));
             btn.classList.add("active");
             document.getElementById(btn.dataset.tab).classList.add("active");
         });

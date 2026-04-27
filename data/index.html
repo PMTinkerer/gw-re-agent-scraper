@@ -266,9 +266,9 @@
         </div>
     </nav>
     <div class="tab-content">
-        <iframe id="maine" class="active" src="maine.html"></iframe>
-        <iframe id="zillow" src="zillow.html"></iframe>
-        <iframe id="redfin" src="redfin.html"></iframe>
+        <iframe id="maine" class="active" src="maine_dashboard.html"></iframe>
+        <iframe id="zillow" src="zillow_directory_dashboard.html"></iframe>
+        <iframe id="redfin" src="dashboard.html"></iframe>
         <div id="master" class="master-tab">
             <div class="master-filters">
                 <div class="entity-toggle">
@@ -309,7 +309,7 @@
     document.querySelectorAll(".tab").forEach(btn => {
         btn.addEventListener("click", () => {
             document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
-            document.querySelectorAll(".tab-content iframe").forEach(f => f.classList.remove("active"));
+            document.querySelectorAll(".tab-content iframe, .tab-content .master-tab").forEach(p => p.classList.remove("active"));
             btn.classList.add("active");
             document.getElementById(btn.dataset.tab).classList.add("active");
         });
