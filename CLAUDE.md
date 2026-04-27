@@ -71,6 +71,11 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 - **Escape decoding**: NUXT blob embeds `\u002F` style escapes; decoded in `src/maine_parser.py::_decode_escapes` after regex extraction.
 - Weekly incremental (`--recent-only`): ~50-100 credits/week (fits Hobby plan). GitHub Actions cron Mondays 6:30am ET.
 - **Key technical detail**: Detail page has TWO `list_agent` objects in NUXT — first is `co_list_agent` (usually null), second has real data. Parser finds the one where `list_agent_email` is a quoted string.
+- **NUXT field name gotchas (verified 2026-04-21 against a live active page):**
+  - The MLS canonical "list date" is `listing_contract_date`, NOT `list_date`. There is no `list_date` field at all.
+  - Lot size is `lot_size_square_feet` as a **quoted float string** (e.g. `"94525.2"`), not `lot_sqft` as a bare int. The numeric picker in `DETAIL_EXTRACT_JS` must tolerate both quoted and bare forms (`year_built` and `days_on_market` are bare; `lot_size_square_feet` is quoted).
+  - Photo URL is NOT in the NUXT blob — it lives in the `<meta property="og:image">` tag in the document head. Pull it via `document.querySelector('meta[property="og:image"]').getAttribute('content')`.
+  - Several fields are double-declared in NUXT (first occurrence is the minified `'a'` placeholder, second has the real value). The `pickQuoted`/`pickNumeric` helpers in `DETAIL_EXTRACT_JS` iterate all occurrences and return the first non-empty/non-NaN value.
 - Separate DB: `data/maine_listings.db`, state: `data/maine_scrape_state.json`
 - Modules: `src/maine_database.py`, `src/maine_state.py`, `src/maine_parser.py`, `src/maine_firecrawl.py`, `src/maine_main.py`, `src/maine_notifier.py`, `src/maine_kpis.py`, `src/maine_report.py`, `src/maine_dashboard.py`
 - CLI: `python -m src.maine_main --discover --max-pages 90 --workers 3` then `python -m src.maine_main --enrich --batch-size 16500 --workers 25`
@@ -87,7 +92,7 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 - Interactive features: Agent/Brokerage toggle, Town filter (caps to top 50 when set), Period selector (12mo/3yr/All-time — changes default sort), in-table name/office search, sortable columns, Biggest Movers banner (top 5 risers + fallers; auto-hides when < 10 qualifying).
 - Row click / mover-card click → detail modal with every period split.
 
-### Phase 7: Active Listings Pipeline — COMPLETE (2026-04-17)
+### Phase 7: Active Listings Pipeline — LIVE (2026-04-21)
 - Same DB (`maine_listings.db`), new `status` column on `maine_transactions`: `'Active' | 'Pending' | 'Closed' | 'Withdrawn'`.
 - Added columns for active workflows: `list_date`, `last_seen_at`, `year_built`, `lot_sqft`, `description`, `photo_url`.
 - New child table `maine_listing_history` captures change-detected snapshots of `(status, list_price)`. Watched fields exclude `days_on_market` deliberately (ticks daily — would spam the table).
@@ -160,6 +165,7 @@ sqlite3 data/maine_listings.db "SELECT COUNT(*) total, SUM(CASE WHEN enrichment_
 - GitHub Actions job max 45-min timeout, 2000 min/month free tier
 - Agent name normalization fuzzy threshold (90%) may need tuning after real data
 - Some Redfin property URLs return CloudFront 403 intermittently — marked as `error` and retried (up to 3 attempts)
+- **Never `git checkout --ours` on `data/maine_listings.db` while it has unflushed WAL** — combining a stale `*-wal`/`*-shm` pair with a checked-out tree version corrupts the DB ("database disk image is malformed"). Either flush first (`sqlite3 data/maine_listings.db "PRAGMA wal_checkpoint(TRUNCATE);"`) or commit before resolving merge conflicts that touch it. Backups in `data/maine_listings.db.bak_<timestamp>` (last 3 retained, written before every mutating run) are the recovery path.
 
 ## City Normalization
 Cape Neddick → York, Moody → Wells, Ocean Park → Old Orchard Beach, Cape Porpoise → Kennebunkport, Biddeford Pool → Biddeford, etc. See `src/scraper.py` CITY_NORMALIZATION dict.
