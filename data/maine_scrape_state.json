@@ -3,54 +3,54 @@
     "kittery": {
       "status": "complete",
       "listings_found": 30,
-      "completed_at": "2026-06-14T13:14:41.433499"
+      "completed_at": "2026-06-15T16:27:29.246123"
     },
     "york": {
       "status": "complete",
       "listings_found": 33,
-      "completed_at": "2026-06-14T13:14:35.833066"
+      "completed_at": "2026-06-15T16:27:24.590519"
     },
     "ogunquit": {
       "status": "complete",
       "listings_found": 21,
-      "completed_at": "2026-06-14T13:14:36.266163"
+      "completed_at": "2026-06-15T16:27:26.200780"
     },
     "wells": {
       "status": "complete",
       "listings_found": 38,
-      "completed_at": "2026-06-14T13:14:35.314540"
+      "completed_at": "2026-06-15T16:27:24.678381"
     },
     "kennebunk": {
       "status": "complete",
       "listings_found": 37,
-      "completed_at": "2026-06-14T13:14:33.952796"
+      "completed_at": "2026-06-15T16:27:27.585333"
     },
     "kennebunkport": {
       "status": "complete",
       "listings_found": 30,
-      "completed_at": "2026-06-14T13:14:33.686765"
+      "completed_at": "2026-06-15T16:27:27.642143"
     },
     "biddeford": {
       "status": "complete",
       "listings_found": 33,
-      "completed_at": "2026-06-14T13:14:34.460739"
+      "completed_at": "2026-06-15T16:27:24.613215"
     },
     "saco": {
       "status": "complete",
-      "listings_found": 38,
-      "completed_at": "2026-06-14T13:14:36.063942"
+      "listings_found": 36,
+      "completed_at": "2026-06-15T16:27:25.885852"
     },
     "old_orchard_beach": {
       "status": "complete",
       "listings_found": 30,
-      "completed_at": "2026-06-14T13:14:36.691834"
+      "completed_at": "2026-06-15T16:27:23.895258"
     },
     "scarborough": {
       "status": "complete",
       "listings_found": 42,
-      "completed_at": "2026-06-14T13:14:34.468856"
+      "completed_at": "2026-06-15T16:27:25.881717"
     }
   },
-  "last_run": "2026-06-14T13:15:23.838347",
+  "last_run": "2026-06-15T16:28:06.325939",
   "created_at": "2026-04-16T01:12:00.608461"
 }
