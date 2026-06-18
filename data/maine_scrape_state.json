@@ -2,55 +2,55 @@
   "towns": {
     "kittery": {
       "status": "complete",
-      "listings_found": 33,
-      "completed_at": "2026-06-17T14:37:48.797813"
+      "listings_found": 31,
+      "completed_at": "2026-06-18T14:28:58.997187"
     },
     "york": {
       "status": "complete",
-      "listings_found": 34,
-      "completed_at": "2026-06-17T14:37:47.596004"
+      "listings_found": 33,
+      "completed_at": "2026-06-18T14:29:15.136773"
     },
     "ogunquit": {
       "status": "complete",
       "listings_found": 22,
-      "completed_at": "2026-06-17T14:37:46.546169"
+      "completed_at": "2026-06-18T14:28:49.211385"
     },
     "wells": {
       "status": "complete",
-      "listings_found": 38,
-      "completed_at": "2026-06-17T14:37:48.331412"
+      "listings_found": 37,
+      "completed_at": "2026-06-18T14:28:46.316189"
     },
     "kennebunk": {
       "status": "complete",
       "listings_found": 36,
-      "completed_at": "2026-06-17T14:37:45.652844"
+      "completed_at": "2026-06-18T14:28:49.603026"
     },
     "kennebunkport": {
       "status": "complete",
       "listings_found": 30,
-      "completed_at": "2026-06-17T14:37:45.554887"
+      "completed_at": "2026-06-18T14:28:47.732471"
     },
     "biddeford": {
       "status": "complete",
-      "listings_found": 33,
-      "completed_at": "2026-06-17T14:37:48.378289"
+      "listings_found": 34,
+      "completed_at": "2026-06-18T14:29:20.863678"
     },
     "saco": {
       "status": "complete",
       "listings_found": 36,
-      "completed_at": "2026-06-17T14:37:46.706399"
+      "completed_at": "2026-06-18T14:28:51.647294"
     },
     "old_orchard_beach": {
       "status": "complete",
       "listings_found": 30,
-      "completed_at": "2026-06-17T14:37:45.471127"
+      "completed_at": "2026-06-18T14:29:05.621750"
     },
     "scarborough": {
       "status": "complete",
       "listings_found": 42,
-      "completed_at": "2026-06-17T14:37:44.940584"
+      "completed_at": "2026-06-18T14:28:49.505506"
     }
   },
-  "last_run": "2026-06-17T14:38:28.054905",
+  "last_run": "2026-06-18T14:31:02.832428",
   "created_at": "2026-04-16T01:12:00.608461"
 }
