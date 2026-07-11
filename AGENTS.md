@@ -69,3 +69,24 @@
 - **2026-03-30 (session 7):** IPRoyal proxy outage diagnosed + renewed. Evaluated PrimeMLS (not viable — ToS + membership).
 - **2026-03-22 to 2026-03-23 (sessions 4-6):** Pushed to GitHub. Residential proxy + resource blocking. HTML dashboard with trend badges. Property type filter (SFH + Condo). Brokerage-as-agent exclusion. GitHub Pages auto-deploy.
 - **2026-03-21 (sessions 1-3):** Initial build. Redfin CSV collection (2,371 transactions). Playwright agent enrichment pipeline (two DOM structures, fresh context per page, CDN error detection). 97 tests passing.
+
+## Workspace Atlas
+
+This repo is one of ~30 projects in Lucas Knowles's SCMaine workspace. The
+workspace atlas — `~/atlas` locally, https://github.com/PMTinkerer/atlas —
+is the source of truth for what exists, where features live, and the
+cross-project rules. Consult it before building anything that might already
+exist elsewhere.
+
+- Cold start: `~/atlas/ATLAS.md`
+- This project's card: `~/atlas/projects/gw-re-agent-scraper.md`
+- "Where does X already live": `~/atlas/capabilities.md`
+- External-service patterns: `~/atlas/integrations.md`
+
+Rules that matter most in this repo:
+
+- Pipeline scraping: playwright==1.58.0 + playwright-stealth, fresh context per page, resource blocking, 10-30s jittered delays.
+- Pin every dependency exactly; SHA-pin GitHub Actions; no emojis anywhere; secrets never in code (~/.env or project .env).
+
+After shipping a change here, update the project's card and its
+`last_verified` date in the atlas (see `~/atlas/protocol/UPDATE.md`).
