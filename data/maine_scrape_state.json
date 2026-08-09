@@ -3,54 +3,54 @@
     "kittery": {
       "status": "complete",
       "listings_found": 32,
-      "completed_at": "2026-08-08T11:41:21.102578"
+      "completed_at": "2026-08-09T11:42:41.089521"
     },
     "york": {
       "status": "complete",
       "listings_found": 32,
-      "completed_at": "2026-08-08T11:41:21.134198"
+      "completed_at": "2026-08-09T11:42:38.791129"
     },
     "ogunquit": {
       "status": "complete",
       "listings_found": 29,
-      "completed_at": "2026-08-08T11:41:20.944066"
+      "completed_at": "2026-08-09T11:42:38.782322"
     },
     "wells": {
       "status": "complete",
       "listings_found": 37,
-      "completed_at": "2026-08-08T11:41:21.204480"
+      "completed_at": "2026-08-09T11:42:39.113566"
     },
     "kennebunk": {
       "status": "complete",
       "listings_found": 38,
-      "completed_at": "2026-08-08T11:41:20.313315"
+      "completed_at": "2026-08-09T11:42:42.236309"
     },
     "kennebunkport": {
       "status": "complete",
       "listings_found": 33,
-      "completed_at": "2026-08-08T11:41:21.407903"
+      "completed_at": "2026-08-09T11:42:39.150058"
     },
     "biddeford": {
       "status": "complete",
       "listings_found": 28,
-      "completed_at": "2026-08-08T11:41:21.008318"
+      "completed_at": "2026-08-09T11:42:38.558618"
     },
     "saco": {
       "status": "complete",
       "listings_found": 35,
-      "completed_at": "2026-08-08T11:41:20.011647"
+      "completed_at": "2026-08-09T11:42:40.560577"
     },
     "old_orchard_beach": {
       "status": "complete",
       "listings_found": 41,
-      "completed_at": "2026-08-08T11:41:20.958789"
+      "completed_at": "2026-08-09T11:42:38.174221"
     },
     "scarborough": {
       "status": "complete",
       "listings_found": 44,
-      "completed_at": "2026-08-08T11:41:20.929928"
+      "completed_at": "2026-08-09T11:42:39.033606"
     }
   },
-  "last_run": "2026-08-08T11:41:59.191683",
+  "last_run": "2026-08-09T11:43:19.043950",
   "created_at": "2026-04-16T01:12:00.608461"
 }
