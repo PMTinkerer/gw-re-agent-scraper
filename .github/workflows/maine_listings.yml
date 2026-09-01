@@ -4,8 +4,9 @@ on:
   schedule:
     # Weekly: Mondays at 11:30 UTC (6:30am ET) — closed transactions
     - cron: '30 11 * * 1'
-    # Daily: every day at 11:30 UTC (6:30am ET) — active listings
-    - cron: '30 11 * * *'
+    # Daily: every day at 12:30 UTC — active listings.
+    # The one-hour offset prevents Monday's generated-data commits from racing.
+    - cron: '30 12 * * *'
   workflow_dispatch:
     inputs:
       mode:
@@ -69,7 +70,7 @@ jobs:
             MODE="${{ github.event.inputs.mode }}"
           elif [ "${{ github.event.schedule }}" = "30 11 * * 1" ]; then
             MODE="weekly"
-          elif [ "${{ github.event.schedule }}" = "30 11 * * *" ]; then
+          elif [ "${{ github.event.schedule }}" = "30 12 * * *" ]; then
             MODE="daily-active"
           else
             MODE="weekly"
