@@ -2,55 +2,57 @@
   "towns": {
     "kittery": {
       "status": "complete",
-      "listings_found": 32,
-      "completed_at": "2026-09-14T12:44:33.024094"
+      "listings_found": 33,
+      "completed_at": "2026-09-15T12:43:26.257122"
     },
     "york": {
       "status": "complete",
       "listings_found": 38,
-      "completed_at": "2026-09-14T12:44:36.600389"
+      "completed_at": "2026-09-15T12:44:26.430693"
     },
     "ogunquit": {
       "status": "complete",
       "listings_found": 36,
-      "completed_at": "2026-09-14T12:44:29.367113"
+      "completed_at": "2026-09-15T12:43:01.830624"
     },
     "wells": {
       "status": "complete",
-      "listings_found": 36,
-      "completed_at": "2026-09-14T12:44:22.429689"
+      "listings_found": 37,
+      "completed_at": "2026-09-15T12:44:14.086837"
     },
     "kennebunk": {
       "status": "complete",
       "listings_found": 41,
-      "completed_at": "2026-09-14T12:44:46.484642"
+      "completed_at": "2026-09-15T12:43:26.432309"
     },
     "kennebunkport": {
-      "status": "complete",
-      "listings_found": 32,
-      "completed_at": "2026-09-14T12:44:20.131160"
+      "status": "failed",
+      "error": "Request Timeout: Failed to scrape as the request timed out. The operation timed out while waiting for a concurrency slot to become available. This means that your requests are exhausting your concurrent browsers limit. Consider using batch endpoints which wait for concurrency slots to become available indefinitely, or consider upgrading your plan to incrase your concurrency limit at https://firecrawl.dev/pricing. - No additional error details provided.",
+      "retries": 1,
+      "failed_at": "2026-09-15T12:43:18.028068"
     },
     "biddeford": {
       "status": "complete",
-      "listings_found": 28,
-      "completed_at": "2026-09-14T12:44:43.283520"
+      "listings_found": 29,
+      "completed_at": "2026-09-15T12:44:10.729011"
     },
     "saco": {
       "status": "complete",
       "listings_found": 37,
-      "completed_at": "2026-09-14T12:44:31.660472"
+      "completed_at": "2026-09-15T12:44:24.018189"
     },
     "old_orchard_beach": {
       "status": "complete",
-      "listings_found": 37,
-      "completed_at": "2026-09-14T12:44:43.830504"
+      "listings_found": 38,
+      "completed_at": "2026-09-15T12:44:28.868808"
     },
     "scarborough": {
-      "status": "complete",
-      "listings_found": 41,
-      "completed_at": "2026-09-14T12:44:22.099625"
+      "status": "failed",
+      "error": "Request Timeout: Failed to scrape as the request timed out. Scrape timed out due to maximum length of 5 minutes - No additional error details provided.",
+      "retries": 1,
+      "failed_at": "2026-09-15T12:47:55.871595"
     }
   },
-  "last_run": "2026-09-14T12:45:26.000208",
+  "last_run": "2026-09-15T12:49:43.026561",
   "created_at": "2026-04-16T01:12:00.608461"
 }
