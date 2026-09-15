@@ -116,10 +116,13 @@ jobs:
         env:
           RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
           HEALTHCHECK_PING_URL: ${{ secrets.HEALTHCHECK_PING_URL }}
+          INPUT_MAX_CHUNKS: ${{ github.event.inputs.max_chunks }}
+          INPUT_MODE: ${{ github.event.inputs.mode }}
+          INPUT_SOURCE: ${{ github.event.inputs.source }}
         run: |
-          CHUNKS="${{ github.event.inputs.max_chunks || '3' }}"
-          MODE="${{ github.event.inputs.mode || 'auto' }}"
-          SOURCE="${{ github.event.inputs.source || '' }}"
+          CHUNKS="${INPUT_MAX_CHUNKS:-3}"
+          MODE="${INPUT_MODE:-auto}"
+          SOURCE="$INPUT_SOURCE"
 
           CMD="python -m src.main --mode $MODE --max-chunks $CHUNKS"
           if [ -n "$SOURCE" ]; then
@@ -153,8 +156,9 @@ jobs:
         env:
           CI: 'true'
           PROXY_URL: ${{ secrets.PROXY_URL }}
+          INPUT_ENRICH_BATCH_SIZE: ${{ github.event.inputs.enrich_batch_size }}
         run: |
-          BATCH="${{ github.event.inputs.enrich_batch_size || '40' }}"
+          BATCH="${INPUT_ENRICH_BATCH_SIZE:-40}"
           if [ "$BATCH" = "0" ]; then
             echo "Enrichment skipped (batch_size=0)."
             echo "skipped=true" >> $GITHUB_OUTPUT

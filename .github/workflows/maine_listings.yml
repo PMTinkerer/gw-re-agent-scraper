@@ -64,13 +64,16 @@ jobs:
 
       - name: Determine effective mode
         id: pickmode
+        env:
+          INPUT_MODE: ${{ github.event.inputs.mode }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
         run: |
           # Manual dispatch wins. Otherwise derive from cron schedule.
-          if [ -n "${{ github.event.inputs.mode }}" ]; then
-            MODE="${{ github.event.inputs.mode }}"
-          elif [ "${{ github.event.schedule }}" = "30 11 * * 1" ]; then
+          if [ -n "$INPUT_MODE" ]; then
+            MODE="$INPUT_MODE"
+          elif [ "$EVENT_SCHEDULE" = "30 11 * * 1" ]; then
             MODE="weekly"
-          elif [ "${{ github.event.schedule }}" = "30 12 * * *" ]; then
+          elif [ "$EVENT_SCHEDULE" = "30 12 * * *" ]; then
             MODE="daily-active"
           else
             MODE="weekly"
@@ -85,12 +88,17 @@ jobs:
           PUSHOVER_API_TOKEN: ${{ secrets.PUSHOVER_API_TOKEN }}
           PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EFFECTIVE_MODE: ${{ steps.pickmode.outputs.mode }}
+          INPUT_WORKERS: ${{ github.event.inputs.workers }}
+          INPUT_BATCH_SIZE: ${{ github.event.inputs.batch_size }}
+          INPUT_MAX_PAGES: ${{ github.event.inputs.max_pages }}
+          INPUT_MAX_CREDITS: ${{ github.event.inputs.max_credits }}
         run: |
-          MODE="${{ steps.pickmode.outputs.mode }}"
-          WORKERS="${{ github.event.inputs.workers || '10' }}"
-          BATCH="${{ github.event.inputs.batch_size || '200' }}"
-          MAX_PAGES="${{ github.event.inputs.max_pages || '90' }}"
-          MAX_CREDITS="${{ github.event.inputs.max_credits }}"
+          MODE="$EFFECTIVE_MODE"
+          WORKERS="${INPUT_WORKERS:-10}"
+          BATCH="${INPUT_BATCH_SIZE:-200}"
+          MAX_PAGES="${INPUT_MAX_PAGES:-90}"
+          MAX_CREDITS="$INPUT_MAX_CREDITS"
           CREDITS_ARG=""
           if [ -n "$MAX_CREDITS" ]; then
             CREDITS_ARG="--max-credits $MAX_CREDITS"

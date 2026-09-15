@@ -59,9 +59,11 @@ jobs:
           key: playwright-${{ hashFiles('requirements.txt') }}
 
       - name: Install dependencies
+        env:
+          INPUT_USE_FIRECRAWL: ${{ github.event.inputs.use_firecrawl }}
         run: |
           pip install -r requirements.txt
-          USE_FC="${{ github.event.inputs.use_firecrawl || 'false' }}"
+          USE_FC="${INPUT_USE_FIRECRAWL:-false}"
           if [ "$USE_FC" != "true" ]; then
             python -m playwright install chromium --with-deps
           else
@@ -95,9 +97,18 @@ jobs:
           ZILLOW_RETRY_BACKOFF_MAX: '18'
           ZILLOW_DIRECTORY_ATTEMPTS: '3'
           ZILLOW_PROFILE_ATTEMPTS: '3'
+          INPUT_USE_FIRECRAWL: ${{ github.event.inputs.use_firecrawl }}
+          INPUT_MAX_PAGES: ${{ github.event.inputs.max_pages }}
+          INPUT_TOWNS: ${{ github.event.inputs.towns }}
+          INPUT_BATCH_SIZE: ${{ github.event.inputs.batch_size }}
+          INPUT_SMOKE_CHECK: ${{ github.event.inputs.smoke_check }}
+          INPUT_SMOKE_ONLY: ${{ github.event.inputs.smoke_only }}
+          INPUT_DISCOVER: ${{ github.event.inputs.discover }}
+          INPUT_SCRAPE_PROFILES: ${{ github.event.inputs.scrape_profiles }}
+          INPUT_REPORT_ONLY: ${{ github.event.inputs.report_only }}
         run: |
-          USE_FC="${{ github.event.inputs.use_firecrawl || 'false' }}"
-          MAX_PAGES="${{ github.event.inputs.max_pages || '5' }}"
+          USE_FC="${INPUT_USE_FIRECRAWL:-false}"
+          MAX_PAGES="${INPUT_MAX_PAGES:-5}"
 
           if [ "$USE_FC" != "true" ] && [ -z "$PROXY_URL" ]; then
             echo "PROXY_URL secret is required for Playwright Zillow runs (use Firecrawl mode to skip)"
@@ -113,13 +124,13 @@ jobs:
             SCRAPE="false"
             REPORT_ONLY="false"
           else
-            TOWNS="${{ github.event.inputs.towns || '' }}"
-            BATCH="${{ github.event.inputs.batch_size || '10' }}"
-            SMOKE_CHECK="${{ github.event.inputs.smoke_check || 'true' }}"
-            SMOKE_ONLY="${{ github.event.inputs.smoke_only || 'false' }}"
-            DISCOVER="${{ github.event.inputs.discover || 'true' }}"
-            SCRAPE="${{ github.event.inputs.scrape_profiles || 'true' }}"
-            REPORT_ONLY="${{ github.event.inputs.report_only || 'false' }}"
+            TOWNS="$INPUT_TOWNS"
+            BATCH="${INPUT_BATCH_SIZE:-10}"
+            SMOKE_CHECK="${INPUT_SMOKE_CHECK:-true}"
+            SMOKE_ONLY="${INPUT_SMOKE_ONLY:-false}"
+            DISCOVER="${INPUT_DISCOVER:-true}"
+            SCRAPE="${INPUT_SCRAPE_PROFILES:-true}"
+            REPORT_ONLY="${INPUT_REPORT_ONLY:-false}"
           fi
 
           # Smoke check (Playwright mode only)
