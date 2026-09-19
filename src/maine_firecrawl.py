@@ -60,8 +60,21 @@ def set_credit_limit(limit: int | None) -> None:
 
 
 def build_search_url(*, town: str, page: int, status: str = 'Closed') -> str:
-    """Compose a mainelistings.com search URL for one town + status + page."""
-    url = f'{_SEARCH_URL}?city={town}&mls_status={status}'
+    """Compose a mainelistings.com search URL for one town + status + page.
+
+    The sort key is explicit and status-dependent. mainelistings.com defaults
+    to `on_market_date` — the date a property was *listed* — which for a
+    Closed search buries recent closings behind years of older listings that
+    happened to close recently. `--recent-only` then pages through the wrong
+    end of the result set and never reaches the new sales. Sorting Closed
+    results by `close_date` makes "recent" mean recently *sold*.
+
+    Active searches keep `on_market_date`, which is what "recent" means for a
+    listing that has not sold yet.
+    """
+    sort_by = 'close_date' if status == 'Closed' else 'on_market_date'
+    url = (f'{_SEARCH_URL}?city={town}&mls_status={status}'
+           f'&sort_by={sort_by}&sort_order=desc')
     if page > 1:
         url += f'&page={page}'
     return url
@@ -353,15 +366,18 @@ def enrich_listings(
     logger.info('Enrichment batch: %d listings (workers=%d)', total, workers)
 
     if workers <= 1:
-        return _enrich_serial(pending)
+        return _enrich_serial(conn, pending)
 
     return _enrich_concurrent(pending, workers, db_path)
 
 
-def _enrich_serial(pending: list[dict]) -> dict:
-    """Serial enrichment using the caller's connection."""
+def _enrich_serial(conn: sqlite3.Connection, pending: list[dict]) -> dict:
+    """Serial enrichment using the caller's connection.
+
+    The caller owns the connection (and chose its path via --db), so this
+    must neither open its own nor close this one.
+    """
     client = _get_client()
-    conn = get_connection()
     db_lock = threading.Lock()
     breaker = _CircuitBreaker()
     counts = {'enriched': 0, 'failed': 0}
@@ -380,7 +396,6 @@ def _enrich_serial(pending: list[dict]) -> dict:
                         i, len(pending), rate,
                         counts['enriched'], counts['failed'])
 
-    conn.close()
     return {'enriched': counts['enriched'], 'failed': counts['failed'], 'total': len(pending)}
 
 

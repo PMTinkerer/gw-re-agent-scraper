@@ -226,6 +226,19 @@ def upsert_listing(conn: sqlite3.Connection, record: dict) -> bool:
                 list_price = COALESCE(excluded.list_price, maine_transactions.list_price),
                 listing_office = COALESCE(excluded.listing_office, maine_transactions.listing_office),
                 status = COALESCE(excluded.status, maine_transactions.status),
+                -- A status change invalidates the enrichment we already have:
+                -- a listing enriched while Active has no close_date and no
+                -- buyer agent, and nothing else would ever re-open it.
+                enrichment_status = CASE
+                    WHEN excluded.status IS NOT NULL
+                     AND excluded.status IS NOT maine_transactions.status
+                    THEN NULL
+                    ELSE maine_transactions.enrichment_status END,
+                enrichment_attempts = CASE
+                    WHEN excluded.status IS NOT NULL
+                     AND excluded.status IS NOT maine_transactions.status
+                    THEN 0
+                    ELSE maine_transactions.enrichment_attempts END,
                 last_seen_at = excluded.last_seen_at
         ''', (
             record.get('address'), record.get('city'), record.get('state', 'ME'),
@@ -326,10 +339,23 @@ def mark_enrichment_failed(
 def get_unenriched(
     conn: sqlite3.Connection, batch_size: int = 50, max_attempts: int = 2,
 ) -> list[dict]:
-    """Return listings needing detail page enrichment."""
+    """Return listings needing detail page enrichment.
+
+    A Closed listing with no close_date is treated as unenriched even when it
+    is marked 'success'. That combination means the row was enriched while it
+    was still Active and then flipped to Closed by discovery — so it carries
+    no close_date, buyer_agent or buyer_office. This clause both recovers the
+    existing backlog of such rows and acts as a safety net if any future path
+    changes status without clearing enrichment_status.
+    """
     rows = conn.execute('''
         SELECT detail_url, city FROM maine_transactions
-        WHERE (enrichment_status IS NULL OR enrichment_status = 'error')
+        WHERE (
+                enrichment_status IS NULL
+                OR enrichment_status = 'error'
+                OR (status = 'Closed'
+                    AND (close_date IS NULL OR close_date = ''))
+              )
           AND enrichment_attempts < ?
         ORDER BY discovered_at DESC
         LIMIT ?
@@ -346,11 +372,85 @@ def url_exists(conn: sqlite3.Connection, detail_url: str) -> bool:
     return row is not None
 
 
-def mark_withdrawn_stale(
+def _requeue_for_enrichment(
+    conn: sqlite3.Connection, where: str, params: list,
+    *, limit: int | None = None,
+) -> int:
+    """Clear enrichment state for the rows matched by `where`.
+
+    Clearing both columns puts a row back at the front of get_unenriched(),
+    so the next enrichment pass re-reads its detail page. Returns the count.
+    """
+    sql = f'SELECT detail_url FROM maine_transactions WHERE {where}'
+    if limit is not None:
+        sql += ' LIMIT ?'
+        params = [*params, limit]
+
+    urls = [r[0] for r in conn.execute(sql, params).fetchall()]
+    if not urls:
+        return 0
+
+    placeholders = ','.join(['?'] * len(urls))
+    conn.execute(f'''
+        UPDATE maine_transactions
+        SET enrichment_status = NULL,
+            enrichment_attempts = 0
+        WHERE detail_url IN ({placeholders})
+    ''', urls)
+    conn.commit()
+    return len(urls)
+
+
+def queue_stale_for_verification(
     conn: sqlite3.Connection, *, stale_days: int = 7,
 ) -> int:
-    """Mark Active/Pending listings not seen in more than `stale_days` days
-    as status='Withdrawn', and write a history row for each.
+    """Re-open stale Active/Pending listings for detail-page verification.
+
+    A listing disappears from the Active feed for two very different reasons:
+    it sold, or it was withdrawn. The search card cannot tell us which, so we
+    clear enrichment_status and let the next enrichment pass read the
+    authoritative status (and close_date + buyer agent) off the detail page.
+
+    This replaces guessing 'Withdrawn', which silently converted real sales
+    into withdrawn listings and dropped them from every closed-side report.
+
+    Returns the count of listings queued.
+    """
+    cutoff = (datetime.utcnow() - timedelta(days=stale_days)).isoformat()
+    return _requeue_for_enrichment(
+        conn,
+        "status IN ('Active', 'Pending') "
+        'AND last_seen_at IS NOT NULL AND last_seen_at < ?',
+        [cutoff],
+    )
+
+
+def queue_withdrawn_for_reverification(
+    conn: sqlite3.Connection, *, limit: int | None = None,
+) -> int:
+    """One-time repair: re-open Withdrawn listings for detail-page checking.
+
+    Rows marked Withdrawn by the old unverified sweeper include real sales
+    that simply left the Active feed because they closed. Clearing
+    enrichment_status lets the next enrichment pass read each detail page and
+    restore the true status, close_date and buyer agent.
+
+    Returns the count of listings queued.
+    """
+    return _requeue_for_enrichment(
+        conn, "status = 'Withdrawn'", [], limit=limit)
+
+
+def mark_withdrawn_stale(
+    conn: sqlite3.Connection, *, stale_days: int = 30,
+) -> int:
+    """Bounded fallback: withdraw listings we tried and failed to verify.
+
+    Only applies to Active/Pending listings that are long stale *and* whose
+    detail page could not be read (enrichment_attempts > 0 with a non-success
+    status). A listing that has never been checked is left alone — we do not
+    guess. Without this fallback, listings whose pages disappear would sit in
+    Active forever.
 
     Returns the count of listings marked.
     """
@@ -360,6 +460,8 @@ def mark_withdrawn_stale(
         WHERE status IN ('Active', 'Pending')
           AND last_seen_at IS NOT NULL
           AND last_seen_at < ?
+          AND enrichment_attempts > 0
+          AND (enrichment_status IS NULL OR enrichment_status != 'success')
     ''', (cutoff,)).fetchall()
 
     urls = [(r[0], r[1]) for r in rows]

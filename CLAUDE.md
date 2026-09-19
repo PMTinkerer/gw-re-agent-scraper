@@ -73,6 +73,8 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 - **Escape decoding**: NUXT blob embeds `\u002F` style escapes; decoded in `src/maine_parser.py::_decode_escapes` after regex extraction.
 - Weekly incremental (`--recent-only`): ~50-100 credits/week (fits Hobby plan). GitHub Actions cron Mondays 6:30am ET.
 - **Key technical detail**: Detail page has TWO `list_agent` objects in NUXT — first is `co_list_agent` (usually null), second has real data. Parser finds the one where `list_agent_email` is a quoted string.
+- **Search sort is explicit and status-dependent (fixed 2026-09-19).** mainelistings.com defaults to `sort_by=on_market_date&sort_order=desc` — the date a property was *listed*. On a Closed search that buries recent sales behind years of older listings that happen to have closed recently, so `--recent-only` paged the wrong end of a 200+ page result set and captured ~7% of recent closings. `build_search_url` now sends `sort_by=close_date` for Closed and `on_market_date` for Active. Only those two values are accepted — `sold_date`/`closed_date`/`contract_date` return an error page. Search cards carry no close date, so recency can only come from the sort.
+- **A status change must re-open enrichment.** A listing enriched while Active is legitimately `enrichment_status='success'` with no close date and no buyer agent. When discovery later flips it to Closed, `upsert_listing` resets `enrichment_status`/`enrichment_attempts` so it is re-enriched; `get_unenriched` also treats any Closed row with no `close_date` as unenriched. Without both, sold listings kept a listing agent and permanently lost their buyer agent.
 - **NUXT field name gotchas (verified 2026-04-21 against a live active page):**
   - The MLS canonical "list date" is `listing_contract_date`, NOT `list_date`. There is no `list_date` field at all.
   - Lot size is `lot_size_square_feet` as a **quoted float string** (e.g. `"94525.2"`), not `lot_sqft` as a bare int. The numeric picker in `DETAIL_EXTRACT_JS` must tolerate both quoted and bare forms (`year_built` and `days_on_market` are bare; `lot_size_square_feet` is quoted).
@@ -98,7 +100,8 @@ Kittery, York, Ogunquit, Wells, Kennebunk, Kennebunkport, Biddeford, Saco, Old O
 - Same DB (`maine_listings.db`), new `status` column on `maine_transactions`: `'Active' | 'Pending' | 'Closed' | 'Withdrawn'`.
 - Added columns for active workflows: `list_date`, `last_seen_at`, `year_built`, `lot_sqft`, `description`, `photo_url`.
 - New child table `maine_listing_history` captures change-detected snapshots of `(status, list_price)`. Watched fields exclude `days_on_market` deliberately (ticks daily — would spam the table).
-- Daily cron at 6:30am ET scrapes all 10 towns with `mls_status=Active`, runs a withdrawn-sweeper at the end (marks any Active/Pending not seen in 7+ days as `Withdrawn`), and fires a Pushover+Resend failure alert if zero new listings AND zero status changes were observed across all 10 towns (anomaly detector).
+- Weekly cron (Mondays 6:30am ET) scrapes all 10 towns with `mls_status=Active`, runs the stale sweeper at the end, and fires a Pushover+Resend failure alert if zero new listings AND zero status changes were observed across all 10 towns (anomaly detector). The former daily active cron was retired 2026-09-19 — weekly is sufficient and keeps Firecrawl credits well inside budget.
+- **The stale sweeper verifies; it never guesses.** A listing that leaves the Active feed has usually *sold*, not been withdrawn. `queue_stale_for_verification()` clears `enrichment_status` for Active/Pending rows unseen for 7+ days so the next enrichment pass reads the authoritative status, close date and buyer agent off the detail page. `mark_withdrawn_stale()` is only a bounded fallback: it marks `Withdrawn` after 30 days *and* only for rows we tried and failed to verify (`enrichment_attempts > 0` with a non-success status). A listing that has never been checked is never withdrawn.
 - New `--max-credits N` CLI flag caps Firecrawl calls per run as a budget safety net.
 - Closed-focused queries (`maine_report`, `maine_kpis`) gated with `WHERE status = 'Closed'` so the leaderboard + KPI dashboards are semantically unchanged — Active/Pending/Withdrawn rows coexist in the same table but don't pollute rankings.
 - Downstream tools (separate repo — direct-mail to owners, listing-agent STR-projection outreach) consume `src/maine_active.py`:
@@ -142,6 +145,8 @@ python -m src.zillow_main --directory-report                                    
 python -m src.maine_main --discover --max-pages 90 --workers 3                          # Full discovery (all towns, 3 concurrent)
 python -m src.maine_main --enrich --batch-size 200 --workers 25                         # Full enrichment (25 concurrent Firecrawl workers)
 python -m src.maine_main --discover --recent-only --enrich --batch-size 200 --workers 10  # Weekly incremental
+python -m src.maine_main --discover --recent-only --status Active --sweep --enrich --batch-size 200 --workers 10  # Weekly actives + verify stale
+python -m src.maine_main --reverify-withdrawn --enrich --batch-size 200 --workers 10    # One-time repair of mislabelled Withdrawn rows
 python -m src.maine_main --report                                                       # Generate md + HTML dashboard
 python -m src.maine_main --update-index                                                 # Regenerate tabbed index.html with all 3 sources
 

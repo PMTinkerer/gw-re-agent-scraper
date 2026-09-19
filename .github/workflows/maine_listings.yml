@@ -2,11 +2,11 @@ name: Maine Listings (MREIS MLS)
 
 on:
   schedule:
-    # Weekly: Mondays at 11:30 UTC (6:30am ET) — closed transactions
+    # Weekly: Mondays at 11:30 UTC (6:30am ET).
+    # One run covers closed discovery, active discovery, stale verification
+    # and enrichment. The former daily active cron was retired — weekly is
+    # enough for this data and keeps Firecrawl credit use well inside budget.
     - cron: '30 11 * * 1'
-    # Daily: every day at 12:30 UTC — active listings.
-    # The one-hour offset prevents Monday's generated-data commits from racing.
-    - cron: '30 12 * * *'
   workflow_dispatch:
     inputs:
       mode:
@@ -16,6 +16,7 @@ on:
         options:
           - weekly
           - backfill
+          - backfill-enrichment
           - daily-active
           - backfill-active
           - report-only
@@ -71,10 +72,6 @@ jobs:
           # Manual dispatch wins. Otherwise derive from cron schedule.
           if [ -n "$INPUT_MODE" ]; then
             MODE="$INPUT_MODE"
-          elif [ "$EVENT_SCHEDULE" = "30 11 * * 1" ]; then
-            MODE="weekly"
-          elif [ "$EVENT_SCHEDULE" = "30 12 * * *" ]; then
-            MODE="daily-active"
           else
             MODE="weekly"
           fi
@@ -111,11 +108,25 @@ jobs:
 
           case "$MODE" in
             weekly)
-              echo "Weekly incremental: discover new closings + enrich"
+              echo "Weekly: closed discovery + active discovery + verify + enrich"
+              # Closed first so newly-sold listings are already flipped to
+              # Closed before the stale sweep looks at what is left Active.
               python -m src.maine_main \
                 --discover --recent-only --status Closed \
+                --workers "$WORKERS" --max-pages "$MAX_PAGES" \
+                $CREDITS_ARG
+              python -m src.maine_main \
+                --discover --recent-only --status Active \
+                --sweep --sweep-days 7 \
                 --enrich --batch-size "$BATCH" \
                 --workers "$WORKERS" --max-pages "$MAX_PAGES" \
+                $CREDITS_ARG
+              ;;
+            backfill-enrichment)
+              echo "Backfill: re-enrich closed listings missing close_date/buyer agent"
+              python -m src.maine_main \
+                --enrich --batch-size "$BATCH" \
+                --workers "$WORKERS" \
                 $CREDITS_ARG
               ;;
             backfill)

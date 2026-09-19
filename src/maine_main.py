@@ -170,10 +170,17 @@ def main() -> int:
     parser.add_argument('--update-index', action='store_true',
                         help='Regenerate the unified index.html with all three sources')
     parser.add_argument('--sweep', action='store_true',
-                        help='Mark active listings not seen in 7 days as Withdrawn '
-                             '(run at end of daily-active cycle)')
+                        help='Re-queue active listings not seen in --sweep-days '
+                             'for detail-page verification (they usually sold)')
     parser.add_argument('--sweep-days', type=int, default=7,
-                        help='Age threshold (days) for withdrawn sweep')
+                        help='Age threshold (days) before re-verifying a listing')
+    parser.add_argument('--withdraw-after-days', type=int, default=30,
+                        help='Age threshold (days) after which a listing we tried '
+                             'and failed to verify is marked Withdrawn')
+    parser.add_argument('--reverify-withdrawn', action='store_true',
+                        help='One-time repair: re-queue every Withdrawn listing for '
+                             'detail-page verification. Rows marked Withdrawn by the '
+                             'old unverified sweeper include real sales.')
     parser.add_argument('--max-credits', type=int, default=None,
                         help='Hard cap on Firecrawl calls this run '
                              '(safeguard against budget overrun)')
@@ -197,7 +204,8 @@ def main() -> int:
     if args.workers < 1 or args.workers > 50:
         parser.error('--workers must be between 1 and 50')
 
-    if not (args.discover or args.enrich or args.report or args.update_index or args.sweep):
+    if not (args.discover or args.enrich or args.report or args.update_index
+            or args.sweep or args.reverify_withdrawn):
         parser.print_help()
         return 0
 
@@ -231,10 +239,22 @@ def main() -> int:
             if detect_daily_active_anomaly(result):
                 send_anomaly_alert(run_id=run_id)
 
+    if args.reverify_withdrawn:
+        from .maine_database import queue_withdrawn_for_reverification
+        queued = queue_withdrawn_for_reverification(conn)
+        logger.info('Withdrawn re-verification: %d listings queued', queued)
+
     if args.sweep:
-        from .maine_database import mark_withdrawn_stale
-        marked = mark_withdrawn_stale(conn, stale_days=args.sweep_days)
-        logger.info('Withdrawn sweep: %d listings marked', marked)
+        # Queue first, then enrichment (below) reads the authoritative status
+        # off each detail page in the same run. Only listings we tried and
+        # failed to verify fall through to the withdraw fallback.
+        from .maine_database import (
+            mark_withdrawn_stale, queue_stale_for_verification,
+        )
+        queued = queue_stale_for_verification(conn, stale_days=args.sweep_days)
+        logger.info('Stale sweep: %d listings queued for verification', queued)
+        marked = mark_withdrawn_stale(conn, stale_days=args.withdraw_after_days)
+        logger.info('Withdrawn fallback: %d unverifiable listings marked', marked)
 
     if args.enrich:
         _backup_db(args.db)
