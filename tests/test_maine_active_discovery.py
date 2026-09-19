@@ -132,6 +132,7 @@ class TestDiscoverListingsWithStatus:
             max_pages=1,
             status='Active',
             workers=1,
+            state_path=str(tmp_path / 'state.json'),
         )
 
         assert result['listings'] >= 1
@@ -157,6 +158,7 @@ class TestDiscoverListingsWithStatus:
 
         result = discover_listings(
             conn, state, towns=['Kittery'], max_pages=1, workers=1,
+            state_path=str(tmp_path / 'state.json'),
         )
 
         rows = conn.execute(
