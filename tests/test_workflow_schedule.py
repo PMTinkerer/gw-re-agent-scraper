@@ -51,6 +51,19 @@ def test_scheduled_runs_default_to_weekly_mode():
     ) in workflow
 
 
+def test_repair_modes_exist_but_are_never_scheduled():
+    """The one-time repair modes must be dispatch-only — a re-run costs credits."""
+    workflow = WORKFLOW.read_text()
+    inputs = _workflow()[True]["workflow_dispatch"]["inputs"]
+
+    assert "reverify-withdrawn" in inputs["mode"]["options"]
+    assert "backfill-enrichment" in inputs["mode"]["options"]
+    assert "--reverify-withdrawn" in workflow
+    # Nothing may map a cron schedule onto a repair mode.
+    assert 'MODE="reverify-withdrawn"' not in workflow
+    assert 'MODE="backfill-enrichment"' not in workflow
+
+
 def test_weekly_mode_covers_closed_active_and_verification():
     """The single weekly run must do the work the daily cron used to."""
     workflow = WORKFLOW.read_text()

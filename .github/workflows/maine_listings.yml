@@ -17,6 +17,7 @@ on:
           - weekly
           - backfill
           - backfill-enrichment
+          - reverify-withdrawn
           - daily-active
           - backfill-active
           - report-only
@@ -125,6 +126,18 @@ jobs:
             backfill-enrichment)
               echo "Backfill: re-enrich closed listings missing close_date/buyer agent"
               python -m src.maine_main \
+                --enrich --batch-size "$BATCH" \
+                --workers "$WORKERS" \
+                $CREDITS_ARG
+              ;;
+            reverify-withdrawn)
+              # One-time repair. Rows marked Withdrawn by the old unverified
+              # sweeper include real sales; this re-reads each detail page.
+              # Do not schedule this — a re-run re-queues every Withdrawn row
+              # and burns a credit each.
+              echo "Repair: re-verify Withdrawn listings against their detail pages"
+              python -m src.maine_main \
+                --reverify-withdrawn \
                 --enrich --batch-size "$BATCH" \
                 --workers "$WORKERS" \
                 $CREDITS_ARG
