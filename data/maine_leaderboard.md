@@ -1,6 +1,6 @@
 # Maine MLS Agent Leaderboard -- Southern Coastal Maine
-_Generated: 2026-09-21 11:40 UTC | Source: MaineListings.com (MREIS MLS) | Date range: 2011-02-23 to 2026-09-17_
-_Enriched: 16,886 / 16,886 closed transactions | Listing agent: 16,886 | Buyer agent: 16,285_
+_Generated: 2026-09-21 12:18 UTC | Source: MaineListings.com (MREIS MLS) | Date range: 2011-02-23 to 2026-09-17_
+_Enriched: 16,886 / 16,886 closed transactions | Listing agent: 16,886 | Buyer agent: 16,286_
 
 > Unique to MLS data: every transaction includes both listing and buyer agent, so buyer-side performance is visible.
 
@@ -118,7 +118,7 @@ _Office branches kept separate (branches compete with each other)._
 | 1 | Keller Williams Realty | 3461 | 384 | $2002.3M | $579K | Scott Townsend, Jeffrey Mateja, Cynthia Dubois-Cote |
 | 2 | Coldwell Banker Realty | 2547 | 287 | $1277.7M | $502K | Julie Barros, Catherine Bame, Margaret Mailman |
 | 3 | Keller Williams Coastal and Lakes & Mountains Realty | 2350 | 260 | $1509.9M | $642K | Troy Williams, Heidi Hayes, Nola Cady |
-| 4 | RE/MAX Realty One | 1604 | 96 | $934.9M | $583K | Donald Wunder, Abigail Douris, Carolyn Weller |
+| 4 | RE/MAX Realty One | 1605 | 96 | $935.3M | $583K | Donald Wunder, Abigail Douris, Carolyn Weller |
 | 5 | Bean Group | 1510 | 253 | $697.6M | $462K | Janna Syrene, Stephen Erickson, Jeffrey Walker |
 | 6 | Portside Real Estate Group | 1468 | 176 | $928.7M | $633K | Grainne Archer, Jeffrey Rioux, Rebecca Bassett |
 | 7 | Pack Maynard and Associates | 1303 | 25 | $1259.9M | $967K | Victoria Benenti, Corey Tracy, Jessica Girard |
@@ -243,7 +243,7 @@ _Office branches kept separate (branches compete with each other)._
 - **Total closed transactions discovered:** 16,886
 - **Successfully enriched:** 16,886
 - **With listing agent:** 16,886
-- **With buyer agent:** 16,285
+- **With buyer agent:** 16,286
 - **Date range:** 2011-02-23 to 2026-09-17
 - **Per-town breakdown:**
   - Scarborough: 2,118 sales
