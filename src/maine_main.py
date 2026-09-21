@@ -275,9 +275,11 @@ def main() -> int:
                 run_id=run_id,
             )
             raise
-        logger.info('Enrichment: %d enriched, %d failed, %d total%s',
-                     result['enriched'], result['failed'], result['total'],
-                     ' (ABORTED by circuit breaker)' if result.get('aborted') else '')
+        logger.info(
+            'Enrichment: %d enriched, %d delisted (no_data), %d failed, %d total%s',
+            result['enriched'], result.get('no_data', 0), result['failed'],
+            result['total'],
+            ' (ABORTED by circuit breaker)' if result.get('aborted') else '')
         _notify_enrichment_result(result, run_id)
 
     if args.report:

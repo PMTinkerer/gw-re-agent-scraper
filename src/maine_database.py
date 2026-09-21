@@ -336,6 +336,28 @@ def mark_enrichment_failed(
     conn.commit()
 
 
+def mark_enrichment_no_data(
+    conn: sqlite3.Connection, detail_url: str,
+) -> None:
+    """Record that a detail page rendered but carried no listing data.
+
+    Terminal: the listing is delisted, so re-scraping cannot help. Distinct
+    from 'success' (reports must not count it as enriched) and from 'error'
+    (it is not an infrastructure fault and must not trip the circuit
+    breaker). Being non-success, the row stays eligible for the withdrawn
+    fallback.
+    """
+    now = datetime.utcnow().isoformat()
+    conn.execute('''
+        UPDATE maine_transactions SET
+            enrichment_status = 'no_data',
+            enrichment_attempts = enrichment_attempts + 1,
+            enriched_at = ?
+        WHERE detail_url = ?
+    ''', (now, detail_url))
+    conn.commit()
+
+
 def get_unenriched(
     conn: sqlite3.Connection, batch_size: int = 50, max_attempts: int = 2,
 ) -> list[dict]:
@@ -354,7 +376,10 @@ def get_unenriched(
                 enrichment_status IS NULL
                 OR enrichment_status = 'error'
                 OR (status = 'Closed'
-                    AND (close_date IS NULL OR close_date = ''))
+                    AND (close_date IS NULL OR close_date = '')
+                    -- 'no_data' is terminal: the page carries nothing to
+                    -- read, so re-queueing it would loop forever.
+                    AND enrichment_status IS NOT 'no_data')
               )
           AND enrichment_attempts < ?
         ORDER BY discovered_at DESC

@@ -204,16 +204,38 @@ def _decode_escapes(value):
     )
 
 
-def parse_detail_response(js_return: dict | str) -> dict | None:
-    """Parse the JS extraction result from a detail page."""
+def _load_detail_payload(js_return: dict | str):
+    """Decode the JS extraction result into a Python object, or None."""
     import json
     val = js_return.get('value', js_return) if isinstance(js_return, dict) else js_return
     try:
-        data = json.loads(val) if isinstance(val, str) else val
+        return json.loads(val) if isinstance(val, str) else val
     except (json.JSONDecodeError, TypeError):
         return None
+
+
+def parse_detail_response(js_return: dict | str) -> dict | None:
+    """Parse the JS extraction result from a detail page."""
+    data = _load_detail_payload(js_return)
 
     if not isinstance(data, dict) or data.get('error'):
         return None
 
     return {k: _decode_escapes(v) for k, v in data.items()}
+
+
+def detail_response_error(js_return: dict | str) -> str | None:
+    """Return the extractor's error when a page parsed but carried no data.
+
+    A delisted listing still serves a full page, but its NUXT blob has no
+    agent data, so the extractor reports an error instead. That is an
+    expected terminal outcome, not an infrastructure fault — the caller uses
+    this to tell the two apart. Returns None for a usable payload and for a
+    genuinely unparseable one (which stays a failure).
+    """
+    data = _load_detail_payload(js_return)
+
+    if isinstance(data, dict) and data.get('error'):
+        return str(data['error'])
+
+    return None
