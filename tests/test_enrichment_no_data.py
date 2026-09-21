@@ -128,3 +128,35 @@ class TestCircuitBreakerIgnoresNoData:
             conn, monkeypatch, {'type': 'string', 'value': 'garbage'}, n=30)
 
         assert result['failed'] > 0
+
+
+class TestConcurrencyClamp:
+    """Exceeding the account's concurrency ceiling fails requests, not queues them."""
+
+    def test_workers_clamped_to_account_limit(self):
+        from src.maine_firecrawl import clamp_workers
+
+        assert clamp_workers(20, 5) == 5
+        assert clamp_workers(25, 5) == 5
+
+    def test_workers_under_limit_untouched(self):
+        from src.maine_firecrawl import clamp_workers
+
+        assert clamp_workers(3, 5) == 3
+        assert clamp_workers(5, 5) == 5
+
+    def test_unknown_limit_fails_open(self):
+        """A transient API problem must never block a run."""
+        from src.maine_firecrawl import clamp_workers
+
+        assert clamp_workers(20, None) == 20
+        assert clamp_workers(20, 0) == 20
+
+    def test_get_max_concurrency_swallows_errors(self, monkeypatch):
+        from src import maine_firecrawl
+
+        monkeypatch.setattr(
+            maine_firecrawl, 'require_firecrawl_key',
+            lambda: (_ for _ in ()).throw(RuntimeError('no key')),
+        )
+        assert maine_firecrawl.get_max_concurrency() is None

@@ -26,9 +26,25 @@
 - Alerting: Pushover + Resend fire on circuit-breaker aborts and run summaries.
 - DB backup before every mutating run (last 3 timestamped copies).
 
-### Firecrawl Credit Usage
-- One-time Phase 2 backfill: ~16K credits on Standard plan ($99/mo).
-- Weekly incremental post-backfill: ~50-100 credits/week. Hobby plan (3K/mo) is sufficient long-term.
+### Firecrawl Account Limits (verified live 2026-09-21)
+Query these rather than trusting notes — both numbers below were previously
+documented wrong, which cost a failed backfill run:
+
+```bash
+curl -s -H "Authorization: Bearer $FIRECRAWL_API_KEY" https://api.firecrawl.dev/v2/team/queue-status
+curl -s -H "Authorization: Bearer $FIRECRAWL_API_KEY" https://api.firecrawl.dev/v2/team/credit-usage
+```
+
+- **`maxConcurrency` is 5.** Never pass `--workers` above 5. Higher values fail
+  with `Request Timeout: ... timed out while waiting for a concurrency slot`,
+  which trips the circuit breaker and aborts the batch. The `--workers 25` in
+  older docs reflects a plan we are no longer on.
+- **Credits are annual, not monthly:** 5,000 per billing period, currently
+  2026-04-07 → 2027-04-07. This was previously documented as "Hobby plan
+  (3K/mo)" — off by a factor of 12 in the wrong direction.
+- Weekly incremental: ~50-150 credits/week. At ~28 weeks left in the period,
+  routine operation is roughly 3,000-4,000 credits, so a large one-time
+  backfill needs checking against `remainingCredits` first.
 
 ## Key Discoveries (Maine MLS)
 1. **mainelistings.com is the official public MREIS portal** — operated by Maine Association of REALTORS. Data flows FROM MREIS TO Zillow/Realtor/Homes, not the reverse.

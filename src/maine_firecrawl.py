@@ -87,6 +87,41 @@ def _get_client():
     return Firecrawl(api_key=require_firecrawl_key())
 
 
+def get_max_concurrency() -> int | None:
+    """Return the Firecrawl account's concurrency ceiling, or None if unknown.
+
+    Exceeding it does not queue — requests fail with a concurrency-slot
+    timeout, which the circuit breaker reads as an outage and aborts the
+    batch. Fails open (returns None) so a transient API problem never blocks
+    a run.
+    """
+    try:
+        import requests
+        resp = requests.get(
+            'https://api.firecrawl.dev/v2/team/queue-status',
+            headers={'Authorization': f'Bearer {require_firecrawl_key()}'},
+            timeout=15,
+        )
+        value = resp.json().get('maxConcurrency')
+        return int(value) if value else None
+    except Exception as exc:
+        logger.debug('Could not read Firecrawl concurrency limit: %s', exc)
+        return None
+
+
+def clamp_workers(workers: int, max_concurrency: int | None) -> int:
+    """Hold `workers` at or below the account's concurrency ceiling."""
+    if not max_concurrency or workers <= max_concurrency:
+        return workers
+
+    logger.warning(
+        'Reducing workers %d -> %d: Firecrawl account allows %d concurrent '
+        'scrapes, and exceeding it fails requests rather than queueing them.',
+        workers, max_concurrency, max_concurrency,
+    )
+    return max_concurrency
+
+
 def _open_threadsafe_conn(db_path: str | None = None) -> sqlite3.Connection:
     """Open a SQLite connection safe for cross-thread use.
 
@@ -365,6 +400,10 @@ def enrich_listings(
     """
     pending = get_unenriched(conn, batch_size=batch_size, max_attempts=max_attempts)
     total = len(pending)
+
+    if workers > 1:
+        workers = clamp_workers(workers, get_max_concurrency())
+
     logger.info('Enrichment batch: %d listings (workers=%d)', total, workers)
 
     if workers <= 1:
