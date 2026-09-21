@@ -21,10 +21,12 @@ from .maine_database import (
     get_connection,
     get_unenriched,
     mark_enrichment_failed,
+    mark_enrichment_no_data,
     upsert_listing,
     url_exists,
 )
 from .maine_parser import (
+    detail_response_error,
     DETAIL_EXTRACT_JS,
     parse_detail_response,
     parse_pagination,
@@ -380,7 +382,7 @@ def _enrich_serial(conn: sqlite3.Connection, pending: list[dict]) -> dict:
     client = _get_client()
     db_lock = threading.Lock()
     breaker = _CircuitBreaker()
-    counts = {'enriched': 0, 'failed': 0}
+    counts = {'enriched': 0, 'failed': 0, 'no_data': 0}
 
     start = time.monotonic()
     for i, row in enumerate(pending, 1):
@@ -388,7 +390,12 @@ def _enrich_serial(conn: sqlite3.Connection, pending: list[dict]) -> dict:
         if status == 'abort':
             logger.error('Circuit breaker tripped (aborting batch)')
             break
-        counts['enriched' if status == 'ok' else 'failed'] += 1
+        if status == 'ok':
+            counts['enriched'] += 1
+        elif status == 'no_data':
+            counts['no_data'] += 1
+        else:
+            counts['failed'] += 1
         if i % 25 == 0:
             elapsed = time.monotonic() - start
             rate = i / elapsed if elapsed > 0 else 0
@@ -396,7 +403,12 @@ def _enrich_serial(conn: sqlite3.Connection, pending: list[dict]) -> dict:
                         i, len(pending), rate,
                         counts['enriched'], counts['failed'])
 
-    return {'enriched': counts['enriched'], 'failed': counts['failed'], 'total': len(pending)}
+    return {
+        'enriched': counts['enriched'],
+        'failed': counts['failed'],
+        'no_data': counts['no_data'],
+        'total': len(pending),
+    }
 
 
 def _enrich_concurrent(pending: list[dict], workers: int, db_path: str | None) -> dict:
@@ -405,7 +417,7 @@ def _enrich_concurrent(pending: list[dict], workers: int, db_path: str | None) -
     conn = _open_threadsafe_conn(db_path)
     db_lock = threading.Lock()
     breaker = _CircuitBreaker()
-    counts = {'enriched': 0, 'failed': 0, 'aborted': False}
+    counts = {'enriched': 0, 'failed': 0, 'no_data': 0, 'aborted': False}
     progress_lock = threading.Lock()
 
     start = time.monotonic()
@@ -430,6 +442,8 @@ def _enrich_concurrent(pending: list[dict], workers: int, db_path: str | None) -
                 completed += 1
                 if status == 'ok':
                     counts['enriched'] += 1
+                elif status == 'no_data':
+                    counts['no_data'] += 1
                 else:
                     counts['failed'] += 1
 
@@ -459,6 +473,7 @@ def _enrich_concurrent(pending: list[dict], workers: int, db_path: str | None) -
     return {
         'enriched': counts['enriched'],
         'failed': counts['failed'],
+        'no_data': counts['no_data'],
         'total': len(pending),
         'aborted': counts['aborted'],
     }
@@ -467,19 +482,33 @@ def _enrich_concurrent(pending: list[dict], workers: int, db_path: str | None) -
 def _enrich_one(
     client, conn, db_lock: threading.Lock, row: dict, breaker: _CircuitBreaker,
 ) -> str:
-    """Enrich a single listing. Returns 'ok', 'failed', or 'abort'."""
+    """Enrich a listing. Returns 'ok', 'no_data', 'failed', or 'abort'."""
     url = row['detail_url']
     try:
         result = _scrape(client, url, 'rawHtml')
 
         acts = getattr(result, 'actions', None)
         if not acts or 'javascriptReturns' not in acts:
+            logger.warning('  %s: no JS returns from scrape', url)
             _db_write(conn, db_lock, mark_enrichment_failed, url, 'no JS returns')
             action = breaker.record_failure()
             return 'abort' if action == 'abort' else 'failed'
 
-        data = parse_detail_response(acts['javascriptReturns'][0])
+        payload = acts['javascriptReturns'][0]
+        data = parse_detail_response(payload)
         if not data:
+            # A delisted listing still serves a full page, but its NUXT blob
+            # has no agent data. That is expected (and common in a repair
+            # backfill) and terminal — it must not count toward the breaker,
+            # which exists to catch Firecrawl/site outages.
+            reason = detail_response_error(payload)
+            if reason:
+                logger.info('  %s: %s — marking no_data', url, reason)
+                _db_write(conn, db_lock, mark_enrichment_no_data, url)
+                breaker.record_success()
+                return 'no_data'
+
+            logger.warning('  %s: detail response unparseable', url)
             _db_write(conn, db_lock, mark_enrichment_failed, url, 'parse failed')
             action = breaker.record_failure()
             return 'abort' if action == 'abort' else 'failed'
