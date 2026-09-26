@@ -130,14 +130,15 @@ def _discover_town(town, callback, max_pages, completed):
             if (
                 not _valid_url(url)
                 or url in completed
-                or _town(listing.get("city")) != town
+                or (listing.get("city") is not None and _town(listing["city"]) != town)
                 or listing.get("status") not in {"Active", "Pending"}
             ):
                 raise RefreshIncomplete(
                     "Duplicate across towns, invalid, or out-of-town discovery card"
                 )
             duplicate = duplicate or url in found
-            found[url] = dict(listing)
+            # Query provenance is not a property fact. Never fill city from it.
+            found[url] = dict(listing, discovery_town=town)
         # Validate the whole page before classifying any drift as retryable.
         if duplicate:
             raise _PaginationInconsistent("Duplicate discovery card within town")
@@ -217,9 +218,11 @@ def _contract_ready(row):
 
 def _merged_detail(summary, detail, *, cached):
     merged = dict(summary, **detail)
-    # These fields are persisted by the discovery insert, not enrich_listing.
+    # Current summary facts take precedence, but absent facts may be supplied
+    # by validated detail evidence. Blank/malformed supplied facts stay invalid.
     for field in ("address", "city", "beds", "baths", "detail_url"):
-        merged[field] = summary.get(field)
+        if summary.get(field) is not None:
+            merged[field] = summary[field]
     merged["list_price"] = summary.get("list_price")
     merged["status"] = summary["status"]
     if not cached and summary["status"] == "Active":
@@ -293,7 +296,8 @@ def _observe(conn, run_id, row, status, reason, timestamp, source):
 
 
 def _identity(detail, row, identities):
-    if detail.get("city") is not None and _town(detail["city"]) != _town(row["city"]):
+    expected_town = row.get("city") or row.get("discovery_town")
+    if detail.get("city") is not None and _town(detail["city"]) != _town(expected_town):
         raise RefreshIncomplete("Detail town identity change")
     if (
         detail.get("detail_url") is not None
@@ -327,6 +331,10 @@ def _stage(db_path, stage_path):
         id INTEGER PRIMARY KEY, run_id TEXT NOT NULL, detail_url TEXT NOT NULL,
         mls_number TEXT, city TEXT NOT NULL, status TEXT NOT NULL,
         reason TEXT NOT NULL, observed_at TEXT NOT NULL, source TEXT NOT NULL)""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS active_refresh_unresolved (
+        id INTEGER PRIMARY KEY, run_id TEXT NOT NULL, detail_url TEXT NOT NULL,
+        discovery_town TEXT NOT NULL, reason TEXT NOT NULL,
+        observed_at TEXT NOT NULL)""")
     conn.commit()
     return conn
 
@@ -408,11 +416,12 @@ def run_active_refresh(
                     if identity:
                         identities.setdefault(identity, set()).add(url)
                 current_identities = {}
+                unresolved = []
                 for url, summary in discovered.items():
                     if url in known:
                         row = known[url]
                         _identity(summary, row, identities)
-                        if _town(row["city"]) != _town(summary["city"]):
+                        if _town(row["city"]) != summary["discovery_town"]:
                             raise RefreshIncomplete("Known identity changed town")
                         status = summary["status"]
                         price = summary.get("list_price", row["list_price"])
@@ -437,21 +446,36 @@ def run_active_refresh(
                             identities,
                         )
                         if detail is None:
+                            evidence = dict(
+                                detail_url=url,
+                                discovery_town=summary["discovery_town"],
+                                reason="new_listing_details_unresolved_or_retry_exhausted",
+                                observed_at=started_at,
+                            )
+                            unresolved.append(evidence)
+                            conn.execute(
+                                """INSERT INTO active_refresh_unresolved
+                                (run_id, detail_url, discovery_town, reason, observed_at)
+                                VALUES (?, ?, ?, ?, ?)""",
+                                (
+                                    run_id,
+                                    url,
+                                    evidence["discovery_town"],
+                                    evidence["reason"],
+                                    started_at,
+                                ),
+                            )
                             continue
                         _identity(detail, summary, identities)
-                        if detail.get("city") is not None and _town(
-                            detail["city"]
-                        ) != _town(summary["city"]):
-                            raise RefreshIncomplete("New identity changed town")
                         status = _source_status(
                             detail.get("status") or summary["status"]
                         )
                         if status not in _STATUSES:
                             raise RefreshIncomplete("Invalid detail status")
-                        upsert_listing(conn, summary)
+                        upsert_listing(conn, detail)
                         enrich_listing(conn, url, dict(detail, status=status))
                         identities.setdefault(detail["mls_number"], set()).add(url)
-                        row = dict(summary, mls_number=detail["mls_number"])
+                        row = detail
                     identity = row.get("mls_number")
                     if identity:
                         if (
@@ -576,6 +600,7 @@ def run_active_refresh(
                 towns=canonical_towns,
                 active_mls_ids=sorted(active_ids),
                 inactive=inactive,
+                unresolved=unresolved,
             )
             _publish(
                 db_path, manifest_path, stage_path, manifest, original_hash, temporary

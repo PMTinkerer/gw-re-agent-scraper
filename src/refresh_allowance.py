@@ -28,6 +28,7 @@ def reserve_run(path, run_id, *, now=None, approval_id="", finalization=False):
         ):
             raise RuntimeError("Invalid durable allowance ledger")
         additional_units = 0
+        explicit_ceilings = {}
         if approval_id:
             approvals = data.get("one_time_approvals", [])
             if not isinstance(approvals, list):
@@ -50,6 +51,19 @@ def reserve_run(path, run_id, *, now=None, approval_id="", finalization=False):
                     else "No matching dated one-time allowance approval"
                 )
             additional_units = matches[0]["additional_units"]
+            ceiling_fields = ("daily_ceiling_units", "rolling_ceiling_units")
+            if any(field in matches[0] for field in ceiling_fields):
+                # A separately recorded single-use extension, not a global cap
+                # increase. Both ceilings must be exactly the approved 15,000.
+                if not finalization or any(
+                    type(matches[0].get(field)) is not int
+                    or matches[0][field] != ROLLING_UNITS + FINALIZATION_DAILY_UNITS
+                    for field in ceiling_fields
+                ):
+                    raise RuntimeError("Invalid explicit test ceilings")
+                explicit_ceilings = {
+                    field: matches[0][field] for field in ceiling_fields
+                }
         daily = rolling = 0
         for row in data["reservations"]:
             if row["run_id"] == run_id:
@@ -69,17 +83,19 @@ def reserve_run(path, run_id, *, now=None, approval_id="", finalization=False):
         daily_limit = (
             FINALIZATION_DAILY_UNITS if finalization else DAILY_UNITS
         ) + additional_units
+        daily_limit = explicit_ceilings.get("daily_ceiling_units", daily_limit)
+        rolling_limit = explicit_ceilings.get("rolling_ceiling_units", ROLLING_UNITS)
         # Manual finalization reserves only capacity still available today.
         # Failed reservations remain counted; old rows are never rewritten.
         run_units = (
-            min(FINALIZATION_DAILY_UNITS, daily_limit - daily, ROLLING_UNITS - rolling)
+            min(FINALIZATION_DAILY_UNITS, daily_limit - daily, rolling_limit - rolling)
             if finalization
             else RUN_UNITS
         )
         if (
             run_units < RUN_UNITS
             or daily + run_units > daily_limit
-            or rolling + run_units > ROLLING_UNITS
+            or rolling + run_units > rolling_limit
         ):
             raise RuntimeError("Durable run allowance exhausted")
         data["reservations"].append(
@@ -89,6 +105,7 @@ def reserve_run(path, run_id, *, now=None, approval_id="", finalization=False):
                 "reserved_units": run_units,
                 **({"finalization": True} if finalization else {}),
                 **({"approval_id": approval_id} if approval_id else {}),
+                **explicit_ceilings,
             }
         )
         temporary = path.with_suffix(".pending")

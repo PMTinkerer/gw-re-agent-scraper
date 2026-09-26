@@ -12,8 +12,9 @@ import requests
 
 from .active_refresh import RefreshIncomplete, SummaryPage
 from .incremental_cards import ActiveCardParseError, parse_active_cards
+from .incremental_detail import INCREMENTAL_DETAIL_JS
+from .refresh_diagnostics import SummaryDiagnostics
 from .maine_parser import (
-    DETAIL_EXTRACT_JS,
     parse_detail_response,
     parse_pagination,
     parse_total_results,
@@ -64,11 +65,18 @@ def verify_billing_policy(path, api_key, *, now=None):
 
 
 class RefreshTransport:
-    def __init__(self, *, api_key, policy_path, reserve, session=None):
+    def __init__(
+        self, *, api_key, policy_path, reserve, session=None, diagnostics_path=None
+    ):
         if not api_key:
             raise BillingPolicyError("Explicit Firecrawl credential required")
         verify_billing_policy(policy_path, api_key)
         self.key, self.policy_path, self.reserve = api_key, policy_path, reserve
+        self.diagnostics = (
+            SummaryDiagnostics(diagnostics_path, redact=api_key)
+            if diagnostics_path is not None
+            else None
+        )
         # requests defaults to zero retries; no SDK or implicit credential loading.
         self.session = session or requests.Session()
         # Never let ~/.netrc or proxy environment change the verified identity.
@@ -116,6 +124,8 @@ class RefreshTransport:
                 {"type": "wait", "milliseconds": 5000},
                 {"type": "executeJavascript", "script": script},
             ]
+        if kind == "summary" and self.diagnostics:
+            self.diagnostics.check_capacity()
         self.reserve(kind, url)
         response = self.session.post(
             API + "/scrape",
@@ -127,6 +137,8 @@ class RefreshTransport:
         response.raise_for_status()
         result = response.json()
         data = result.get("data")
+        if kind == "summary" and self.diagnostics and isinstance(data, dict):
+            self.diagnostics.save(url, data)
         if result.get("success") is not True or not isinstance(data, dict):
             raise RefreshIncomplete("Firecrawl scrape did not return a document")
         status = data.get("metadata", {}).get("statusCode")
@@ -181,7 +193,7 @@ class RefreshTransport:
         return results[0]
 
     def detail(self, url):
-        result = self._detail_result(url, "new_detail", DETAIL_EXTRACT_JS)
+        result = self._detail_result(url, "new_detail", INCREMENTAL_DETAIL_JS)
         return parse_detail_response(result)
 
     def status(self, url):

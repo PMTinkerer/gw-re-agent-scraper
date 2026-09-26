@@ -52,3 +52,12 @@ jobs:
           args=()
           if [ "$FINALIZATION" = "true" ]; then args+=(--finalization); fi
           python -m src.incremental_main --billing-proof config/active-refresh-billing.json --github-publish --one-time-approval "$ONE_TIME_APPROVAL" "${args[@]}"
+      - name: Retain bounded summary diagnostics on success or failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: active-refresh-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .firecrawl/active-refresh-diagnostics/*.json
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 30

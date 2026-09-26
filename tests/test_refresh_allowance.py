@@ -6,6 +6,59 @@ import pytest
 from src.refresh_allowance import reserve_run
 
 
+def sparse_retry_ledger(path):
+    data = price_retry_ledger(path, prior=10000)
+    data["one_time_approvals"][0].update(
+        daily_ceiling_units=15000, rolling_ceiling_units=15000
+    )
+    path.write_text(json.dumps(data))
+    return data
+
+
+def test_explicit_sparse_extension_is_single_use_not_a_permanent_cap_raise(tmp_path):
+    path = tmp_path / "allowance.json"
+    before = sparse_retry_ledger(path)
+    now = datetime(2026, 9, 26, 20, tzinfo=timezone.utc)
+    assert (
+        reserve_run(
+            path, "sparse", now=now, finalization=True, approval_id="price-retry"
+        )
+        == 5000
+    )
+    after = json.loads(path.read_text())
+    assert after["reservations"][:-1] == before["reservations"]
+    assert after["one_time_approvals"] == before["one_time_approvals"]
+    for days, approval in [(0, "price-retry"), (0, ""), (1, ""), (1, "price-retry")]:
+        with pytest.raises(RuntimeError):
+            reserve_run(
+                path,
+                "again",
+                now=now + timedelta(days=days),
+                finalization=True,
+                approval_id=approval,
+            )
+    assert json.loads(path.read_text()) == after
+
+
+@pytest.mark.parametrize("field", ["daily_ceiling_units", "rolling_ceiling_units"])
+@pytest.mark.parametrize("value", [None, True, "15000", 15001, 10000, -1])
+def test_invalid_explicit_ceiling_does_not_mutate(tmp_path, field, value):
+    path = tmp_path / "allowance.json"
+    data = sparse_retry_ledger(path)
+    data["one_time_approvals"][0][field] = value
+    path.write_text(json.dumps(data))
+    before = path.read_bytes()
+    with pytest.raises(RuntimeError):
+        reserve_run(
+            path,
+            "sparse",
+            now=datetime(2026, 9, 26, 20, tzinfo=timezone.utc),
+            finalization=True,
+            approval_id="price-retry",
+        )
+    assert path.read_bytes() == before
+
+
 def price_retry_ledger(path, prior=5000):
     data = {
         "schema_version": 1,

@@ -79,7 +79,10 @@ def main(argv=None):
     budget_path = "data/active_refresh_usage.db"
     # Fail before reserving today's allowance if the configured account is unavailable.
     transport = RefreshTransport(
-        api_key=key, policy_path=args.billing_proof, reserve=lambda *_: None
+        api_key=key,
+        policy_path=args.billing_proof,
+        reserve=lambda *_: None,
+        diagnostics_path=".firecrawl/active-refresh-diagnostics",
     )
     daily_limit = FINALIZATION_DAILY_UNITS if args.finalization else DAILY_UNITS
     if transport.balance() < (
@@ -134,7 +137,9 @@ def main(argv=None):
             _checkpoint(paths, run_id)
     _checkpoint(["data/maine_listings.db", "data/active_refresh.json"], run_id)
     print(
-        f"Published complete refresh {result['run_id']}: {len(result['active_mls_ids'])} active MLS IDs; {requested} reserved units (not billed credits). No notifications."
+        f"Published complete discovery {result['run_id']}: {len(result['active_mls_ids'])} active MLS IDs; "
+        f"{len(result.get('unresolved', []))} unresolved new listings; "
+        f"{requested} reserved units (not billed credits). No notifications."
     )
 
 

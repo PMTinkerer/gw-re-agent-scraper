@@ -1,5 +1,39 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Approved sparse release/test — 2026-09-26
+
+Lucas said Go to publishing the correction and one bounded all-town test.
+New exact approval `2026-09-26-sparse-discovery-test`: finalization only,
+5,000 units maximum / at most 1,000 requests. Explicit daily/rolling ceilings
+15,000 apply only to that dated single-use approval; normal constants and all
+prior records remain unchanged. USD 5/month cap unchanged, no email or daily
+activation during testing. Broad preflight: 569 tests + two subtests pass,
+three unchanged slow Redfin tests omitted after passing in the prior full run.
+See `docs/superpowers/plans/2026-09-26-sparse-release.md`. This supersedes the
+no-further-test checkpoint below, not the requirement for complete feed proof.
+
+## Sparse-card correction — locally verified 2026-09-26
+
+Lucas approved fixing the importer. Addressless summary cards now count by
+validated URL; queried town is provenance, not an invented home fact. Missing
+address/city can be recovered by an incremental-only extractor from the visible
+detail header. Truly hidden addresses remain unresolved. New unresolved URLs
+are explicitly retained in append-only snapshot observations and the additive
+manifest `unresolved` list, never inserted into the usable active feed. Existing
+identity, completeness, two-attempt detail, atomic publication and budget gates
+remain. Summary responses are bounded/redacted before parsing and retained by
+an always-run artifact step; artifact access inherits the PUBLIC scraper repo.
+Never call these private artifacts or put user data/provider envelopes in them.
+
+Final-tree broad run: 556 tests + two subtests passed, three unchanged slow
+Redfin tests deselected. Those three passed in this turn's earlier complete
+553-test/two-subtest run (383.72s), before the final detail supplement. Scoped
+Black/Ruff and diff checks pass; independent re-review found no blockers.
+Protected helper/legacy code, source DB and both spend ledgers hash unchanged.
+No paid run, commit, push, import, activation or email. This supersedes the
+design-only gate below; all-town provider acceptance is still outstanding.
+See `docs/sparse-discovery-verification-2026-09-26.md`.
+
 ## Price-sort provider result / coverage design gate — 2026-09-26
 
 Release `928eb3c`; run `36264703193` failed at 19:07 UTC after20 summary requests

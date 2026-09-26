@@ -1,6 +1,14 @@
 {
   "one_time_approvals": [
     {
+      "additional_units": 5000,
+      "approval_id": "2026-09-26-sparse-discovery-test",
+      "daily_ceiling_units": 15000,
+      "rolling_ceiling_units": 15000,
+      "reason": "Lucas said Go to publishing the sparse importer correction and one controlled all-town test with a bounded extension. Same 5000-unit maximum, prior records retained, USD 5 provider cap unchanged. No email or daily activation during testing.",
+      "utc_date": "2026-09-26"
+    },
+    {
       "additional_units": 500,
       "approval_id": "2026-09-26-extra-canary",
       "reason": "Lucas explicitly approved one additional capped live test today after the first five-summary parser failure. Keep prior usage; no recurring activation or email.",

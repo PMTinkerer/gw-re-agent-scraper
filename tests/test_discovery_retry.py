@@ -90,7 +90,7 @@ def test_second_inconsistent_attempt_is_terminal(failure):
     [
         {"detail_url": "https://example.test/listings/a"},
         {"city": "Wells"},
-        {"city": None},
+        {"city": ""},
         {"status": "Closed"},
     ],
 )

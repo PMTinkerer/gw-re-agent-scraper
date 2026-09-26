@@ -17,8 +17,9 @@ _CARD_START = re.compile(r"\$[^\n\\]*" + _BREAK)
 _CARD = re.compile(
     r"\$\s*([\d,]+)\s*(Active|New Listing|Pending)"
     + _BREAK
-    + r"\*\*([^*]+)\*\*\s+\*\*([^*]+)\*\*"
+    + r"(?:\*\*([^*]+)\*\*\s+\*\*([^*]+)\*\*"
     + _BREAK
+    + r")?"
     + r"(?:(\d+)\s+[Bb]eds?"
     + _BREAK
     + r")?"
@@ -57,13 +58,17 @@ def parse_active_cards(markdown):
         raise ActiveCardParseError("Unparsed Active result card footer")
     cards = []
     for match in matches:
-        city, state, zip_code = _parse_city_state_zip(match[4].strip())
+        city, state, zip_code = (
+            _parse_city_state_zip(match[4].strip())
+            if match[4] is not None
+            else (None, None, None)
+        )
         cards.append(
             {
                 "status": "Active" if match[2] == "New Listing" else match[2],
                 "sale_price": None,
                 "list_price": int(match[1].replace(",", "")),
-                "address": match[3].strip(),
+                "address": match[3].strip() if match[3] is not None else None,
                 "city": city,
                 "state": state,
                 "zip": zip_code,
