@@ -8,7 +8,9 @@ import subprocess
 from pathlib import Path
 
 from .active_refresh import run_active_refresh
-from .refresh_allowance import reserve_run, RUN_UNITS
+from .refresh_allowance import (
+    reserve_run, RUN_UNITS, DAILY_UNITS, FINALIZATION_DAILY_UNITS,
+)
 from .refresh_budget import BudgetExceeded, BudgetLedger
 from .refresh_transport import RefreshTransport, verify_billing_policy
 from .state import TOWNS
@@ -42,12 +44,16 @@ def main(argv=None):
     parser.add_argument("--billing-proof", required=True)
     parser.add_argument("--github-publish", action="store_true")
     parser.add_argument("--one-time-approval", default="")
+    parser.add_argument(
+        "--finalization", action="store_true",
+        help="Operator-approved temporary 5,000-unit manual testing ceiling",
+    )
     args = parser.parse_args(argv)
     if (
-        args.one_time_approval
+        (args.one_time_approval or args.finalization)
         and os.environ.get("GITHUB_EVENT_NAME") != "workflow_dispatch"
     ):
-        raise RuntimeError("One-time approval requires manual dispatch")
+        raise RuntimeError("Expanded allowance requires manual dispatch")
     # No standalone environment variables may bypass the publication boundary.
     if not args.github_publish or os.environ.get("GITHUB_ACTIONS") != "true":
         raise RuntimeError("Use the gated GitHub daily lane; no ad-hoc paid runs")
@@ -72,18 +78,24 @@ def main(argv=None):
     transport = RefreshTransport(
         api_key=key, policy_path=args.billing_proof, reserve=lambda *_: None
     )
-    if transport.balance() < RUN_UNITS:
+    daily_limit = FINALIZATION_DAILY_UNITS if args.finalization else DAILY_UNITS
+    if transport.balance() < (FINALIZATION_DAILY_UNITS if args.finalization else RUN_UNITS):
         raise BudgetExceeded(
             "Insufficient existing credits for conservative run allowance"
         )
-    reserve_run(allowance_path, run_id, approval_id=args.one_time_approval)
+    options = {"approval_id": args.one_time_approval}
+    if args.finalization:
+        options["finalization"] = True
+    run_units = reserve_run(allowance_path, run_id, **options)
     _checkpoint([allowance_path], run_id)
-    ledger = BudgetLedger(budget_path, read_balance=transport.balance)
+    ledger = BudgetLedger(
+        budget_path, read_balance=transport.balance, daily_limit=daily_limit,
+    )
     requested = 0
 
     def before_request(kind, url):
         nonlocal requested
-        if requested + 5 > RUN_UNITS:
+        if requested + 5 > run_units:
             raise BudgetExceeded("Whole-run conservative allowance exhausted")
         ledger.reserve(run_id, kind, url)
         requested += 5

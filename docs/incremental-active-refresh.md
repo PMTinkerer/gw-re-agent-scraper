@@ -122,3 +122,12 @@ An operator must handle a rejected Git push; no force push or automatic conflict
 resolution exists. A crash between local database/manifest replacements causes
 checksum rejection, not acceptance of a partial feed. Only a successful final
 Git commit publishes that pair for consumers.
+# Temporary manual testing ceiling (September 26, 2026)
+
+Lucas approved 5,000 conservative units per UTC day during finalization.
+The manual workflow input `finalization=true` reserves remaining daily capacity
+after prior reservations, up to the unchanged 10,000-unit rolling ceiling.
+Normal/default/scheduled runs retain 500. Request-level and whole-run limits
+both enforce the selected policy; exceptions cannot stack. No ledger reset,
+provider cap increase, email or recurring activation. Stop using the temporary
+input after finalization. See `finalization-allowance-2026-09-26.md`.

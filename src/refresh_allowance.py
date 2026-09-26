@@ -11,9 +11,12 @@ from pathlib import Path
 RUN_UNITS = 500
 DAILY_UNITS = 500
 ROLLING_UNITS = 10000
+FINALIZATION_DAILY_UNITS = 5000
 
 
-def reserve_run(path, run_id, *, now=None, approval_id=""):
+def reserve_run(path, run_id, *, now=None, approval_id="", finalization=False):
+    if finalization and approval_id:
+        raise RuntimeError("Cannot combine finalization and one-time allowance")
     path = Path(path)
     now = now or datetime.now(timezone.utc)
     if not run_id or now.tzinfo is None:
@@ -60,16 +63,26 @@ def reserve_run(path, run_id, *, now=None, approval_id=""):
                 daily += units
             if timestamp > now - timedelta(days=30):
                 rolling += units
+        daily_limit = (
+            FINALIZATION_DAILY_UNITS if finalization else DAILY_UNITS + additional_units
+        )
+        # Manual finalization reserves only capacity still available today.
+        # Failed reservations remain counted; old rows are never rewritten.
+        run_units = (
+            min(daily_limit - daily, ROLLING_UNITS - rolling)
+            if finalization else RUN_UNITS
+        )
         if (
-            daily + RUN_UNITS > DAILY_UNITS + additional_units
-            or rolling + RUN_UNITS > ROLLING_UNITS
+            run_units < RUN_UNITS or daily + run_units > daily_limit
+            or rolling + run_units > ROLLING_UNITS
         ):
             raise RuntimeError("Durable run allowance exhausted")
         data["reservations"].append(
             {
                 "run_id": run_id,
                 "reserved_at": now.isoformat(),
-                "reserved_units": RUN_UNITS,
+                "reserved_units": run_units,
+                **({"finalization": True} if finalization else {}),
                 **({"approval_id": approval_id} if approval_id else {}),
             }
         )
@@ -79,4 +92,4 @@ def reserve_run(path, run_id, *, now=None, approval_id=""):
             out.flush()
             os.fsync(out.fileno())
         os.replace(temporary, path)
-        return RUN_UNITS
+        return run_units

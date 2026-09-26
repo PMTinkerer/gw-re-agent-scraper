@@ -5,6 +5,11 @@ on:
     - cron: '15 10 * * *'
   workflow_dispatch:
     inputs:
+      finalization:
+        description: 'Temporary operator-approved 5000-unit daily testing ceiling (manual only)'
+        required: false
+        default: false
+        type: boolean
       one_time_approval:
         description: 'Optional exact ID of a recorded, single-use operator approval'
         required: false
@@ -42,4 +47,8 @@ jobs:
         env:
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
           ONE_TIME_APPROVAL: ${{ inputs.one_time_approval }}
-        run: python -m src.incremental_main --billing-proof config/active-refresh-billing.json --github-publish --one-time-approval "$ONE_TIME_APPROVAL"
+          FINALIZATION: ${{ inputs.finalization }}
+        run: |
+          args=()
+          if [ "$FINALIZATION" = "true" ]; then args+=(--finalization); fi
+          python -m src.incremental_main --billing-proof config/active-refresh-billing.json --github-publish --one-time-approval "$ONE_TIME_APPROVAL" "${args[@]}"

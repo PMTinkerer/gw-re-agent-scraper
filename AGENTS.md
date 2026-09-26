@@ -1,5 +1,17 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Superseding finalization allowance — 2026-09-26
+
+Lucas explicitly approved raising the temporary test ceiling to 5,000 units.
+Manual `finalization=true` runs use up to 5,000/UTC day including prior reserved
+units, still bounded by 10,000/trailing 30 days. Normal runs remain 500/day.
+The old two 500-unit reservations stay immutable, leaving 4,000 today.
+This does not raise the USD 5 provider cap, activate recurring refresh or send
+email. The redundant 8:05 PM one-shot task is PAUSED. Stop using the manual
+finalization input once testing is complete. See
+`docs/finalization-allowance-2026-09-26.md` for verification and run evidence.
+Older statements requiring another approval for today's testing are superseded.
+
 ## Recovery fix published — 2026-09-26
 
 Lucas approved proceeding after offline verification. Commit 5fce0d0 is now

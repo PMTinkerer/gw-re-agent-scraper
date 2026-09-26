@@ -6,6 +6,42 @@ import pytest
 from src.refresh_allowance import reserve_run
 
 
+def test_finalization_uses_remaining_5000_without_erasing_history(tmp_path):
+    path = tmp_path / "allowance.json"
+    approved_ledger(path)
+    now = datetime(2026, 9, 26, tzinfo=timezone.utc)
+    reserve_run(path, "first", now=now)
+    reserve_run(path, "second", now=now, approval_id="extra-canary")
+    previous = json.loads(path.read_text())["reservations"]
+    assert reserve_run(path, "finalize", now=now, finalization=True) == 4000
+    rows = json.loads(path.read_text())["reservations"]
+    assert rows[:2] == previous
+    assert rows[-1]["finalization"] is True
+    assert sum(row["reserved_units"] for row in rows) == 5000
+    with pytest.raises(RuntimeError, match="allowance"):
+        reserve_run(path, "more", now=now, finalization=True)
+    assert reserve_run(path, "tomorrow", now=now + timedelta(days=1)) == 500
+
+
+def test_finalization_respects_rolling_limit(tmp_path):
+    path = tmp_path / "allowance.json"
+    approved_ledger(path)
+    now = datetime(2026, 9, 26, tzinfo=timezone.utc)
+    for day in range(16):
+        reserve_run(path, str(day), now=now - timedelta(days=16-day))
+    assert reserve_run(path, "finalize", now=now, finalization=True) == 2000
+    with pytest.raises(RuntimeError, match="allowance"):
+        reserve_run(path, "more", now=now + timedelta(days=1), finalization=True)
+
+
+def test_finalization_cannot_stack_old_exception(tmp_path):
+    path = tmp_path / "allowance.json"
+    approved_ledger(path)
+    with pytest.raises(RuntimeError, match="combine"):
+        reserve_run(path, "both", now=datetime(2026, 9, 26, tzinfo=timezone.utc),
+                    finalization=True, approval_id="extra-canary")
+
+
 def test_remote_run_allowance_survives_failed_run_and_rerun(tmp_path):
     path = tmp_path / "allowance.json"
     path.write_text(json.dumps({"schema_version": 1, "reservations": []}))

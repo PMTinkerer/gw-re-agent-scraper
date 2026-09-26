@@ -160,6 +160,37 @@ def test_exception_requires_manual_dispatch(tmp_path, monkeypatch):
     assert events == []
 
 
+def test_finalization_requires_manual_dispatch(tmp_path, monkeypatch):
+    policy, events = configure(tmp_path, monkeypatch)
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "schedule")
+    with pytest.raises(RuntimeError, match="manual dispatch"):
+        cli.main(["--billing-proof", str(policy), "--github-publish", "--finalization"])
+    assert events == []
+
+
+def test_finalization_wires_run_and_request_budgets(tmp_path, monkeypatch):
+    policy, events = configure(tmp_path, monkeypatch)
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
+    transport = cli.RefreshTransport
+    monkeypatch.setattr(transport, "balance", lambda self: 10000)
+    checkpoints = []
+    monkeypatch.setattr(cli, "_checkpoint", lambda paths, run: checkpoints.append(paths))
+
+    def run(**kwargs):
+        for _ in range(1000):
+            kwargs["fetch_summary"]("york", 1)
+        with pytest.raises(cli.BudgetExceeded, match="Whole-run"):
+            kwargs["fetch_summary"]("york", 1)
+        return {"run_id": "42-1", "active_mls_ids": []}
+
+    monkeypatch.setattr(cli, "run_active_refresh", run)
+    cli.main(["--billing-proof", str(policy), "--github-publish", "--finalization"])
+    assert len(events) == 1000
+    rows = json.loads(Path("data/active_refresh_allowances.json").read_text())["reservations"]
+    assert rows[-1]["reserved_units"] == 5000
+    assert checkpoints[0] == ["data/active_refresh_allowances.json"]
+
+
 def test_manual_exception_reaches_durable_reservation(tmp_path, monkeypatch):
     policy, events = configure(tmp_path, monkeypatch)
     monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
