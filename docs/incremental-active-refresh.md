@@ -1,6 +1,13 @@
 # Incremental active refresh — controlled acceptance
 
-Latest: Lucas explicitly approved one extra capped September26 test. Dated
+Latest local change: Lucas approved bounded whole-town pagination recovery and
+offline testing on September 26. An inconsistent town may restart once, within
+the existing request budget. This has not been published or exercised through a
+new paid canary. No further paid test, import, daily activation or email is
+authorized by the implementation approval. See
+`bounded-discovery-retry-verification-2026-09-26.md` for final local evidence.
+
+Previous paid acceptance attempt: Lucas explicitly approved one extra capped September26 test. Dated
 single-use allowance d88fc5c preserved prior reservations and normal request
 limits. Run36257185586 used five additional actual credits and safely rejected
 source pages containing118 cards but117 unique URLs (350 Main Street duplicated
@@ -30,9 +37,15 @@ closed-transaction workflow is unchanged.
   aliases; conflicting simultaneous current URLs stop publication.
 - Verify missing previously active homes with a status-only extraction. Explicit
   inactive status hides them; ambiguous evidence is Unverified, never guessed Sold.
-- Incomplete pages, blocked responses, caps, changed counts or failed requests
-  leave the published database and coverage unchanged. Complete empty sets are
-  valid only with explicit zero-result evidence.
+- Within-town duplicate URLs, changed page/result totals or terminal count
+  mismatches trigger at most one restart of that town from page 1. Discard its
+  entire failed attempt; never union incomplete scans. Earlier completed towns
+  are retained, and cross-town duplicate identities remain fatal.
+- Invalid cards/metadata, missing pages, blocked responses, caps and failed
+  requests stop immediately. Validate every card on a fetched page before
+  classifying an inconsistency as retryable. A second inconsistent scan stops
+  too. These failures leave the published database and coverage unchanged.
+  Complete empty sets are valid only with explicit zero-result evidence.
 - Publish the standalone database and hash-bound `data/active_refresh.json`
   together. Do not change the frozen `maine_active.py` consumer helper.
 
@@ -50,6 +63,9 @@ This conservative accounting is NOT actual billed credit usage. Requests use
 basic proxy, plain markdown/raw HTML, no PDF parsing or LLM formats, explicit
 timeouts and no HTTP retries. New-detail attempt counts are pushed before the
 detail request; failed runner retention therefore does not reset retry counts.
+The one town-discovery retry also uses this exact reservation path; it does not
+grant extra budget or reset any reservation. If the cap is exhausted during
+recovery, the next request is denied and the published feed remains unchanged.
 
 Provider pricing reference checked September 26:
 https://docs.firecrawl.dev/billing . Basic scrape is documented as one credit;

@@ -1,5 +1,22 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Bounded pagination recovery — local offline implementation 2026-09-26
+
+Lucas approved one whole-town recovery retry and offline testing. Discovery now
+discards an inconsistent town attempt and starts that town at page 1 once, while
+keeping earlier complete towns. Only valid within-town duplicates, changed
+page/result totals and terminal count mismatches qualify. Invalid cards/metadata,
+cross-town duplicates, missing pages and transport/budget failures remain fatal.
+No union of partial attempts; publication still requires complete discovery.
+Existing callbacks reserve every retry request under unchanged limits. No paid
+test, push, import, schedule activation or email is authorized by this approval.
+Strict incremental parsing rejects malformed raw cards before they can masquerade
+as retryable count drift. Final full suite: 521 tests and two subtests pass;
+170 focused checks pass. Independent spec and quality re-reviews pass. Existing
+deprecation warnings remain. Source DB/allowance/usage hashes unchanged.
+See docs/superpowers/specs/2026-09-26-bounded-discovery-retry-design.md and
+docs/bounded-discovery-retry-verification-2026-09-26.md for final local evidence.
+
 ## Additional approved canary — 2026-09-26
 
 Lucas approved one extra capped test today. Implementation commit d88fc5c added

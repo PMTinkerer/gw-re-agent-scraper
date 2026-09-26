@@ -11,7 +11,7 @@ from urllib.parse import urlencode, urlsplit
 import requests
 
 from .active_refresh import RefreshIncomplete, SummaryPage
-from .incremental_cards import parse_active_cards
+from .incremental_cards import ActiveCardParseError, parse_active_cards
 from .maine_parser import (
     DETAIL_EXTRACT_JS,
     parse_detail_response,
@@ -159,12 +159,16 @@ class RefreshTransport:
             pagination = (1, 1)
         if count is None or pagination is None:
             raise RefreshIncomplete("Missing result count or pagination evidence")
+        try:
+            listings = parse_active_cards(text)
+        except ActiveCardParseError as exc:
+            raise RefreshIncomplete("Malformed Active discovery page") from exc
         return SummaryPage(
             town,
             pagination[0],
             pagination[1],
             count,
-            parse_active_cards(text),
+            listings,
         )
 
     def _detail_result(self, url, kind, script):

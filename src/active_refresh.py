@@ -96,55 +96,74 @@ def _valid_url(value: object) -> bool:
     )
 
 
+class _PaginationInconsistent(RefreshIncomplete):
+    """Valid source cards drifted within a town's paginated search."""
+
+
+def _discover_town(town, callback, max_pages, completed):
+    """Keep one attempt isolated until its entire town has complete coverage."""
+    found = {}
+    page_number, expected_pages, expected_count = 1, None, None
+    while True:
+        page = callback(town, page_number)
+        if not isinstance(page, SummaryPage) or _town(page.town) != town:
+            raise RefreshIncomplete("Missing requested town coverage")
+        if (
+            type(page.page) is not int
+            or page.page != page_number
+            or type(page.total_pages) is not int
+            or not 1 <= page.total_pages <= max_pages
+            or type(page.total_results) is not int
+            or page.total_results < 0
+            or not isinstance(page.listings, list)
+        ):
+            raise RefreshIncomplete("Invalid or capped pagination")
+        if expected_pages is None:
+            expected_pages, expected_count = page.total_pages, page.total_results
+        if not page.listings and not (
+            page_number == 1 and expected_count == 0 and expected_pages == 1
+        ):
+            raise RefreshIncomplete("Missing discovery page results")
+        duplicate = False
+        for listing in page.listings:
+            url = listing.get("detail_url") if isinstance(listing, dict) else None
+            if (
+                not _valid_url(url)
+                or url in completed
+                or _town(listing.get("city")) != town
+                or listing.get("status") not in {"Active", "Pending"}
+            ):
+                raise RefreshIncomplete(
+                    "Duplicate across towns, invalid, or out-of-town discovery card"
+                )
+            duplicate = duplicate or url in found
+            found[url] = dict(listing)
+        # Validate the whole page before classifying any drift as retryable.
+        if duplicate:
+            raise _PaginationInconsistent("Duplicate discovery card within town")
+        if (page.total_pages, page.total_results) != (expected_pages, expected_count):
+            raise _PaginationInconsistent(
+                "Pagination or result count changed during discovery"
+            )
+        if page_number == expected_pages:
+            break
+        page_number += 1
+    if len(found) != expected_count:
+        raise _PaginationInconsistent("Incomplete discovery result count")
+    return found
+
+
 def _discover(towns, callback, max_pages):
     found = {}
     for town in towns:
-        page_number, expected_pages, expected_count, town_count = 1, None, None, 0
-        while True:
-            page = callback(town, page_number)
-            if not isinstance(page, SummaryPage) or _town(page.town) != town:
-                raise RefreshIncomplete("Missing requested town coverage")
-            if (
-                type(page.page) is not int
-                or page.page != page_number
-                or type(page.total_pages) is not int
-                or not 1 <= page.total_pages <= max_pages
-                or type(page.total_results) is not int
-                or page.total_results < 0
-                or not isinstance(page.listings, list)
-            ):
-                raise RefreshIncomplete("Invalid or capped pagination")
-            if expected_pages is None:
-                expected_pages, expected_count = page.total_pages, page.total_results
-            if (page.total_pages, page.total_results) != (
-                expected_pages,
-                expected_count,
-            ):
-                raise RefreshIncomplete(
-                    "Pagination or result count changed during discovery"
-                )
-            if not page.listings and not (
-                page_number == 1 and expected_count == 0 and expected_pages == 1
-            ):
-                raise RefreshIncomplete("Missing discovery page results")
-            for listing in page.listings:
-                url = listing.get("detail_url") if isinstance(listing, dict) else None
-                if (
-                    not _valid_url(url)
-                    or url in found
-                    or _town(listing.get("city")) != town
-                    or listing.get("status") not in {"Active", "Pending"}
-                ):
-                    raise RefreshIncomplete(
-                        "Duplicate, invalid, or out-of-town discovery card"
-                    )
-                found[url] = dict(listing)
-                town_count += 1
-            if page_number == expected_pages:
+        for attempt in range(2):
+            try:
+                town_found = _discover_town(town, callback, max_pages, found)
                 break
-            page_number += 1
-        if town_count != expected_count:
-            raise RefreshIncomplete("Incomplete discovery result count")
+            except _PaginationInconsistent:
+                if attempt == 1:
+                    raise
+        found.update(town_found)
     return found
 
 

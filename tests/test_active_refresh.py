@@ -238,6 +238,117 @@ def test_pages_continue_after_known_urls_and_cover_every_town(setup):
     assert result["towns"] == ["wells", "york"]
 
 
+@pytest.mark.parametrize("budget_exhausted", [False, True])
+def test_failed_discovery_retry_preserves_published_bytes(setup, budget_exhausted):
+    execute(setup)
+    before = setup["db_path"].read_bytes(), setup["manifest_path"].read_bytes()
+    calls, details = [], []
+
+    def summary(town, page):
+        calls.append((town, page))
+        if budget_exhausted and len(calls) == 2:
+            raise RuntimeError("budget exhausted before retry request")
+        return SummaryPage(town, page, 1, 2, [card("new"), card("new")])
+
+    with pytest.raises((RefreshIncomplete, RuntimeError)):
+        execute(setup, fetch_summary=summary, fetch_detail=details.append)
+    assert calls == [("york", 1), ("york", 1)]
+    assert details == []
+    assert (
+        setup["db_path"].read_bytes(),
+        setup["manifest_path"].read_bytes(),
+    ) == before
+    with sqlite3.connect(setup["state_path"]) as conn:
+        assert (
+            conn.execute("SELECT COUNT(*) FROM new_listing_retries").fetchone()[0] == 0
+        )
+
+
+def test_successful_discovery_retry_enriches_only_final_new_home_once(setup):
+    before = rows(setup)
+    calls, details = [], []
+
+    def summary(town, page):
+        calls.append(page)
+        if len(calls) == 1:
+            return SummaryPage(town, page, 2, 3, [card("stale"), card("old")])
+        if len(calls) == 2:
+            return SummaryPage(town, page, 2, 3, [card("old")])
+        return SummaryPage(
+            town,
+            page,
+            2,
+            3,
+            [card("old"), card("gone")] if page == 1 else [card("new")],
+        )
+
+    def detail(url):
+        details.append(url)
+        return dict(mls_number="new", status="Active", list_date="2026-09-01")
+
+    result = execute(setup, fetch_summary=summary, fetch_detail=detail)
+    assert calls == [1, 2, 1, 2]
+    assert details == [card("new")["detail_url"]]
+    assert result["active_mls_ids"] == ["gone", "new", "old"]
+    assert (
+        result["database_sha256"]
+        == hashlib.sha256(setup["db_path"].read_bytes()).hexdigest()
+    )
+    assert json.loads(setup["manifest_path"].read_text()) == result
+    after = rows(setup)
+    assert "stale" not in after
+    for key in ("old", "gone"):
+        for field in (
+            "id",
+            "mls_number",
+            "list_date",
+            "listing_agent_email",
+            "photo_url",
+        ):
+            assert after[key][field] == before[key][field]
+    execute(setup, [card("old"), card("gone"), card("new")], fetch_detail=detail)
+    assert details == [card("new")["detail_url"]]
+
+
+def test_discovery_retry_cannot_bypass_persistent_budget_reservations(setup, tmp_path):
+    from src.refresh_budget import BudgetExceeded, BudgetLedger
+
+    execute(setup)
+    before = setup["db_path"].read_bytes(), setup["manifest_path"].read_bytes()
+    budget_path = tmp_path / "budget.db"
+    ledger = BudgetLedger(budget_path, daily_limit=15, read_balance=lambda: 1000)
+    prior_id = ledger.reserve("prior-run", "summary", "prior/1")
+    with sqlite3.connect(budget_path) as conn:
+        prior = conn.execute(
+            "SELECT * FROM reservations WHERE reservation_id=?", (prior_id,)
+        ).fetchone()
+    requested, fetched = [], []
+
+    def summary(town, page):
+        requested.append(page)
+        ledger.reserve("retry-run", "summary", f"{town}/{page}")
+        fetched.append(page)
+        return SummaryPage(town, page, 2, 2, [card("old")])
+
+    with pytest.raises(BudgetExceeded):
+        execute(setup, fetch_summary=summary)
+    assert requested == [1, 2, 1] and fetched == [1, 2]
+    assert (
+        setup["db_path"].read_bytes(),
+        setup["manifest_path"].read_bytes(),
+    ) == before
+    with sqlite3.connect(budget_path) as conn:
+        assert (
+            conn.execute(
+                "SELECT * FROM reservations WHERE reservation_id=?", (prior_id,)
+            ).fetchone()
+            == prior
+        )
+        assert conn.execute(
+            "SELECT COUNT(*), SUM(reserved_units) FROM reservations"
+        ).fetchone() == (3, 15)
+
+
 def test_mls_collision_aborts_without_publication(setup):
     original = setup["db_path"].read_bytes()
     with pytest.raises(RefreshIncomplete, match="identity"):

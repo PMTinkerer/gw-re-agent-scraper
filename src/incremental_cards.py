@@ -11,6 +11,9 @@ import re
 from .maine_parser import _parse_city_state_zip
 
 _BREAK = r"\\\\\s*\\\\\s*"
+# Detailed cards have a price/status line followed by the source's double break.
+# Compact map cards and repeated photo links do not have this structure.
+_CARD_START = re.compile(r"\$[^\n\\]*" + _BREAK)
 _CARD = re.compile(
     r"\$\s*([\d,]+)\s*(Active|New Listing|Pending)"
     + _BREAK
@@ -31,9 +34,29 @@ _CARD = re.compile(
 )
 
 
+class ActiveCardParseError(ValueError):
+    """A source card was present but could not be parsed completely."""
+
+
 def parse_active_cards(markdown):
+    starts = list(_CARD_START.finditer(markdown))
+    matches = []
+    for index, start in enumerate(starts):
+        end = starts[index + 1].start() if index + 1 < len(starts) else len(markdown)
+        match = _CARD.match(markdown, start.start(), end)
+        if match is None:
+            raise ActiveCardParseError("Malformed or unparsed Active result card")
+        matches.append(match)
+    # An invalid/missing price must not hide a card that still has its footer.
+    previous_end = 0
+    for match in matches:
+        if "Brought to you by" in markdown[previous_end : match.start()]:
+            raise ActiveCardParseError("Unparsed Active result card footer")
+        previous_end = match.end()
+    if "Brought to you by" in markdown[previous_end:]:
+        raise ActiveCardParseError("Unparsed Active result card footer")
     cards = []
-    for match in _CARD.finditer(markdown):
+    for match in matches:
         city, state, zip_code = _parse_city_state_zip(match[4].strip())
         cards.append(
             {

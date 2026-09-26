@@ -228,35 +228,120 @@ def test_saved_live_cards_with_missing_facts_keep_complete_coverage(tmp_path):
         ("2 Baths", "unknown Baths"),
         ("Brought to you by", "missing card terminator"),
         ("Biddeford, ME 04005", "York, ME 03909"),
+        ("](https://mainelistings.com/listings/", "](https://example.test/listings/"),
+        ("Active", "Mystery"),
+        ("$521,000", "$unknown"),
+        ("$521,000", "521,000"),
     ],
 )
-def test_malformed_saved_card_cannot_be_hidden_by_next_card(old, new):
-    from src.active_refresh import RefreshIncomplete, SummaryPage, _discover
-    from src.incremental_cards import parse_active_cards
+def test_malformed_saved_card_cannot_be_hidden_by_next_card(old, new, tmp_path):
+    from src.active_refresh import RefreshIncomplete, _discover
 
     pages = json.loads(
         (
             Path(__file__).parent / "fixtures/biddeford-active-cards-2026-09-26.json"
         ).read_text()
     )
-    pages[0]["markdown"] = pages[0]["markdown"].replace(old, new, 1)
+    session = Session()
+    transport = RefreshTransport(
+        api_key="fixture-key",
+        policy_path=proof(tmp_path),
+        reserve=lambda *args: None,
+        session=session,
+    )
+    calls = []
 
     def fetch(town, page):
+        calls.append(page)
         saved = pages[page - 1]
-        return SummaryPage(town, page, 5, 118, parse_active_cards(saved["markdown"]))
+        markdown = saved["markdown"]
+        if len(calls) == 1:
+            assert old in markdown
+            markdown = markdown.replace(old, new, 1)
+        session.document = {
+            "markdown": f"118 Results\n{page} of 5\n" + markdown,
+            "metadata": {"statusCode": 200},
+        }
+        return transport.summary(town, page)
 
     with pytest.raises(RefreshIncomplete):
         _discover(["biddeford"], fetch, 90)
+    assert calls == [1] and len(session.posts) == 1
 
 
-def test_second_live_scan_duplicate_never_becomes_complete_coverage():
+@pytest.mark.parametrize(
+    "tail", ["$521,000Active\\\\\n\\\\\n", "Brought to you by missing card"]
+)
+def test_unparsed_card_tail_is_fatal_even_when_result_count_matches(tmp_path, tail):
+    from src.active_refresh import RefreshIncomplete, _discover
+
+    pages = json.loads(
+        (
+            Path(__file__).parent / "fixtures/biddeford-active-cards-2026-09-26.json"
+        ).read_text()
+    )
+    session = Session(
+        {
+            "markdown": "24 Results\n1 of 1\n" + pages[0]["markdown"] + "\n\n" + tail,
+            "metadata": {"statusCode": 200},
+        }
+    )
+    transport = RefreshTransport(
+        api_key="fixture-key",
+        policy_path=proof(tmp_path),
+        reserve=lambda *args: None,
+        session=session,
+    )
+    with pytest.raises(RefreshIncomplete):
+        _discover(["biddeford"], transport.summary, 90)
+    assert len(session.posts) == 1
+
+
+@pytest.mark.parametrize("with_cards", [False, True])
+def test_property_photo_and_compact_links_do_not_count_as_detailed_cards(
+    tmp_path, with_cards
+):
+    from src.active_refresh import _discover
+
+    pages = json.loads(
+        (
+            Path(__file__).parent / "fixtures/biddeford-active-cards-2026-09-26.json"
+        ).read_text()
+    )
+    url = "https://mainelistings.com/listings/ME/Biddeford/example"
+    links = (
+        f"[![](https://photos.example.test/photo.jpg)]({url})"
+        f"[**$521,000**]({url})\n\n2\n\n2,402 sqft\n\n"
+        f"[177 South Street\\\\\n\\\\\nBiddeford, ME 04005]({url})\n\n"
+    )
+    markdown = pages[0]["markdown"] if with_cards else ""
+    count = 24 if with_cards else 0
+    session = Session(
+        {
+            "markdown": f"{count} Results\n1 of 1\n" + links * 10 + markdown,
+            "metadata": {"statusCode": 200},
+        }
+    )
+    transport = RefreshTransport(
+        api_key="fixture-key",
+        policy_path=proof(tmp_path),
+        reserve=lambda *args: None,
+        session=session,
+    )
+    assert len(_discover(["biddeford"], transport.summary, 90)) == count
+
+
+@pytest.mark.parametrize("clean_retry", [False, True])
+def test_second_live_scan_duplicate_never_becomes_complete_coverage(
+    clean_retry, tmp_path
+):
     """Replay the exact card substitution observed in canary 36257185586.
 
     Page five replaced 365 Main Street with 350 Main Street, already on page
     four, while the published count stayed 118. Never deduplicate and accept.
     Raw provider exports are retained locally; this uses public card excerpts.
     """
-    from src.active_refresh import RefreshIncomplete, SummaryPage, _discover
+    from src.active_refresh import RefreshIncomplete, _discover
     from src.incremental_cards import _CARD, parse_active_cards
 
     pages = json.loads(
@@ -264,6 +349,7 @@ def test_second_live_scan_duplicate_never_becomes_complete_coverage():
             Path(__file__).parent / "fixtures/biddeford-active-cards-2026-09-26.json"
         ).read_text()
     )
+    clean_pages = [dict(page) for page in pages]
     duplicate = next(
         m.group()
         for m in _CARD.finditer(pages[3]["markdown"])
@@ -278,9 +364,31 @@ def test_second_live_scan_duplicate_never_becomes_complete_coverage():
     cards = [parse_active_cards(page["markdown"]) for page in pages]
     assert [len(rows) for rows in cards] == [24, 24, 24, 24, 22]
     assert len({row["detail_url"] for rows in cards for row in rows}) == 117
-    with pytest.raises(RefreshIncomplete, match="Duplicate"):
-        _discover(
-            ["biddeford"],
-            lambda town, page: SummaryPage(town, page, 5, 118, cards[page - 1]),
-            90,
-        )
+    session = Session()
+    reserved, calls = [], []
+    transport = RefreshTransport(
+        api_key="fixture-key",
+        policy_path=proof(tmp_path),
+        reserve=lambda *args: reserved.append(args),
+        session=session,
+    )
+
+    def fetch(town, page):
+        calls.append(page)
+        saved = (clean_pages if clean_retry and len(calls) > 5 else pages)[page - 1]
+        session.document = {
+            "markdown": f"118 Results\n{page} of 5\n" + saved["markdown"],
+            "metadata": {"statusCode": 200},
+        }
+        return transport.summary(town, page)
+
+    if clean_retry:
+        found = _discover(["biddeford"], fetch, 90)
+        assert len(found) == 118
+        assert sum(row["address"] == "350 Main Street" for row in found.values()) == 1
+        assert sum(row["address"] == "365 Main Street" for row in found.values()) == 1
+    else:
+        with pytest.raises(RefreshIncomplete, match="Duplicate"):
+            _discover(["biddeford"], fetch, 90)
+    assert calls == list(range(1, 6)) * 2
+    assert len(reserved) == len(session.posts) == 10
