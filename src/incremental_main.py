@@ -47,7 +47,10 @@ def main(argv=None):
         raise RuntimeError("Use the gated GitHub daily lane; no ad-hoc paid runs")
     if os.environ.get("GITHUB_REF") != "refs/heads/main":
         raise RuntimeError("Incremental publication requires main")
-    if _git("remote", "get-url", "origin") != EXPECTED_ORIGIN:
+    if _git("remote", "get-url", "origin") not in (
+        EXPECTED_ORIGIN,
+        EXPECTED_ORIGIN.removesuffix(".git"),
+    ):
         raise RuntimeError("Unexpected scraper repository")
     if _git("status", "--porcelain", "--untracked-files=no"):
         raise RuntimeError("Clean tracked checkout required before refresh")

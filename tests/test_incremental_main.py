@@ -91,6 +91,50 @@ def test_direct_local_cli_cannot_spend(tmp_path, monkeypatch):
     assert events == []
 
 
+@pytest.mark.parametrize(
+    "origin", [cli.EXPECTED_ORIGIN, cli.EXPECTED_ORIGIN.removesuffix(".git")]
+)
+def test_github_checkout_origin_reaches_checkpoint_without_spending(
+    tmp_path, monkeypatch, origin
+):
+    policy, events = configure(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        cli, "_git", lambda *a: origin if a[:2] == ("remote", "get-url") else ""
+    )
+
+    def stop(*args):
+        raise RuntimeError("checkpoint reached")
+
+    monkeypatch.setattr(cli, "_checkpoint", stop)
+    with pytest.raises(RuntimeError, match="checkpoint reached"):
+        cli.main(["--billing-proof", str(policy), "--github-publish"])
+    assert events == []
+
+
+@pytest.mark.parametrize(
+    "origin",
+    [
+        "https://github.com/other/gw-re-agent-scraper",
+        cli.EXPECTED_ORIGIN + "/other",
+        "http://github.com/PMTinkerer/gw-re-agent-scraper",
+    ],
+)
+def test_other_origin_stops_before_reservation(tmp_path, monkeypatch, origin):
+    policy, events = configure(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        cli, "_git", lambda *a: origin if a[:2] == ("remote", "get-url") else ""
+    )
+    with pytest.raises(RuntimeError, match="Unexpected scraper repository"):
+        cli.main(["--billing-proof", str(policy), "--github-publish"])
+    assert events == []
+    assert (
+        json.loads((tmp_path / "data/active_refresh_allowances.json").read_text())[
+            "reservations"
+        ]
+        == []
+    )
+
+
 def test_daily_workflow_is_gated_and_has_no_notification_credentials():
     root = Path(__file__).resolve().parents[1]
     workflow = (root / ".github/workflows/incremental_active.yml").read_text()
