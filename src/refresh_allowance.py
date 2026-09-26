@@ -1,0 +1,58 @@
+"""Whole-run allowances committed remotely before ephemeral runners spend."""
+
+from __future__ import annotations
+
+import fcntl
+import json
+import os
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+RUN_UNITS = 500
+DAILY_UNITS = 500
+ROLLING_UNITS = 10000
+
+
+def reserve_run(path, run_id, *, now=None):
+    path = Path(path)
+    now = now or datetime.now(timezone.utc)
+    if not run_id or now.tzinfo is None:
+        raise ValueError("Run ID and timezone-aware clock required")
+    now = now.astimezone(timezone.utc)
+    with open(str(path) + ".lock", "a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        data = json.loads(path.read_text())
+        if data.get("schema_version") != 1 or not isinstance(
+            data.get("reservations"), list
+        ):
+            raise RuntimeError("Invalid durable allowance ledger")
+        daily = rolling = 0
+        for row in data["reservations"]:
+            if row["run_id"] == run_id:
+                raise RuntimeError("Run allowance is single use")
+            timestamp = datetime.fromisoformat(row["reserved_at"])
+            units = row["reserved_units"]
+            if timestamp.tzinfo is None or type(units) is not int or units < RUN_UNITS:
+                raise RuntimeError("Invalid historical allowance")
+            if timestamp > now:
+                raise RuntimeError("Future allowance timestamp")
+            if timestamp.date() == now.date():
+                daily += units
+            if timestamp > now - timedelta(days=30):
+                rolling += units
+        if daily + RUN_UNITS > DAILY_UNITS or rolling + RUN_UNITS > ROLLING_UNITS:
+            raise RuntimeError("Durable run allowance exhausted")
+        data["reservations"].append(
+            {
+                "run_id": run_id,
+                "reserved_at": now.isoformat(),
+                "reserved_units": RUN_UNITS,
+            }
+        )
+        temporary = path.with_suffix(".pending")
+        with temporary.open("w") as out:
+            json.dump(data, out, indent=2, sort_keys=True)
+            out.flush()
+            os.fsync(out.fileno())
+        os.replace(temporary, path)
+        return RUN_UNITS

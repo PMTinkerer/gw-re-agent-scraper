@@ -1,0 +1,8 @@
+{
+  "api_key_sha256": "46b38b708fb5a3b9ad482876380a791fbb23276cad5be18b33bc6576c1f4fadd",
+  "pay_as_you_go_enabled": true,
+  "monthly_limit_usd": 5,
+  "currency": "USD",
+  "verified_at": "2026-09-26T16:29:53.621862+00:00",
+  "evidence": "Operator readback of matching-account Firecrawl Billing UI on 2026-09-26: Pay-as-you-go enabled, USD 5 monthly limit, USD 0 spent this cycle, 99004 credits remaining. User explicitly approved retaining this setting. No account setting was changed."
+}

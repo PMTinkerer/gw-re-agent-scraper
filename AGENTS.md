@@ -1,5 +1,34 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Superseding billing approval — 2026-09-26
+
+Lucas explicitly approved retaining the existing USD 5/month Pay-as-you-go
+limit and running the controlled refresh. No larger cap, plan upgrade, manual
+credit purchase or email is authorized. Current matching-account UI readback
+still shows USD 5 limit, zero spent and 99,004 credits. Dated matching-key proof
+is in config/active-refresh-billing.json. The gate permits disabled Pay-as-you-go
+or verified USD caps no greater than five; unknown/higher caps fail closed.
+Whole-run/day/rolling limits are unchanged. See docs/approved-five-dollar-canary.md.
+Older no-automatic-purchase and awaiting-approval notes below are superseded.
+
+## Incremental Active lane — 2026-09-26 (daily activation OFF)
+
+New `src/incremental_main.py` / `.github/workflows/incremental_active.yml` use
+complete summary scans, new-only bounded detail enrichment, targeted status
+checks and hash-bound complete manifests for outreach. Existing weekly closed
+workflow and `src/maine_active.py` remain unchanged. No email/notification paths.
+500 conservative reserved units/day,10,000/trailing30days; remote whole-run
+reservation before paid calls, persistent attempts before new-detail calls.
+Never reset ledgers to retry. See `docs/incremental-active-refresh.md`.
+
+Matched-account UI on September26 showed99,004 remaining, Standard100k/month
+billed yearly (credit resetOct23), Pay-as-you-go ON at approved USD5/month.
+This supersedes the old annual5000-credit documentation below. Billing proof
+must match the running key. No account setting changes were made. Publication
+and a manually gated one-run canary are authorized; daily activation stays OFF.
+Never reset usage/retry ledgers or claim a successful complete feed without
+the finished run, matching database hash and consumer acceptance evidence.
+
 ## Current Status (2026-04-17)
 **Phase: Maine MLS Phase 2 enrichment COMPLETE — leaderboard redesign shipped.**
 
