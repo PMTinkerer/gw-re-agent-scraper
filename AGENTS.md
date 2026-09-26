@@ -1,5 +1,17 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Price-range investigation — 2026-09-26, not implemented
+
+Free public-browser verification collected200/200 unique Wells listing URLs
+using ten disjoint one-page price ranges; unfiltered counts before/after both200.
+Each leaf count and every price bound matched. Earlier paid scan had199 unique
+URLs; browser recovered missing760702704, a $49,900 peer at the failed boundary.
+This is not all-town Firecrawl acceptance. No paid calls, code changes, allowance
+edits, publication/import, email or activation in this investigation. Evidence:
+docs/evidence/wells-price-bands-2026-09-26.json. Written design awaits review:
+docs/superpowers/specs/2026-09-26-price-partition-discovery-design.md. Preserve
+all safety gates; do not infer permission for another paid run from this evidence.
+
 ## Sparse release terminal result — 2026-09-26
 
 Published af20ca7; controlled run36267949570 failed at20:08:09UTC on duplicate
