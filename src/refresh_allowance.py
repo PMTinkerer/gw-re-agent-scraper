@@ -54,10 +54,17 @@ def reserve_run(path, run_id, *, now=None, approval_id="", finalization=False):
             ceiling_fields = ("daily_ceiling_units", "rolling_ceiling_units")
             if any(field in matches[0] for field in ceiling_fields):
                 # A separately recorded single-use extension, not a global cap
-                # increase. Both ceilings must be exactly the approved 15,000.
+                # increase. The 20,000 extension is bound to this exact dated
+                # approval; all other explicit exceptions retain 15,000.
+                ceiling = ROLLING_UNITS + FINALIZATION_DAILY_UNITS
+                if (
+                    approval_id == "2026-09-26-price-partition-test"
+                    and matches[0].get("utc_date") == "2026-09-26"
+                ):
+                    ceiling += FINALIZATION_DAILY_UNITS
                 if not finalization or any(
                     type(matches[0].get(field)) is not int
-                    or matches[0][field] != ROLLING_UNITS + FINALIZATION_DAILY_UNITS
+                    or matches[0][field] != ceiling
                     for field in ceiling_fields
                 ):
                     raise RuntimeError("Invalid explicit test ceilings")

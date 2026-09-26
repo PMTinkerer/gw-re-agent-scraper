@@ -1,5 +1,14 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Price-partition release/test approval — 2026-09-26
+
+Lucas explicitly approved publication and ONE controlled all-town test, capped
+at 1,000 requests / 5,000 reserved units. Exact single-use dated approval:
+`2026-09-26-price-partition-test`. Its daily/rolling ceilings20,000 retain the
+prior15,000 reservations; normal constants and USD5/month cap unchanged. Email
+and recurring refresh stay OFF. Do not reuse consumed approvals or auto-retry.
+See docs/price-partition-release-2026-09-26.md for dispatch and terminal evidence.
+
 ## Price-range implementation — locally verified 2026-09-26
 
 Approved design now implemented: incremental CLI selects disjoint price ranges,

@@ -2,6 +2,14 @@
   "one_time_approvals": [
     {
       "additional_units": 5000,
+      "approval_id": "2026-09-26-price-partition-test",
+      "daily_ceiling_units": 20000,
+      "reason": "Lucas explicitly approved publishing the price-partition fix and one controlled all-town test capped at 1000 requests with another 5000-unit internal allowance. Prior reservations and USD 5 monthly billing cap unchanged; email and daily refresh stay off.",
+      "rolling_ceiling_units": 20000,
+      "utc_date": "2026-09-26"
+    },
+    {
+      "additional_units": 5000,
       "approval_id": "2026-09-26-sparse-discovery-test",
       "daily_ceiling_units": 15000,
       "reason": "Lucas said Go to publishing the sparse importer correction and one controlled all-town test with a bounded extension. Same 5000-unit maximum, prior records retained, USD 5 provider cap unchanged. No email or daily activation during testing.",

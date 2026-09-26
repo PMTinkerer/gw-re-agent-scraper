@@ -6,6 +6,79 @@ import pytest
 from src.refresh_allowance import reserve_run
 
 
+def partition_ledger(path):
+    data = price_retry_ledger(path, prior=15000)
+    data["one_time_approvals"][0].update(
+        approval_id="2026-09-26-price-partition-test",
+        daily_ceiling_units=20000,
+        rolling_ceiling_units=20000,
+    )
+    path.write_text(json.dumps(data))
+    return data
+
+
+def test_partition_extension_preserves_history_and_is_single_use(tmp_path):
+    path = tmp_path / "allowance.json"
+    before = partition_ledger(path)
+    now = datetime(2026, 9, 26, 22, tzinfo=timezone.utc)
+    assert (
+        reserve_run(
+            path,
+            "partition",
+            now=now,
+            finalization=True,
+            approval_id="2026-09-26-price-partition-test",
+        )
+        == 5000
+    )
+    after = json.loads(path.read_text())
+    assert after["reservations"][:-1] == before["reservations"]
+    assert after["one_time_approvals"] == before["one_time_approvals"]
+    for days, approval in [(0, "2026-09-26-price-partition-test"), (0, ""), (1, "")]:
+        with pytest.raises(RuntimeError):
+            reserve_run(
+                path,
+                "again",
+                now=now + timedelta(days=days),
+                finalization=True,
+                approval_id=approval,
+            )
+    assert json.loads(path.read_text()) == after
+
+
+@pytest.mark.parametrize(
+    "mode", ["wrong_id", "wrong_day", "wrong_mode", "higher", "half", "bool"]
+)
+def test_partition_extension_rejects_unapproved_capacity(tmp_path, mode):
+    path = tmp_path / "allowance.json"
+    data = partition_ledger(path)
+    approval = data["one_time_approvals"][0]
+    now = datetime(2026, 9, 26, 22, tzinfo=timezone.utc)
+    if mode == "wrong_id":
+        approval["approval_id"] = "different-test"
+    if mode == "wrong_day":
+        approval["utc_date"] = "2026-09-27"
+        now += timedelta(days=1)
+    if mode == "higher":
+        approval["daily_ceiling_units"] = 25000
+        approval["rolling_ceiling_units"] = 25000
+    if mode == "half":
+        del approval["rolling_ceiling_units"]
+    if mode == "bool":
+        approval["daily_ceiling_units"] = True
+    path.write_text(json.dumps(data))
+    before = path.read_bytes()
+    with pytest.raises(RuntimeError):
+        reserve_run(
+            path,
+            "partition",
+            now=now,
+            finalization=mode != "wrong_mode",
+            approval_id=approval["approval_id"],
+        )
+    assert path.read_bytes() == before
+
+
 def sparse_retry_ledger(path):
     data = price_retry_ledger(path, prior=10000)
     data["one_time_approvals"][0].update(
