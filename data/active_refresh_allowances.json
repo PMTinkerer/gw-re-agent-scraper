@@ -30,6 +30,13 @@
       "reserved_at": "2026-09-26T18:10:27.266518+00:00",
       "reserved_units": 4000,
       "run_id": "36261585861-1"
+    },
+    {
+      "approval_id": "2026-09-26-price-sort-test",
+      "finalization": true,
+      "reserved_at": "2026-09-26T19:03:37.546896+00:00",
+      "reserved_units": 5000,
+      "run_id": "36264703193-1"
     }
   ],
   "schema_version": 1
