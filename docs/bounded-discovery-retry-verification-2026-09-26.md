@@ -1,5 +1,22 @@
 # Bounded discovery retry — local verification
 
+## Subsequent publication checkpoint
+
+Lucas approved proceeding after the offline handoff. On September 26 at about
+17:40 UTC, the focused suite passed again (170 tests), and a fast-forward push
+published `5fce0d0e4740102b23be22cdfc42c9a571d17391` to GitHub main. Remote SHA
+readback matched. Repository variables still show canary false and no daily
+enable variable. Latest incremental run is still the earlier failed
+36257185586; no new paid run was dispatched.
+
+The read-only allowance check found 1,000 reserved units today (normal 500 plus
+the previously approved extra 500), 1,000 of 10,000 rolling units, and no remaining
+normal run allowance. The normal daily window resets at September 26, 8:00 PM
+America/New_York. Reservations were not reset or raised. No delayed test is
+scheduled. Publication does not establish a successful live refresh or authorize
+daily operation/email. The verification record below describes the prior offline
+implementation phase.
+
 Scope: user-approved implementation and offline testing only. No paid requests,
 push, deployment, consumer import, schedule activation or email in this work.
 

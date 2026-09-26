@@ -1,5 +1,13 @@
 # Incremental active refresh — controlled acceptance
 
+Publication checkpoint (September 26): following Lucas's approval to proceed,
+GitHub main readback confirms recovery fix `5fce0d0`. Fresh focused tests: 170
+passed. Canary remains false and daily-enable variable absent. No paid run was
+dispatched because the normal and extra September 26 run allowances are already
+consumed; both reservations remain intact. Next normal window: September 26,
+8:00 PM Eastern (September 27 00:00 UTC). No test has been scheduled, no consumer
+import occurred, and neither daily refresh nor email was activated.
+
 Latest local change: Lucas approved bounded whole-town pagination recovery and
 offline testing on September 26. An inconsistent town may restart once, within
 the existing request budget. This has not been published or exercised through a

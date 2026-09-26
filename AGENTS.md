@@ -1,5 +1,17 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Recovery fix published — 2026-09-26
+
+Lucas approved proceeding after offline verification. Commit 5fce0d0 is now
+verified on GitHub main. Fresh focused suite: 170 passed. Manual canary remains
+false and daily-enable variable absent. No new paid run was dispatched: today's
+normal 500-unit allowance plus the previously consumed extra 500 are retained.
+The next normal UTC-day window begins September 26 at 8:00 PM America/New_York.
+This is conservative reserved test capacity, not actual spending or the USD 5
+billing cap. No ledger reset, import, recurring activation or email. No delayed
+test has been scheduled. The local-only checkpoint below describes the earlier
+implementation phase; publication is now complete, live acceptance still pending.
+
 ## Bounded pagination recovery — local offline implementation 2026-09-26
 
 Lucas approved one whole-town recovery retry and offline testing. Discovery now
