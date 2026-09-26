@@ -147,7 +147,9 @@ class RefreshTransport:
             {
                 "city": town.title(),
                 "mls_status": "Active",
-                "sort_by": "on_market_date",
+                # Public Price ordering avoids observed date-sort overlap. It
+                # is not a snapshot: strict coverage and duplicate guards remain.
+                "sort_by": "list_price",
                 "sort_order": "desc",
                 "page": page,
             }

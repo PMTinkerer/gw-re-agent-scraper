@@ -5,6 +5,12 @@
       "approval_id": "2026-09-26-extra-canary",
       "reason": "Lucas explicitly approved one additional capped live test today after the first five-summary parser failure. Keep prior usage; no recurring activation or email.",
       "utc_date": "2026-09-26"
+    },
+    {
+      "additional_units": 5000,
+      "approval_id": "2026-09-26-price-sort-test",
+      "reason": "Lucas explicitly approved one additional controlled test now: at most 5000 reserved units and 1000 requests, today's ceiling 10000, prior records preserved, USD 5 monthly provider cap unchanged, no emails or daily refresh.",
+      "utc_date": "2026-09-26"
     }
   ],
   "reservations": [

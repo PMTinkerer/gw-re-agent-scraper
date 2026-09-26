@@ -2,6 +2,7 @@ import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 import requests
@@ -159,6 +160,36 @@ def test_basic_bounded_options_and_no_retries(tmp_path):
     assert body["formats"] == ["markdown"] and body["maxAge"] == 0
     assert session.posts[0]["allow_redirects"] is False
     assert len(session.posts) == 1
+
+
+@pytest.mark.parametrize("town", ["biddeford", "old orchard beach", "kennebunkport"])
+@pytest.mark.parametrize("page_number", [1, 2, 5])
+def test_incremental_summary_uses_price_descending_on_every_page(
+    tmp_path, town, page_number
+):
+    session = Session(
+        {
+            "markdown": f"118 Results\n{page_number} of 5\n",
+            "metadata": {"statusCode": 200},
+        }
+    )
+    reserved = []
+    transport = RefreshTransport(
+        api_key="fixture-key",
+        policy_path=proof(tmp_path),
+        reserve=lambda *args: reserved.append(args),
+        session=session,
+    )
+    transport.summary(town, page_number)
+    url = session.posts[0]["json"]["url"]
+    assert parse_qs(urlsplit(url).query) == {
+        "city": [town.title()],
+        "mls_status": ["Active"],
+        "sort_by": ["list_price"],
+        "sort_order": ["desc"],
+        "page": [str(page_number)],
+    }
+    assert reserved == [("summary", url)]
 
 
 @pytest.mark.parametrize(
@@ -392,3 +423,7 @@ def test_second_live_scan_duplicate_never_becomes_complete_coverage(
             _discover(["biddeford"], fetch, 90)
     assert calls == list(range(1, 6)) * 2
     assert len(reserved) == len(session.posts) == 10
+    assert all(
+        parse_qs(urlsplit(post["json"]["url"]).query)["sort_by"] == ["list_price"]
+        for post in session.posts
+    )

@@ -1,5 +1,40 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Immediate single-use price-sort test approved — 2026-09-26
+
+Lucas declined waiting for the UTC reset and explicitly approved one additional
+controlled test now: at most 5,000 reserved units / 1,000 requests, today's
+internal ceiling 10,000, previous records retained, USD 5/month cap unchanged,
+no email or daily refresh. Exact dated ID: `2026-09-26-price-sort-test`.
+Use `finalization=true` AND that `one_time_approval` once. Only a matching dated
+5,000-unit record can combine with finalization; old 500-unit exceptions cannot.
+Each run still caps at 5,000 and the 10,000 rolling ceiling remains. This approval
+supersedes the wait-for-capacity instruction below, not the immutable ledger.
+Before publication: 204 focused tests passed; latest broad suite 540 passed,
+two subtests, three unchanged slow Redfin tests deselected. Those three passed
+in this turn's preceding full 535-test/two-subtest run (384.81 seconds).
+No provider run has been dispatched at this checkpoint. Read release/run evidence
+in `docs/price-sort-verification-2026-09-26.md` before any dispatch or retry.
+
+## Price-sort correction locally verified — 2026-09-26
+
+Lucas approved implementing and verifying the public Price-sort alternative.
+Incremental Active summaries now request `list_price` descending on every page
+and the one bounded whole-town retry. Weekly Closed/date ordering, frozen feed
+helper, strict completeness/duplicate rejection and all budgets are unchanged.
+Test-first assertions failed against date ordering before the correction.
+Final full suite: 535 tests plus two subtests passed; focused suite: 182 passed;
+independent read-only review found no issues. Scoped Black/Ruff and diff checks
+pass. A fresh free public-browser scan at 18:51 UTC found all 118 Biddeford
+listings exactly once across five pages (24/24/24/24/22), globally descending
+prices, including both 350 and 365 Main Street. This is NOT all-town Firecrawl
+acceptance or a stable-source guarantee. Protected code/source DB/budget ledger
+hashes matched. Changes remain local and uncommitted; no push, paid run, feed
+import, activation or email. Next: publication and separately authorized bounded
+provider acceptance when capacity exists; today's 5,000 reservation stays used.
+See `docs/price-sort-verification-2026-09-26.md`. This supersedes the candidate-
+only implementation status below, not its historical paid-run failure evidence.
+
 ## Superseding finalization allowance — 2026-09-26
 
 Lucas explicitly approved raising the temporary test ceiling to 5,000 units.

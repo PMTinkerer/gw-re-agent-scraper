@@ -1,5 +1,6 @@
 import json
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -174,7 +175,9 @@ def test_finalization_wires_run_and_request_budgets(tmp_path, monkeypatch):
     transport = cli.RefreshTransport
     monkeypatch.setattr(transport, "balance", lambda self: 10000)
     checkpoints = []
-    monkeypatch.setattr(cli, "_checkpoint", lambda paths, run: checkpoints.append(paths))
+    monkeypatch.setattr(
+        cli, "_checkpoint", lambda paths, run: checkpoints.append(paths)
+    )
 
     def run(**kwargs):
         for _ in range(1000):
@@ -186,7 +189,9 @@ def test_finalization_wires_run_and_request_budgets(tmp_path, monkeypatch):
     monkeypatch.setattr(cli, "run_active_refresh", run)
     cli.main(["--billing-proof", str(policy), "--github-publish", "--finalization"])
     assert len(events) == 1000
-    rows = json.loads(Path("data/active_refresh_allowances.json").read_text())["reservations"]
+    rows = json.loads(Path("data/active_refresh_allowances.json").read_text())[
+        "reservations"
+    ]
     assert rows[-1]["reserved_units"] == 5000
     assert checkpoints[0] == ["data/active_refresh_allowances.json"]
 
@@ -211,6 +216,54 @@ def test_manual_exception_reaches_durable_reservation(tmp_path, monkeypatch):
             ]
         )
     assert events == []
+
+
+def test_price_retry_wires_existing_usage_and_1000_request_ceiling(
+    tmp_path, monkeypatch
+):
+    from tests.test_refresh_allowance import price_retry_ledger
+
+    policy, events = configure(tmp_path, monkeypatch)
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
+    monkeypatch.setattr(cli.RefreshTransport, "balance", lambda self: 20000)
+    path = Path("data/active_refresh_allowances.json")
+    data = price_retry_ledger(path)
+    now = datetime.now(timezone.utc)
+    data["reservations"][0]["reserved_at"] = now.isoformat()
+    data["one_time_approvals"][0]["utc_date"] = now.date().isoformat()
+    path.write_text(json.dumps(data))
+    ledger = cli.BudgetLedger(
+        "data/active_refresh_usage.db", read_balance=lambda: 20000
+    )
+    ledger.reserve("prior", "summary", "prior", units=100)
+    checkpoints = []
+    monkeypatch.setattr(
+        cli, "_checkpoint", lambda paths, run: checkpoints.append(paths)
+    )
+
+    def run(**kwargs):
+        for _ in range(1000):
+            kwargs["fetch_summary"]("york", 1)
+        with pytest.raises(cli.BudgetExceeded, match="Whole-run"):
+            kwargs["fetch_summary"]("york", 1)
+        return {"run_id": "42-1", "active_mls_ids": []}
+
+    monkeypatch.setattr(cli, "run_active_refresh", run)
+    cli.main(
+        [
+            "--billing-proof",
+            str(policy),
+            "--github-publish",
+            "--finalization",
+            "--one-time-approval",
+            "price-retry",
+        ]
+    )
+    assert len(events) == 1000
+    rows = json.loads(path.read_text())["reservations"]
+    assert rows[0] == data["reservations"][0]
+    assert rows[-1]["reserved_units"] == 5000
+    assert checkpoints[0] == ["data/active_refresh_allowances.json"]
 
 
 def test_checkpoint_verifies_actual_local_remote_and_rejects_divergence(

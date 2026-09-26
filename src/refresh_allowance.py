@@ -15,8 +15,6 @@ FINALIZATION_DAILY_UNITS = 5000
 
 
 def reserve_run(path, run_id, *, now=None, approval_id="", finalization=False):
-    if finalization and approval_id:
-        raise RuntimeError("Cannot combine finalization and one-time allowance")
     path = Path(path)
     now = now or datetime.now(timezone.utc)
     if not run_id or now.tzinfo is None:
@@ -43,10 +41,15 @@ def reserve_run(path, run_id, *, now=None, approval_id="", finalization=False):
                 len(matches) != 1
                 or matches[0].get("utc_date") != now.date().isoformat()
                 or type(matches[0].get("additional_units")) is not int
-                or matches[0]["additional_units"] != RUN_UNITS
+                or matches[0]["additional_units"]
+                != (FINALIZATION_DAILY_UNITS if finalization else RUN_UNITS)
             ):
-                raise RuntimeError("No matching dated one-time allowance approval")
-            additional_units = RUN_UNITS
+                raise RuntimeError(
+                    "Cannot combine finalization without matching dated 5000-unit approval"
+                    if finalization
+                    else "No matching dated one-time allowance approval"
+                )
+            additional_units = matches[0]["additional_units"]
         daily = rolling = 0
         for row in data["reservations"]:
             if row["run_id"] == run_id:
@@ -64,16 +67,18 @@ def reserve_run(path, run_id, *, now=None, approval_id="", finalization=False):
             if timestamp > now - timedelta(days=30):
                 rolling += units
         daily_limit = (
-            FINALIZATION_DAILY_UNITS if finalization else DAILY_UNITS + additional_units
-        )
+            FINALIZATION_DAILY_UNITS if finalization else DAILY_UNITS
+        ) + additional_units
         # Manual finalization reserves only capacity still available today.
         # Failed reservations remain counted; old rows are never rewritten.
         run_units = (
-            min(daily_limit - daily, ROLLING_UNITS - rolling)
-            if finalization else RUN_UNITS
+            min(FINALIZATION_DAILY_UNITS, daily_limit - daily, ROLLING_UNITS - rolling)
+            if finalization
+            else RUN_UNITS
         )
         if (
-            run_units < RUN_UNITS or daily + run_units > daily_limit
+            run_units < RUN_UNITS
+            or daily + run_units > daily_limit
             or rolling + run_units > ROLLING_UNITS
         ):
             raise RuntimeError("Durable run allowance exhausted")

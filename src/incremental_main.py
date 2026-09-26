@@ -9,7 +9,10 @@ from pathlib import Path
 
 from .active_refresh import run_active_refresh
 from .refresh_allowance import (
-    reserve_run, RUN_UNITS, DAILY_UNITS, FINALIZATION_DAILY_UNITS,
+    reserve_run,
+    RUN_UNITS,
+    DAILY_UNITS,
+    FINALIZATION_DAILY_UNITS,
 )
 from .refresh_budget import BudgetExceeded, BudgetLedger
 from .refresh_transport import RefreshTransport, verify_billing_policy
@@ -45,14 +48,14 @@ def main(argv=None):
     parser.add_argument("--github-publish", action="store_true")
     parser.add_argument("--one-time-approval", default="")
     parser.add_argument(
-        "--finalization", action="store_true",
+        "--finalization",
+        action="store_true",
         help="Operator-approved temporary 5,000-unit manual testing ceiling",
     )
     args = parser.parse_args(argv)
-    if (
-        (args.one_time_approval or args.finalization)
-        and os.environ.get("GITHUB_EVENT_NAME") != "workflow_dispatch"
-    ):
+    if (args.one_time_approval or args.finalization) and os.environ.get(
+        "GITHUB_EVENT_NAME"
+    ) != "workflow_dispatch":
         raise RuntimeError("Expanded allowance requires manual dispatch")
     # No standalone environment variables may bypass the publication boundary.
     if not args.github_publish or os.environ.get("GITHUB_ACTIONS") != "true":
@@ -79,7 +82,9 @@ def main(argv=None):
         api_key=key, policy_path=args.billing_proof, reserve=lambda *_: None
     )
     daily_limit = FINALIZATION_DAILY_UNITS if args.finalization else DAILY_UNITS
-    if transport.balance() < (FINALIZATION_DAILY_UNITS if args.finalization else RUN_UNITS):
+    if transport.balance() < (
+        FINALIZATION_DAILY_UNITS if args.finalization else RUN_UNITS
+    ):
         raise BudgetExceeded(
             "Insufficient existing credits for conservative run allowance"
         )
@@ -87,9 +92,15 @@ def main(argv=None):
     if args.finalization:
         options["finalization"] = True
     run_units = reserve_run(allowance_path, run_id, **options)
+    # The dated single-use approval was validated above before widening request
+    # headroom. The whole-run ceiling remains the returned (at most 5000) units.
+    if args.finalization and args.one_time_approval:
+        daily_limit += FINALIZATION_DAILY_UNITS
     _checkpoint([allowance_path], run_id)
     ledger = BudgetLedger(
-        budget_path, read_balance=transport.balance, daily_limit=daily_limit,
+        budget_path,
+        read_balance=transport.balance,
+        daily_limit=daily_limit,
     )
     requested = 0
 
