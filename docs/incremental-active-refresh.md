@@ -1,5 +1,14 @@
 # Incremental active refresh — controlled acceptance
 
+Latest: Lucas explicitly approved one extra capped September26 test. Dated
+single-use allowance d88fc5c preserved prior reservations and normal request
+limits. Run36257185586 used five additional actual credits and safely rejected
+source pages containing118 cards but117 unique URLs (350 Main Street duplicated
+on pages4and5). All cards parsed; source pagination itself was inconsistent.
+No database/manifest publication or consumer import. Both gates OFF; no further
+retry authorized. Full suite457 tests plus two subtests passed. Saved responses
+are retained in .firecrawl/canary-2026-09-26-extra. Current balance98,994.
+
 September26 outcome: source code published but canary36256050877 rejected
 incomplete card parsing after five summary requests/five actual credits. No
 source snapshot published; all allowance/retry evidence retained. Offline repair

@@ -1,5 +1,20 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Additional approved canary — 2026-09-26
+
+Lucas approved one extra capped test today. Implementation commit d88fc5c added
+the dated approval2026-09-26-extra-canary, consumed by36257185586; previous
+reservations were preserved. Five additional
+actual credits, balance98,994. Source returned118 cards but117 unique URLs:
+350 Main Street appears on pages4and5;365 Main Street missing versus first scan.
+Saved exports in .firecrawl/canary-2026-09-26-extra reproduce rejection. This is
+source pagination inconsistency, not dropped parser cards. No source publication,
+consumer import or email. Both gates OFF; no further paid retry authorized.
+Full suite457 tests plus two subtests passed; a subsequent captured-duplicate
+rejection regression makes119 final focused checks. Independent review passed.
+Approved Atlas card/registry update committed155a04e. Older extra-approval-needed notes are
+historical; the new approval has been consumed and cannot be reused.
+
 ## Controlled canary result — 2026-09-26
 
 Code published; daily activation remains OFF, manual canary flag FALSE.

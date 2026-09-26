@@ -247,3 +247,40 @@ def test_malformed_saved_card_cannot_be_hidden_by_next_card(old, new):
 
     with pytest.raises(RefreshIncomplete):
         _discover(["biddeford"], fetch, 90)
+
+
+def test_second_live_scan_duplicate_never_becomes_complete_coverage():
+    """Replay the exact card substitution observed in canary 36257185586.
+
+    Page five replaced 365 Main Street with 350 Main Street, already on page
+    four, while the published count stayed 118. Never deduplicate and accept.
+    Raw provider exports are retained locally; this uses public card excerpts.
+    """
+    from src.active_refresh import RefreshIncomplete, SummaryPage, _discover
+    from src.incremental_cards import _CARD, parse_active_cards
+
+    pages = json.loads(
+        (
+            Path(__file__).parent / "fixtures/biddeford-active-cards-2026-09-26.json"
+        ).read_text()
+    )
+    duplicate = next(
+        m.group()
+        for m in _CARD.finditer(pages[3]["markdown"])
+        if m[3].strip() == "350 Main Street"
+    )
+    missing = next(
+        m.group()
+        for m in _CARD.finditer(pages[4]["markdown"])
+        if m[3].strip() == "365 Main Street"
+    )
+    pages[4]["markdown"] = pages[4]["markdown"].replace(missing, duplicate, 1)
+    cards = [parse_active_cards(page["markdown"]) for page in pages]
+    assert [len(rows) for rows in cards] == [24, 24, 24, 24, 22]
+    assert len({row["detail_url"] for rows in cards for row in rows}) == 117
+    with pytest.raises(RefreshIncomplete, match="Duplicate"):
+        _discover(
+            ["biddeford"],
+            lambda town, page: SummaryPage(town, page, 5, 118, cards[page - 1]),
+            90,
+        )
