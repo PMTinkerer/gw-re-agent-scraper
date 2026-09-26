@@ -1,5 +1,57 @@
 # Incremental Active price-sort verification — 2026-09-26
 
+## Terminal outcome — incomplete feed, not accepted
+
+Run36264703193 failed at19:07:16 UTC with `ActiveCardParseError: Malformed or
+unparsed Active result card`, wrapped as `RefreshIncomplete: Malformed Active
+discovery page`. Remote evidence fast-forwarded through
+`0a0e466dc44bc2ee6a51b88fcf9fb4cbe7638e15`.
+
+The durable ledger records20 summary requests /100 reserved request units:
+Biddeford pages1–5, Kennebunk1–5, Kennebunkport1–3, Kittery1–3, Ogunquit1–3,
+then Old Orchard Beach1. Sequential discovery cannot advance towns without
+validated complete coverage; no town retried. The original Biddeford pagination
+failure did not recur. No detail/status requests or complete publication/import.
+
+Free browser inspection of the exact failing query displayed113 Results, page1
+of5, Sort: Price. One card showed $1,300,000, Active, The Boulos Company, and no
+address/town, linking to https://mainelistings.com/listings/759917817 . The detail
+UI identifies MLS1662844, Property Type Land, a permitted condo/commercial site.
+The parser requires two bold address/city fields, so this visible shape is
+unsupported. Failed Firecrawl markdown was not archived; this diagnostic is not
+an exact provider-payload reproduction.
+
+Next design review: identity-first discovery/coverage separate from complete
+home facts and eligibility; explicitly account for unresolved/ineligible cards,
+never silently drop them or fabricate addresses. Capture bounded failure evidence
+for offline compatibility work. No new parser change or paid retry was inferred.
+
+Protected source DB, frozen helper and weekly workflow hashes still match below.
+The ledger appended the approved5,000 reservation with all older rows preserved;
+whole-run total10,000 now exhausts the rolling allowance. This is reservation
+accounting, not measured provider charges. Canary=false, daily-enable absent,
+no delayed run scheduled. Both local environments' private before/after audits
+match exactly (`tmp/handoff-audit-price-sort-{before,after}.json` in outreach).
+Real sandbox retains4 saved versions,2 PDFs,288 defaults and zero send evidence.
+Backup: `.local/live-sandbox/history-backups/history-mqj4pnfu`. No app restart.
+
+Atlas card updated; last_verified already2026-09-26. Full Atlas validation found
+seven unrelated existing registration/capability errors and one stale-project
+warning; none was changed here.
+
+## Published release and dispatched test
+
+Release `928eb3cd7b0eb0a37b4fb535a8316eadca7c0f50` was pushed and independently
+read back from GitHub main. Independent review found no issues and reproduced
+204 focused passing tests.
+
+Dispatched once: **36264703193**, 2026-09-26T19:03:20Z, release SHA above,
+`finalization=true`, `one_time_approval=2026-09-26-price-sort-test`.
+Job 108467038909 started at 19:03:24Z. Manual canary flag restored false at
+19:03:46Z; daily-enable variable absent. Observe this exact run, never duplicate
+an uncertain dispatch. No email or recurring activation. Terminal result and
+complete feed remain unverified at this checkpoint.
+
 ## Superseding immediate-test approval and release preflight
 
 Lucas approved publication, then explicitly approved one additional test now:

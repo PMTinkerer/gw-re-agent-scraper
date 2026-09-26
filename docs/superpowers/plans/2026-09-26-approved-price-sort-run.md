@@ -11,17 +11,21 @@ new run at 5,000 and preserve the 10,000 rolling ceiling. Propagate the same dai
 ceiling to the request ledger only after reserve_run validates the approval.
 Do not refund/reset reservations or permanently raise default limits.
 
-- [ ] Add allowance tests for successful 5,000 extra reservation, immutable prior
+- [x] Add allowance tests for successful 5,000 extra reservation, immutable prior
   rows, reuse, wrong day/ID/amount, missing finalization, rolling limit and per-run
   ceiling. Add CLI test with prior request usage; request 1,001 must fail.
-- [ ] Observe failures; minimally update refresh_allowance.py and incremental_main.py.
-- [ ] Append exact dated approval to data/active_refresh_allowances.json without
+- [x] Observe failures; minimally update refresh_allowance.py and incremental_main.py.
+- [x] Append exact dated approval to data/active_refresh_allowances.json without
   changing previous approvals or reservations. Run focused/full regression/review.
-- [ ] Publish only reviewed files, read GitHub main back, dispatch once with
+- [x] Publish only reviewed files, read GitHub main back, dispatch once with
   finalization=true and one_time_approval=2026-09-26-price-sort-test. Restore
   canary=false once job starts; never set the daily-enable flag.
-- [ ] Observe terminal run result; accept only complete all-town manifest and
+- [x] Observe terminal run result; accept only complete all-town manifest and
   matching database checksum. No partial import. Record evidence and next gate.
 
 Alternatives considered: waiting for UTC reset (user declined), deleting/refunding
 prior reservations (rejected; loses the existing conservative audit boundary).
+
+Run36264703193 rejected incomplete discovery on Old Orchard Beach page1 after
+five completed towns. No feed accepted/imported. See price-sort verification
+report for the addressless Land card diagnostic and required design review.

@@ -1,5 +1,23 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Price-sort provider result / coverage design gate — 2026-09-26
+
+Release `928eb3c`; run `36264703193` failed at 19:07 UTC after20 summary requests
+(100 request-reserved units, not measured charges). Price ordering completed
+Biddeford, Kennebunk, Kennebunkport, Kittery and Ogunquit once each. Old Orchard
+Beach page1 failed strict card parsing. Free browser inspection found a $1.3M
+card without address/town at https://mainelistings.com/listings/759917817;
+detail UI identifies MLS1662844, Property Type Land. Raw failed provider markdown
+was not archived; this is a source-visible unsupported shape, not captured replay.
+Next: review identity-first discovery/coverage separated from eligible-home facts,
+explicit unresolved/ineligible handling and bounded diagnostic capture. Do not
+silently drop cards or fabricate addresses; do not keep buying scans for regex fixes.
+No source publication/import/email; source DB unchanged. Both launch gates OFF.
+Whole-run reservations now total10,000 and exhaust the rolling cap, not just
+today's window. Single-use approval consumed; no further paid test or schedule.
+Sandbox and controlled audited rows/PDFs unchanged. See
+`docs/price-sort-verification-2026-09-26.md` for terminal evidence.
+
 ## Immediate single-use price-sort test approved — 2026-09-26
 
 Lucas declined waiting for the UTC reset and explicitly approved one additional
