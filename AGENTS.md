@@ -6,6 +6,11 @@ Lucas explicitly approved raising the temporary test ceiling to 5,000 units.
 Manual `finalization=true` runs use up to 5,000/UTC day including prior reserved
 units, still bounded by 10,000/trailing 30 days. Normal runs remain 500/day.
 The old two 500-unit reservations stay immutable, leaving 4,000 today.
+Run 36261585861 consumed that reservation and made 10 summary requests (50
+request-level reserved units). It failed on duplicate source pagination after
+the recovery retry; no complete source or consumer import. Full suite: 526
+tests plus two subtests passed. A free browser price-sort scan found 118/118
+unique Biddeford listings; this is a candidate investigation, not a shipped fix.
 This does not raise the USD 5 provider cap, activate recurring refresh or send
 email. The redundant 8:05 PM one-shot task is PAUSED. Stop using the manual
 finalization input once testing is complete. See
