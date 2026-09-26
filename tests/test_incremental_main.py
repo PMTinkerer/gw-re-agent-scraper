@@ -41,7 +41,7 @@ def configure(tmp_path, monkeypatch):
             self.reserve("summary", "https://mainelistings.com/listings")
             events.append("paid")
 
-        detail = status = summary
+        summary_range = detail = status = summary
 
     monkeypatch.setattr(cli, "RefreshTransport", FakeTransport)
     return proof(tmp_path), events
@@ -69,7 +69,8 @@ def test_incomplete_run_keeps_reservation_and_never_publishes_source(
     )
 
     def fail(**kwargs):
-        kwargs["fetch_summary"]("york", 1)
+        assert "fetch_summary" not in kwargs
+        kwargs["fetch_summary_range"]("york", None, None)
         raise RuntimeError("incomplete")
 
     monkeypatch.setattr(cli, "run_active_refresh", fail)
@@ -181,9 +182,9 @@ def test_finalization_wires_run_and_request_budgets(tmp_path, monkeypatch):
 
     def run(**kwargs):
         for _ in range(1000):
-            kwargs["fetch_summary"]("york", 1)
+            kwargs["fetch_summary_range"]("york", None, None)
         with pytest.raises(cli.BudgetExceeded, match="Whole-run"):
-            kwargs["fetch_summary"]("york", 1)
+            kwargs["fetch_summary_range"]("york", None, None)
         return {"run_id": "42-1", "active_mls_ids": []}
 
     monkeypatch.setattr(cli, "run_active_refresh", run)
@@ -243,9 +244,9 @@ def test_price_retry_wires_existing_usage_and_1000_request_ceiling(
 
     def run(**kwargs):
         for _ in range(1000):
-            kwargs["fetch_summary"]("york", 1)
+            kwargs["fetch_summary_range"]("york", None, None)
         with pytest.raises(cli.BudgetExceeded, match="Whole-run"):
-            kwargs["fetch_summary"]("york", 1)
+            kwargs["fetch_summary_range"]("york", None, None)
         return {"run_id": "42-1", "active_mls_ids": []}
 
     monkeypatch.setattr(cli, "run_active_refresh", run)

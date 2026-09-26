@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlencode, urlsplit
 
 import requests
 
-from .active_refresh import RefreshIncomplete, SummaryPage
+from .active_refresh import RefreshIncomplete, SummaryPage, _town
 from .incremental_cards import ActiveCardParseError, parse_active_cards
 from .incremental_detail import INCREMENTAL_DETAIL_JS
 from .refresh_diagnostics import SummaryDiagnostics
@@ -184,6 +185,76 @@ class RefreshTransport:
             count,
             listings,
         )
+
+    def summary_range(self, town, minimum, maximum):
+        """Read actual page-one evidence for an inclusive price interval.
+
+        Never page through the result set or declare a truncated probe complete.
+        Reservation, billing verification and diagnostics stay in _scrape.
+        """
+        town = _town(town)
+        if any(
+            value is not None and (type(value) is not int or value < 0)
+            for value in (minimum, maximum)
+        ) or (minimum is not None and maximum is not None and minimum > maximum):
+            raise RefreshIncomplete("Invalid price bounds")
+        query = {
+            "city": town.title(),
+            "mls_status": "Active",
+            "sort_by": "list_price",
+            "sort_order": "desc",
+            "page": 1,
+        }
+        if minimum is not None:
+            query["min_list_price"] = minimum
+        if maximum is not None:
+            query["max_list_price"] = maximum
+        data = self._scrape(
+            "https://mainelistings.com/listings?" + urlencode(query), "summary"
+        )
+        text = data["markdown"]
+        # Unlike the legacy parser, don't interpret '-1' or '1.5' as '1'/'5'.
+        tokens = re.findall(r"([^\s*]+)\s+Results\b", text)
+        if not tokens or any(
+            not re.fullmatch(r"(?:\d+|\d{1,3}(?:,\d{3})+)", token) for token in tokens
+        ):
+            raise RefreshIncomplete("Missing or invalid result count evidence")
+        counts = {int(token.replace(",", "")) for token in tokens}
+        if len(counts) != 1:
+            raise RefreshIncomplete("Conflicting result counts")
+        count = counts.pop()
+        try:
+            listings = parse_active_cards(text)
+        except ActiveCardParseError as exc:
+            raise RefreshIncomplete("Malformed Active discovery page") from exc
+        if len(listings) != min(count, 24) or len(
+            {r["detail_url"] for r in listings}
+        ) != len(listings):
+            raise RefreshIncomplete("Incomplete or duplicate first-page cards")
+        pages = re.findall(
+            r"(?m)^[ \t*]*(?:Page[ \t]+)?([^\s*]+)[ \t]+of[ \t]+([^\n]*?)[ \t*]*$",
+            text,
+            re.I,
+        )
+        expected = (1, max(1, (count + 23) // 24))
+        if pages:
+            if any(
+                not all(re.fullmatch(r"[0-9]+", token) for token in pair)
+                or tuple(map(int, pair)) != expected
+                for pair in pages
+            ):
+                raise RefreshIncomplete("Contradictory range pagination")
+        elif count > 24 or re.search(r"\b(?:Page\s+)?\d+\s+of\b", text, re.I):
+            raise RefreshIncomplete("Missing range pagination evidence")
+        # A hidden/omitted paginator cannot make a linked second page disappear.
+        if count <= 24 and (
+            re.search(r"[?&](?:amp;)?page=(?!1(?:[&#)\s]|$))[^&#)\s]+", text, re.I)
+            or re.search(r"\[(?:next|previous|[2-9]\d*)\]\(", text, re.I)
+        ):
+            raise RefreshIncomplete("Contradictory single-page navigation")
+        from .price_discovery import RangePage
+
+        return RangePage(town, minimum, maximum, *expected, count, listings)
 
     def _detail_result(self, url, kind, script):
         data = self._scrape(url, kind, script)

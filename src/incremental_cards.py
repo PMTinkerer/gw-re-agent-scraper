@@ -15,7 +15,7 @@ _BREAK = r"\\\\\s*\\\\\s*"
 # Compact map cards and repeated photo links do not have this structure.
 _CARD_START = re.compile(r"\$[^\n\\]*" + _BREAK)
 _CARD = re.compile(
-    r"\$\s*([\d,]+)\s*(Active|New Listing|Pending)"
+    r"\$\s*((?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]+))\s*(Active|New Listing|Pending)"
     + _BREAK
     + r"(?:\*\*([^*]+)\*\*\s+\*\*([^*]+)\*\*"
     + _BREAK

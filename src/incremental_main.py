@@ -126,7 +126,7 @@ def main(argv=None):
             state_path=state_path,
             towns=TOWNS,
             run_id=run_id,
-            fetch_summary=transport.summary,
+            fetch_summary_range=transport.summary_range,
             fetch_detail=transport.detail,
             fetch_status=transport.status,
         )

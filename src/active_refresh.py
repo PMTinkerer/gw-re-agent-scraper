@@ -363,7 +363,8 @@ def run_active_refresh(
     manifest_path: str | Path,
     state_path: str | Path,
     towns: list[str],
-    fetch_summary: Callable[[str, int], SummaryPage],
+    fetch_summary: Callable[[str, int], SummaryPage] | None = None,
+    fetch_summary_range: Callable | None = None,
     fetch_detail: Callable[[str], dict | None],
     fetch_status: Callable[[str], dict | None],
     now: Callable[[], datetime] | None = None,
@@ -377,6 +378,8 @@ def run_active_refresh(
     """
     if type(max_pages) is not int or max_pages < 1:
         raise ValueError("max_pages must be a positive integer")
+    if (fetch_summary is None) == (fetch_summary_range is None):
+        raise ValueError("Select exactly one discovery mechanism")
     canonical_towns = sorted({_town(town) for town in towns})
     if not canonical_towns:
         raise RefreshIncomplete("At least one requested town is required")
@@ -398,7 +401,31 @@ def run_active_refresh(
             state.execute("""CREATE TABLE IF NOT EXISTS new_listing_retries (
                 detail_url TEXT PRIMARY KEY, attempts INTEGER NOT NULL,
                 last_attempt_at TEXT NOT NULL, detail_json TEXT)""")
-        discovered = _discover(canonical_towns, fetch_summary, max_pages)
+        range_result = None
+        if fetch_summary_range is not None:
+            from .price_discovery import discover_price_ranges
+
+            # Only a complete, matching prior publication may supply hints.
+            # Even valid hints are queried afresh; they never establish coverage.
+            hints = None
+            try:
+                previous = json.loads(manifest_path.read_text())
+                if (
+                    isinstance(previous, dict)
+                    and previous.get("complete") is True
+                    and type(previous.get("schema_version")) is int
+                    and previous["schema_version"] == 1
+                    and previous.get("database_sha256") == original_hash
+                ):
+                    hints = previous.get("price_range_hints")
+            except (OSError, ValueError):
+                pass
+            range_result = discover_price_ranges(
+                canonical_towns, fetch_summary_range, hints=hints
+            )
+            discovered = range_result.listings
+        else:
+            discovered = _discover(canonical_towns, fetch_summary, max_pages)
         with tempfile.TemporaryDirectory(
             prefix=".active-refresh-", dir=db_path.parent
         ) as directory:
@@ -602,6 +629,9 @@ def run_active_refresh(
                 inactive=inactive,
                 unresolved=unresolved,
             )
+            if range_result is not None:
+                manifest["price_range_hints"] = range_result.hints
+                manifest["discovery_requests"] = range_result.requests
             _publish(
                 db_path, manifest_path, stage_path, manifest, original_hash, temporary
             )

@@ -1,5 +1,20 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Price-range implementation — locally verified 2026-09-26
+
+Approved design now implemented: incremental CLI selects disjoint price ranges,
+page1 only, strict source evidence/probe/count reconciliation, exact-price
+overflow rejection and90-request town cap. Fresh validated hints persist with
+the existing atomic complete manifest; no paging fallback or retries. Source
+DB/ledgers/frozen helper/legacy workflow unchanged. No paid call, new allowance,
+push/import/activation/email. Final-tree698 tests plus2 subtests pass;3 unchanged
+slow Redfin tests passed in the preceding full675-test run. Independent spec and
+quality reviews pass. Offline Wells end-to-end200 identities:34 cold/19 warm
+requests. Nine-town modeled warm total87, excluding York/detail/status, so normal
+100-request daily capacity is NOT proven adequate. Do not activate automatically.
+See docs/price-partition-verification-2026-09-26.md for evidence and remaining
+publication/provider-test/daily-capacity gates. Old consumed approvals stay used.
+
 ## Price-range investigation — 2026-09-26, not implemented
 
 Free public-browser verification collected200/200 unique Wells listing URLs

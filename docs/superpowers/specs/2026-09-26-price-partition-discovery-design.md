@@ -1,6 +1,7 @@
 # Stable Active discovery through one-page price ranges
 
-Status: investigation verified; proposed implementation awaiting written-spec review.
+Status: approved by Lucas; implemented and offline-verified locally on2026-09-26.
+See `docs/price-partition-verification-2026-09-26.md`. Not published or provider-accepted.
 
 ## Goal and authority
 
