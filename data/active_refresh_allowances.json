@@ -1,4 +1,12 @@
 {
+  "one_time_approvals": [
+    {
+      "approval_id": "2026-09-26-extra-canary",
+      "utc_date": "2026-09-26",
+      "additional_units": 500,
+      "reason": "Lucas explicitly approved one additional capped live test today after the first five-summary parser failure. Keep prior usage; no recurring activation or email."
+    }
+  ],
   "reservations": [
     {
       "reserved_at": "2026-09-26T16:36:45.928578+00:00",

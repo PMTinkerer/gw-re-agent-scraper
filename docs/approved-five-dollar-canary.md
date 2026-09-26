@@ -1,5 +1,21 @@
 # Approved five-dollar billing policy and canary plan
 
+## Explicit additional canary approval, September 26
+
+Lucas approved one additional capped test today after the five-summary parser
+failure, plus updating the shared Atlas index. Add a dated, single-use approval
+to the durable ledger and require its exact ID on manual dispatch. Consume it
+with the new reservation before paid work, preserving the original reservation.
+Reject replay, other dates/IDs, schedule use and rolling-cap exhaustion. Normal
+daily whole-run limits remain unchanged. Per-request daily accounting also
+remains 500 units: the earlier 25 units leave at most 95 basic requests today.
+No extra retries, automatic activation or email permission is implied.
+
+Verification: new acceptance/replay/date/rolling/CLI tests failed first; implement
+the narrow allowance, run focused regressions and independent review, publish,
+dispatch once and close the manual gate. Verify provider usage and final source
+coverage before any consumer import. Record failure honestly without another run.
+
 September 26: Lucas explicitly approved leaving the existing account-wide
 Pay-as-you-go limit at USD 5/month, then instructed us to run the controlled
 refresh. This supersedes the previous no-automatic-purchases requirement.

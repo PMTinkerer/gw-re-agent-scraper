@@ -41,7 +41,13 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--billing-proof", required=True)
     parser.add_argument("--github-publish", action="store_true")
+    parser.add_argument("--one-time-approval", default="")
     args = parser.parse_args(argv)
+    if (
+        args.one_time_approval
+        and os.environ.get("GITHUB_EVENT_NAME") != "workflow_dispatch"
+    ):
+        raise RuntimeError("One-time approval requires manual dispatch")
     # No standalone environment variables may bypass the publication boundary.
     if not args.github_publish or os.environ.get("GITHUB_ACTIONS") != "true":
         raise RuntimeError("Use the gated GitHub daily lane; no ad-hoc paid runs")
@@ -70,7 +76,7 @@ def main(argv=None):
         raise BudgetExceeded(
             "Insufficient existing credits for conservative run allowance"
         )
-    reserve_run(allowance_path, run_id)
+    reserve_run(allowance_path, run_id, approval_id=args.one_time_approval)
     _checkpoint([allowance_path], run_id)
     ledger = BudgetLedger(budget_path, read_balance=transport.balance)
     requested = 0

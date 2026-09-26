@@ -144,6 +144,44 @@ def test_daily_workflow_is_gated_and_has_no_notification_credentials():
         assert prohibited not in workflow
 
 
+def test_exception_requires_manual_dispatch(tmp_path, monkeypatch):
+    policy, events = configure(tmp_path, monkeypatch)
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "schedule")
+    with pytest.raises(RuntimeError, match="manual dispatch"):
+        cli.main(
+            [
+                "--billing-proof",
+                str(policy),
+                "--github-publish",
+                "--one-time-approval",
+                "extra-canary",
+            ]
+        )
+    assert events == []
+
+
+def test_manual_exception_reaches_durable_reservation(tmp_path, monkeypatch):
+    policy, events = configure(tmp_path, monkeypatch)
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
+
+    def stop(path, run_id, **kwargs):
+        assert kwargs == {"approval_id": "extra-canary"}
+        raise RuntimeError("approved reservation reached")
+
+    monkeypatch.setattr(cli, "reserve_run", stop)
+    with pytest.raises(RuntimeError, match="approved reservation reached"):
+        cli.main(
+            [
+                "--billing-proof",
+                str(policy),
+                "--github-publish",
+                "--one-time-approval",
+                "extra-canary",
+            ]
+        )
+    assert events == []
+
+
 def test_checkpoint_verifies_actual_local_remote_and_rejects_divergence(
     tmp_path, monkeypatch
 ):
