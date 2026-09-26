@@ -1,5 +1,19 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Sparse release terminal result — 2026-09-26
+
+Published af20ca7; controlled run36267949570 failed at20:08:09UTC on duplicate
+pagination after eight complete towns. Old Orchard Beach sparse card now passes.
+Saco recovered on its one retry; Wells failed both attempts; York not reached.
+All44 summary responses retained and offline-replayed;220 request-reserved units
+are not measured credits/cost. No source publication/import, app restart, email
+or recurring activation. Protected source DB/helper/legacy hashes unchanged;
+both consumer audit snapshots match exactly. Manual canary false, daily-enable
+absent. Approval consumed; whole-run reservations15,000 exhaust normal rolling
+capacity. Do not run another paid retry or weaken completeness. Next is an
+architectural review of stable discovery (e.g. verified disjoint one-page price
+ranges), not another identical scan. See docs/sparse-release-2026-09-26.md.
+
 ## Approved sparse release/test — 2026-09-26
 
 Lucas said Go to publishing the correction and one bounded all-town test.
