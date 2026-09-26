@@ -1,5 +1,21 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Controlled canary result — 2026-09-26
+
+Code published; daily activation remains OFF, manual canary flag FALSE.
+Run36255865762 stopped before spend (checkout URL lacked optional.git); exact
+origin fix published. Run36256050877 consumed five actual Firecrawl credits on
+Biddeford summaries then rejected incomplete parsing before detail enrichment or
+source publication. Whole500-unit allowance and five request reservations remain.
+
+Saved response replay found legacy required bed/bath/sqft and lowercase `1 bed`
+parsing gaps. New incremental_cards parser reads all118real cards, keeps omitted
+facts None and leaves the weekly parser/frozen helper intact.111focused tests and
+independent review pass. Malformed facts/terminators/towns still fail discovery.
+Source database unchanged; no complete manifest or consumer import yet. A further
+paid test today needs explicit revised allowance approval; otherwise next UTCday.
+Never reset ledgers to force success. No daily schedule or email was activated.
+
 ## Superseding billing approval — 2026-09-26
 
 Lucas explicitly approved retaining the existing USD 5/month Pay-as-you-go

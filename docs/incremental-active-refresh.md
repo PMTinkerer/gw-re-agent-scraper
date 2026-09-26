@@ -1,5 +1,12 @@
 # Incremental active refresh — controlled acceptance
 
+September26 outcome: source code published but canary36256050877 rejected
+incomplete card parsing after five summary requests/five actual credits. No
+source snapshot published; all allowance/retry evidence retained. Offline repair
+now reads all118saved Biddeford cards, with unknown property facts left unknown.
+111focused checks and independent review passed. Both activation gates remain
+off. Do not reset the whole-run allowance to force another paid attempt today.
+
 This separate lane is approved for publication and one manually gated canary.
 Daily activation remains OFF until complete source and consumer acceptance.
 It does not import notifications or email transports. The original weekly

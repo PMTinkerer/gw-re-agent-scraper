@@ -11,11 +11,11 @@ from urllib.parse import urlencode, urlsplit
 import requests
 
 from .active_refresh import RefreshIncomplete, SummaryPage
+from .incremental_cards import parse_active_cards
 from .maine_parser import (
     DETAIL_EXTRACT_JS,
     parse_detail_response,
     parse_pagination,
-    parse_search_cards,
     parse_total_results,
 )
 
@@ -164,7 +164,7 @@ class RefreshTransport:
             pagination[0],
             pagination[1],
             count,
-            parse_search_cards(text, status="Active"),
+            parse_active_cards(text),
         )
 
     def _detail_result(self, url, kind, script):

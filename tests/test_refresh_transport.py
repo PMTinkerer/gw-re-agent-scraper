@@ -1,6 +1,7 @@
 import hashlib
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 import requests
@@ -180,3 +181,69 @@ def test_invalid_response_never_becomes_empty_snapshot(tmp_path, document):
     with pytest.raises(RuntimeError):
         transport.summary("york", 1)
     assert len(session.posts) == 1
+
+
+def test_saved_live_cards_with_missing_facts_keep_complete_coverage(tmp_path):
+    from src.active_refresh import _discover
+
+    pages = json.loads(
+        (
+            Path(__file__).parent / "fixtures/biddeford-active-cards-2026-09-26.json"
+        ).read_text()
+    )
+    session = Session()
+    transport = RefreshTransport(
+        api_key="fixture-key",
+        policy_path=proof(tmp_path),
+        reserve=lambda *a: None,
+        session=session,
+    )
+
+    def fetch(town, page):
+        saved = pages[page - 1]
+        session.document = {
+            "markdown": f"{saved['total_results']} Results\n{page} of 5\n"
+            + saved["markdown"],
+            "metadata": {"statusCode": 200},
+        }
+        result = transport.summary(town, page)
+        assert len(result.listings) == saved["card_count"]
+        return result
+
+    found = _discover(["biddeford"], fetch, 90)
+    assert len(found) == 118
+    south = next(row for row in found.values() if row["address"] == "177 South Street")
+    assert south["beds"] is None and south["baths"] == 2 and south["sqft"] == 2402
+    birdie = next(row for row in found.values() if row["address"] == "10 Birdie Lane")
+    assert birdie["beds"] is None and birdie["baths"] is None and birdie["sqft"] is None
+    woodland = next(
+        row for row in found.values() if row["address"] == "2 Woodland Drive"
+    )
+    assert woodland["beds"] == 3 and woodland["baths"] == 1
+
+
+@pytest.mark.parametrize(
+    "old,new",
+    [
+        ("2 Baths", "unknown Baths"),
+        ("Brought to you by", "missing card terminator"),
+        ("Biddeford, ME 04005", "York, ME 03909"),
+    ],
+)
+def test_malformed_saved_card_cannot_be_hidden_by_next_card(old, new):
+    from src.active_refresh import RefreshIncomplete, SummaryPage, _discover
+    from src.incremental_cards import parse_active_cards
+
+    pages = json.loads(
+        (
+            Path(__file__).parent / "fixtures/biddeford-active-cards-2026-09-26.json"
+        ).read_text()
+    )
+    pages[0]["markdown"] = pages[0]["markdown"].replace(old, new, 1)
+
+    def fetch(town, page):
+        saved = pages[page - 1]
+        return SummaryPage(town, page, 5, 118, parse_active_cards(saved["markdown"]))
+
+    with pytest.raises(RefreshIncomplete):
+        _discover(["biddeford"], fetch, 90)
