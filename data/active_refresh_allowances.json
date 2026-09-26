@@ -4,8 +4,8 @@
       "additional_units": 5000,
       "approval_id": "2026-09-26-sparse-discovery-test",
       "daily_ceiling_units": 15000,
-      "rolling_ceiling_units": 15000,
       "reason": "Lucas said Go to publishing the sparse importer correction and one controlled all-town test with a bounded extension. Same 5000-unit maximum, prior records retained, USD 5 provider cap unchanged. No email or daily activation during testing.",
+      "rolling_ceiling_units": 15000,
       "utc_date": "2026-09-26"
     },
     {
@@ -45,6 +45,15 @@
       "reserved_at": "2026-09-26T19:03:37.546896+00:00",
       "reserved_units": 5000,
       "run_id": "36264703193-1"
+    },
+    {
+      "approval_id": "2026-09-26-sparse-discovery-test",
+      "daily_ceiling_units": 15000,
+      "finalization": true,
+      "reserved_at": "2026-09-26T19:59:58.818747+00:00",
+      "reserved_units": 5000,
+      "rolling_ceiling_units": 15000,
+      "run_id": "36267949570-1"
     }
   ],
   "schema_version": 1
