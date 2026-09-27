@@ -1,6 +1,9 @@
 """Offline provider boundary for actual one-page price-range responses."""
 
 import json
+import subprocess
+import sys
+from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
@@ -8,6 +11,67 @@ import pytest
 from src.active_refresh import RefreshIncomplete
 from src.refresh_transport import RefreshTransport
 from tests.test_refresh_transport import Session, proof
+
+
+@pytest.mark.parametrize("placement", ["before", "after", "same_line", "invalid_count"])
+def test_long_non_count_token_does_not_stall_range_parser(tmp_path, placement):
+    # Real provider markdown had a 222,300-character non-count line. Keep a
+    # subprocess deadline so a regression cannot hang the entire test runner.
+    script = r"""
+import sys
+from pathlib import Path
+from tests.test_price_transport import card_text, transport_for
+from src.active_refresh import RefreshIncomplete
+
+placement = sys.argv[2]
+noise = "![image](data:image/png;base64," + "A" * 250000 + ")"
+valid = "1 Results\n1 of 1\n" + card_text()
+if placement == "before":
+    text = noise + "\n" + valid
+elif placement == "after":
+    text = valid + "\n" + noise
+elif placement == "same_line":
+    text = noise + " 1 Results\n1 of 1\n" + card_text()
+else:
+    text = valid + "\n" + "A" * 250000 + " Results"
+transport, session, reserved = transport_for(Path(sys.argv[1]), text)
+try:
+    page = transport.summary_range("york", None, None)
+except RefreshIncomplete:
+    assert placement == "invalid_count"
+else:
+    assert placement != "invalid_count"
+    assert page.total_results == 1 and len(page.listings) == 1
+assert len(session.posts) == len(reserved) == 1
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script, str(tmp_path), placement],
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("count", ["1", "**1", "prefix*1", "1\n"])
+def test_count_token_boundaries_preserve_supported_markdown(tmp_path, count):
+    transport, _, _ = transport_for(tmp_path, count + " Results\n" + card_text())
+    assert transport.summary_range("york", None, None).total_results == 1
+
+
+@pytest.mark.parametrize("count", ["x1", "-1", "1.0", "1,00", "+1"])
+def test_invalid_whole_count_token_is_never_accepted_as_a_suffix(tmp_path, count):
+    transport, _, _ = transport_for(tmp_path, count + " Results\n" + card_text())
+    with pytest.raises(RefreshIncomplete):
+        transport.summary_range("york", None, None)
+
+
+@pytest.mark.parametrize("counts", ["1 Results-2 Results", "1 Results! Results"])
+def test_adjacent_malformed_count_evidence_is_not_skipped(tmp_path, counts):
+    transport, _, _ = transport_for(tmp_path, counts + "\n" + card_text())
+    with pytest.raises(RefreshIncomplete):
+        transport.summary_range("york", None, None)
 
 
 def card_text(key="one", price=500000):

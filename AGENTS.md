@@ -1,5 +1,43 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Approved parser release/test — 2026-09-27
+
+Lucas said Go to publishing the verified parser correction and ONE controlled
+live test. Exact single-use approval `2026-09-27-parser-performance-test`: at most
+1,000 requests / 5,000 newly reserved units. Its 25,000-unit explicit ceilings
+preserve all prior 20,000 reservations; normal caps and USD 5/month billing cap
+are unchanged. No automatic retry, email, daily activation, app import/restart.
+Read docs/parser-release-2026-09-27.md for publication and run evidence. Older
+no-publication statements describe the preceding local-only correction.
+
+## Offline parser correction — 2026-09-27
+
+Lucas approved fixing the timeout cause locally. Result-count extraction now
+scans whole tokens once, preserving old non-overlapping matches and malformed
+evidence rejection. All 10 captured responses replay in 0.1266 seconds total;
+51 focused tests and independent re-review pass. Final full suite: 723 tests plus
+2 subtests pass; scoped Black/Ruff/diff checks pass. Verification is recorded in
+docs/count-parser-performance-2026-09-27.md.
+No push, paid scrape, allowance change/reset, app import/restart or email.
+Manual/daily gates remain OFF; consumed approvals stay consumed. This is NOT
+all-town acceptance. Publication and a separately authorized bounded live test
+remain separate steps. Frozen helper, source DB, workflow and ledgers unchanged.
+
+## Price-partition test timed out — 2026-09-27 UTC
+
+Run36277036335 hit GitHub's90-minute limit and endedcancelled00:10:45UTC. Only10
+Biddeford summaries captured; no town/feed completion or detail checkpoint.
+Offline replay reproduces a local result-count regex stall at
+src/refresh_transport.py:217 within3seconds without any network request. Next:
+bounded parsing/performance regressions against the saved responses, NOT another
+blind paid retry or a larger timeout. Artifact10919077871 retained locally in
+.firecrawl/partition-run-36277036335. Remote mainc19c4c4 contains only the initial
+allowance checkpoint; source DB/manifest unchanged. Whole-run20,000 reservations
+remain, normal rolling capacity exhausted; final per-request ledger checkpoint
+was not reached, so actual provider usage remains unverified. App before/after
+audits identical, no sends/import/restart. Manual/daily gatesOFF. See
+docs/price-partition-release-2026-09-26.md for terminal evidence and next gates.
+
 ## Price-partition release/test approval — 2026-09-26
 
 Lucas explicitly approved publication and ONE controlled all-town test, capped

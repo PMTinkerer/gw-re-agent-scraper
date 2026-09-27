@@ -2,6 +2,14 @@
   "one_time_approvals": [
     {
       "additional_units": 5000,
+      "approval_id": "2026-09-27-parser-performance-test",
+      "daily_ceiling_units": 25000,
+      "reason": "Lucas said Go to publishing the verified parser fix and one controlled live test. Maximum 1000 requests and 5000 newly reserved units; preserve all prior records and the USD 5 monthly provider billing cap. No email, daily refresh activation or automatic retry.",
+      "rolling_ceiling_units": 25000,
+      "utc_date": "2026-09-27"
+    },
+    {
+      "additional_units": 5000,
       "approval_id": "2026-09-26-price-partition-test",
       "daily_ceiling_units": 20000,
       "reason": "Lucas explicitly approved publishing the price-partition fix and one controlled all-town test capped at 1000 requests with another 5000-unit internal allowance. Prior reservations and USD 5 monthly billing cap unchanged; email and daily refresh stay off.",

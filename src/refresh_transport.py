@@ -36,6 +36,26 @@ class BillingPolicyError(RuntimeError):
     pass
 
 
+def _result_count_tokens(text):
+    """Match whole count tokens without rescanning long non-count tokens.
+
+    Preserve the previous findall pattern's non-overlapping consumption,
+    including malformed evidence attached immediately after ``Results``.
+    """
+    token_pattern = re.compile(r"[^\s*]+")
+    suffix_pattern = re.compile(r"\s+Results\b")
+    tokens = []
+    position = 0
+    while token := token_pattern.search(text, position):
+        suffix = suffix_pattern.match(text, token.end())
+        if suffix:
+            tokens.append(token.group())
+            position = suffix.end()
+        else:
+            position = token.end()
+    return tokens
+
+
 def verify_billing_policy(path, api_key, *, now=None):
     """Explicit dated operator evidence; never infer billing policy from balance."""
     try:
@@ -214,7 +234,8 @@ class RefreshTransport:
         )
         text = data["markdown"]
         # Unlike the legacy parser, don't interpret '-1' or '1.5' as '1'/'5'.
-        tokens = re.findall(r"([^\s*]+)\s+Results\b", text)
+        # Keep whole malformed tokens, without quadratic long-token backtracking.
+        tokens = _result_count_tokens(text)
         if not tokens or any(
             not re.fullmatch(r"(?:\d+|\d{1,3}(?:,\d{3})+)", token) for token in tokens
         ):
