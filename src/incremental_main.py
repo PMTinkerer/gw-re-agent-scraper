@@ -13,6 +13,7 @@ from .refresh_allowance import (
     RUN_UNITS,
     DAILY_UNITS,
     FINALIZATION_DAILY_UNITS,
+    ALIAS_VERIFICATION_CEILINGS,
 )
 from .refresh_budget import BudgetExceeded, BudgetLedger
 from .refresh_transport import RefreshTransport, verify_billing_policy
@@ -99,11 +100,15 @@ def main(argv=None):
     # headroom. The whole-run ceiling remains the returned (at most 5000) units.
     if args.finalization and args.one_time_approval:
         daily_limit += FINALIZATION_DAILY_UNITS
+    request_limits = {"daily_limit": daily_limit}
+    alias_ceiling = ALIAS_VERIFICATION_CEILINGS.get(args.one_time_approval)
+    if alias_ceiling is not None:
+        request_limits.update(daily_limit=alias_ceiling, rolling_limit=alias_ceiling)
     _checkpoint([allowance_path], run_id)
     ledger = BudgetLedger(
         budget_path,
         read_balance=transport.balance,
-        daily_limit=daily_limit,
+        **request_limits,
     )
     requested = 0
 

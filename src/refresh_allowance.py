@@ -12,6 +12,10 @@ RUN_UNITS = 500
 DAILY_UNITS = 500
 ROLLING_UNITS = 10000
 FINALIZATION_DAILY_UNITS = 5000
+ALIAS_VERIFICATION_CEILINGS = {
+    f"2026-09-27-alias-verification-{attempt}": 25000 + 5000 * attempt
+    for attempt in range(1, 6)
+}
 
 
 def reserve_run(path, run_id, *, now=None, approval_id="", finalization=False):
@@ -52,7 +56,15 @@ def reserve_run(path, run_id, *, now=None, approval_id="", finalization=False):
                 )
             additional_units = matches[0]["additional_units"]
             ceiling_fields = ("daily_ceiling_units", "rolling_ceiling_units")
-            if any(field in matches[0] for field in ceiling_fields):
+            alias_ceiling = ALIAS_VERIFICATION_CEILINGS.get(approval_id)
+            if (
+                approval_id.startswith("2026-09-27-alias-verification-")
+                and alias_ceiling is None
+            ):
+                raise RuntimeError("Unknown alias verification approval")
+            if alias_ceiling is not None or any(
+                field in matches[0] for field in ceiling_fields
+            ):
                 # A separately recorded single-use extension, not a global cap
                 # increase. Larger extensions are bound to exact dated approvals;
                 # all other explicit exceptions retain 15,000.
@@ -67,6 +79,10 @@ def reserve_run(path, run_id, *, now=None, approval_id="", finalization=False):
                     and matches[0].get("utc_date") == "2026-09-27"
                 ):
                     ceiling += 2 * FINALIZATION_DAILY_UNITS
+                elif alias_ceiling is not None:
+                    if matches[0].get("utc_date") != "2026-09-27":
+                        raise RuntimeError("Invalid alias verification approval date")
+                    ceiling = alias_ceiling
                 if not finalization or any(
                     type(matches[0].get(field)) is not int
                     or matches[0][field] != ceiling

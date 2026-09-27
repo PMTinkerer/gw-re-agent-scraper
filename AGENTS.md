@@ -1,5 +1,75 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Superseding bounded release authority — 2026-09-27
+
+Lucas explicitly approved publication and up to FIVE TOTAL controlled live
+verification/fix attempts without repeated permission requests. Stop on first
+verified success; diagnose/fix/test failures before using another slot. Exact
+single-use IDs2026-09-27-alias-verification-1 through-5 permit at most5000reserved
+units/1000requests each, preserving all prior25000whole-run reservations.
+USD5/month billing cap and normal operating limits unchanged. No sixth attempt,
+consumed-ID reuse, daily activation, email, app import or restart. Manual canary
+is permitted solely for dispatch and must promptly returnfalse. Read
+docs/alias-release-batch-2026-09-27.md for attempt register and completion rules.
+Earlier local-only/no-publication notes below are historical for this release.
+
+## Verified listing-alias repair — locally complete 2026-09-27
+
+Seven verification passes completed without routine user approval stops.
+Strict source-ID/prefix + MLS/town proof now records address-slug aliases while
+preserving original rows, URLs, contacts and history. Verified historical
+duplicates retain one deterministic active representative; secondaries stay
+Unverified even if the legacy importer reactivates them. Pending/Sold, failed
+publication, cached proof and two-attempt limits are covered. Independent spec
+and quality reviews pass after a reproduced legacy-reactivation defect was fixed.
+Final focused86 and broad750 tests +2subtests pass;3unchanged slow Redfin tests
+passed in the earlier full745-test run. Scoped Black/Ruff/diff checks pass.
+
+All154captured summaries replay across10towns in a temporary copy. Original
+18214rows/7167history records survive, frozen reader matches manifest. Alias
+proof in that rehearsal is simulated, NOT live acceptance. Source DB, budgets,
+retry ledgers, frozen helper/workflow hashes and application audits unchanged;
+real sandbox outbox/attempts/ledger0/0/0, sending/dailyOFF. No paid scan, push,
+import or restart. Preserve remote d30e3b9 durable checkpoints on later release.
+Read docs/listing-alias-verification-2026-09-27.md for exact proof and release gates.
+
+## Continuous local repair authority — 2026-09-27
+
+Lucas approved the verified-alias repair and directed at least seven internal
+implementation/verification passes without routine clarification stops. Use
+focused sub-agents for implementation and independent review, resolve ordinary
+technical choices internally, and complete the local evidence/report in one
+task. No new paid scan, consumed approval reuse, budget change, publication,
+consumer import/restart, daily activation or email follows from this authority.
+Plan: docs/superpowers/plans/2026-09-27-verified-listing-aliases.md.
+
+## Identity investigation — 2026-09-27
+
+Free browser inspection of the failed run's final URL confirms current MLS1672938
+and source listingID782016957, matching the stored row despite an address-slug
+correction from ridge-ridge to ridge-road. The code keys known records by full
+URL and rejects the same MLS at a different URL. The historic failed detail
+payload remains unavailable; do not claim exact payload replay. Proposed fix is
+verified aliases with exact stable-ID/MLS/town agreement, preserving original
+rows/history and retaining collision guards. Not implemented yet. No paid scan,
+publication, import, restart or gate change is authorized by this investigation.
+See docs/parser-release-2026-09-27.md.
+
+## Parser test terminal result — 2026-09-27
+
+Run36325959142 failed15:08:56UTC during new-detail identity validation:
+`MLS identity collision or change`. All ten towns completed discovery:154 saved
+responses,953 unique listing URLs; exact offline replay succeeds in2.926s.
+201 request reservations total1005 conservative units, not measured charges;
+46 successful details are cached. Last request was1 Willow Ridge Road,Biddeford,
+numeric listingID782016957, while stored MLS1672938 uses an older `ridge-ridge`
+URL slug. Failed detail response is not retained: this is a specific candidate,
+not a fully reproduced root cause. Do not weaken identity checks or retry blindly.
+No source DB/complete manifest published/imported; app before/after audits match
+exactly. Sending/daily/manual gatesOFF. The5000-unit approval is consumed; prior
+ledgers retained. Follow-up pauses after terminal reporting. Read
+docs/parser-release-2026-09-27.md for bounded evidence and remaining gates.
+
 ## Approved parser release/test — 2026-09-27
 
 Lucas said Go to publishing the verified parser correction and ONE controlled

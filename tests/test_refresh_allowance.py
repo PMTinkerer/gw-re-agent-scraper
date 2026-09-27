@@ -6,6 +6,147 @@ import pytest
 from src.refresh_allowance import reserve_run
 
 
+def alias_verification_ledger(path):
+    data = price_retry_ledger(path, prior=25000)
+    data["one_time_approvals"] = [
+        {
+            "approval_id": f"2026-09-27-alias-verification-{attempt}",
+            "utc_date": "2026-09-27",
+            "additional_units": 5000,
+            "daily_ceiling_units": 25000 + 5000 * attempt,
+            "rolling_ceiling_units": 25000 + 5000 * attempt,
+        }
+        for attempt in range(1, 6)
+    ]
+    path.write_text(json.dumps(data))
+    return data
+
+
+def test_alias_verification_five_single_use_attempts_preserve_history(tmp_path):
+    path = tmp_path / "allowance.json"
+    original = alias_verification_ledger(path)
+    now = datetime(2026, 9, 27, 18, tzinfo=timezone.utc)
+    for attempt, approval in enumerate(original["one_time_approvals"], 1):
+        before = json.loads(path.read_text())
+        assert (
+            reserve_run(
+                path,
+                f"alias-{attempt}",
+                now=now,
+                finalization=True,
+                approval_id=approval["approval_id"],
+            )
+            == 5000
+        )
+        after = json.loads(path.read_text())
+        assert after["reservations"][:-1] == before["reservations"]
+        assert after["one_time_approvals"] == original["one_time_approvals"]
+        assert sum(row["reserved_units"] for row in after["reservations"]) == (
+            25000 + 5000 * attempt
+        )
+        assert after["reservations"][-1]["daily_ceiling_units"] == (
+            approval["daily_ceiling_units"]
+        )
+        assert after["reservations"][-1]["rolling_ceiling_units"] == (
+            approval["rolling_ceiling_units"]
+        )
+        with pytest.raises(RuntimeError, match="already consumed"):
+            reserve_run(
+                path,
+                f"reuse-{attempt}",
+                now=now,
+                finalization=True,
+                approval_id=approval["approval_id"],
+            )
+        assert json.loads(path.read_text()) == after
+    for days in (0, 1):
+        for finalization in (False, True):
+            with pytest.raises(RuntimeError, match="exhausted"):
+                reserve_run(
+                    path,
+                    "no-approval",
+                    now=now + timedelta(days=days),
+                    finalization=finalization,
+                )
+    assert json.loads(path.read_text()) == after
+
+
+@pytest.mark.parametrize("attempt", range(1, 6))
+@pytest.mark.parametrize(
+    "mode",
+    [
+        "zero",
+        "six",
+        "wrong_date",
+        "wrong_clock",
+        "wrong_mode",
+        "wrong_units",
+        "daily_lower",
+        "daily_higher",
+        "rolling_lower",
+        "rolling_higher",
+        "missing_daily",
+        "missing_rolling",
+        "missing_both",
+        "bool",
+        "string",
+        "zero_missing",
+        "six_missing",
+        "leading_zero_missing",
+    ],
+)
+def test_alias_verification_rejects_unapproved_capacity(tmp_path, attempt, mode):
+    path = tmp_path / "allowance.json"
+    data = alias_verification_ledger(path)
+    # No prior usage: malformed approvals must be rejected even when the
+    # ordinary allowance would have room, rather than fall back to normal caps.
+    data["reservations"] = []
+    approval = data["one_time_approvals"][attempt - 1]
+    now = datetime(2026, 9, 27, 18, tzinfo=timezone.utc)
+    if mode in ("zero", "six", "zero_missing", "six_missing"):
+        approval["approval_id"] = (
+            f"2026-09-27-alias-verification-{0 if mode.startswith('zero') else 6}"
+        )
+    if mode == "leading_zero_missing":
+        approval["approval_id"] = "2026-09-27-alias-verification-01"
+    if mode == "wrong_date":
+        approval["utc_date"] = "2026-09-28"
+        now += timedelta(days=1)
+    if mode == "wrong_clock":
+        now += timedelta(days=1)
+    if mode in ("wrong_mode", "wrong_units"):
+        approval["additional_units"] = 500
+    for field in ("daily", "rolling"):
+        key = f"{field}_ceiling_units"
+        if mode == f"{field}_lower":
+            approval[key] -= 5000
+        if mode == f"{field}_higher":
+            approval[key] += 5000
+        if mode in (
+            f"missing_{field}",
+            "missing_both",
+            "zero_missing",
+            "six_missing",
+            "leading_zero_missing",
+        ):
+            del approval[key]
+    if mode == "bool":
+        approval["daily_ceiling_units"] = True
+    if mode == "string":
+        approval["rolling_ceiling_units"] = str(approval["rolling_ceiling_units"])
+    path.write_text(json.dumps(data))
+    before = path.read_bytes()
+    with pytest.raises(RuntimeError):
+        reserve_run(
+            path,
+            "alias",
+            now=now,
+            finalization=mode != "wrong_mode",
+            approval_id=approval["approval_id"],
+        )
+    assert path.read_bytes() == before
+
+
 def parser_test_ledger(path):
     data = price_retry_ledger(path, prior=20000)
     data["one_time_approvals"][0].update(

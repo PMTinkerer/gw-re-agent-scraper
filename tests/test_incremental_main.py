@@ -267,6 +267,113 @@ def test_price_retry_wires_existing_usage_and_1000_request_ceiling(
     assert checkpoints[0] == ["data/active_refresh_allowances.json"]
 
 
+@pytest.mark.parametrize("attempt", range(1, 6))
+def test_alias_batch_wires_existing_usage_and_1000_request_ceiling(
+    tmp_path, monkeypatch, attempt
+):
+    from tests.test_refresh_allowance import alias_verification_ledger
+
+    policy, events = configure(tmp_path, monkeypatch)
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
+    monkeypatch.setattr(cli.RefreshTransport, "balance", lambda self: 100000)
+    path = Path("data/active_refresh_allowances.json")
+    data = alias_verification_ledger(path)
+    prior = 25000 + 5000 * (attempt - 1)
+    data["reservations"][0]["reserved_units"] = prior
+    path.write_text(json.dumps(data))
+    now = datetime(2026, 9, 27, 18, tzinfo=timezone.utc)
+    reserve = cli.reserve_run
+    monkeypatch.setattr(
+        cli, "reserve_run", lambda *args, **kwargs: reserve(*args, now=now, **kwargs)
+    )
+    ledger_class = cli.BudgetLedger
+    monkeypatch.setattr(
+        cli,
+        "BudgetLedger",
+        lambda *args, **kwargs: ledger_class(*args, now=lambda: now, **kwargs),
+    )
+    ledger = cli.BudgetLedger(
+        "data/active_refresh_usage.db",
+        read_balance=lambda: 100000,
+        daily_limit=prior,
+        rolling_limit=prior,
+    )
+    ledger.reserve("prior", "summary", "prior", units=prior)
+    checkpoints = []
+    monkeypatch.setattr(
+        cli, "_checkpoint", lambda paths, run: checkpoints.append(paths)
+    )
+
+    def run(**kwargs):
+        for _ in range(1000):
+            kwargs["fetch_summary_range"]("york", None, None)
+        with pytest.raises(cli.BudgetExceeded, match="Whole-run"):
+            kwargs["fetch_summary_range"]("york", None, None)
+        return {"run_id": "42-1", "active_mls_ids": []}
+
+    monkeypatch.setattr(cli, "run_active_refresh", run)
+    cli.main(
+        [
+            "--billing-proof",
+            str(policy),
+            "--github-publish",
+            "--finalization",
+            "--one-time-approval",
+            f"2026-09-27-alias-verification-{attempt}",
+        ]
+    )
+    assert len(events) == 1000
+    assert json.loads(path.read_text())["reservations"][0] == data["reservations"][0]
+    assert checkpoints[0] == ["data/active_refresh_allowances.json"]
+
+
+@pytest.mark.parametrize("mode", ["six", "wrong_ceiling", "wrong_date", "wrong_mode"])
+def test_alias_batch_invalid_authority_stops_before_scrapes(
+    tmp_path, monkeypatch, mode
+):
+    from tests.test_refresh_allowance import alias_verification_ledger
+
+    policy, events = configure(tmp_path, monkeypatch)
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
+    monkeypatch.setattr(cli.RefreshTransport, "balance", lambda self: 100000)
+    path = Path("data/active_refresh_allowances.json")
+    data = alias_verification_ledger(path)
+    approval = data["one_time_approvals"][0]
+    if mode == "six":
+        approval["approval_id"] = "2026-09-27-alias-verification-6"
+    if mode == "wrong_ceiling":
+        approval["rolling_ceiling_units"] = 50000
+    if mode == "wrong_date":
+        approval["utc_date"] = "2026-09-28"
+    path.write_text(json.dumps(data))
+    before = path.read_bytes()
+    reserve = cli.reserve_run
+    monkeypatch.setattr(
+        cli,
+        "reserve_run",
+        lambda *args, **kwargs: reserve(
+            *args, now=datetime(2026, 9, 27, 18, tzinfo=timezone.utc), **kwargs
+        ),
+    )
+    checkpoints = []
+    monkeypatch.setattr(cli, "_checkpoint", lambda *args: checkpoints.append(args))
+    with pytest.raises(RuntimeError):
+        cli.main(
+            [
+                "--billing-proof",
+                str(policy),
+                "--github-publish",
+                "--one-time-approval",
+                approval["approval_id"],
+            ]
+            + ([] if mode == "wrong_mode" else ["--finalization"])
+        )
+    assert events == []
+    assert checkpoints == []
+    assert path.read_bytes() == before
+    assert not Path("data/active_refresh_usage.db").exists()
+
+
 def test_checkpoint_verifies_actual_local_remote_and_rejects_divergence(
     tmp_path, monkeypatch
 ):

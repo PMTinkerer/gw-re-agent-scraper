@@ -35,6 +35,46 @@
       "approval_id": "2026-09-26-price-sort-test",
       "reason": "Lucas explicitly approved one additional controlled test now: at most 5000 reserved units and 1000 requests, today's ceiling 10000, prior records preserved, USD 5 monthly provider cap unchanged, no emails or daily refresh.",
       "utc_date": "2026-09-26"
+    },
+    {
+      "additional_units": 5000,
+      "approval_id": "2026-09-27-alias-verification-1",
+      "daily_ceiling_units": 30000,
+      "rolling_ceiling_units": 30000,
+      "utc_date": "2026-09-27",
+      "reason": "Lucas approved publishing the verified listing-alias repair and up to five total controlled verification/fix cycles without reapproval. Stop on first verified success. Each attempt max1000 requests/5000 reserved units; preserve prior records and USD5/month provider cap. No email, daily activation, app import or restart."
+    },
+    {
+      "additional_units": 5000,
+      "approval_id": "2026-09-27-alias-verification-2",
+      "daily_ceiling_units": 35000,
+      "rolling_ceiling_units": 35000,
+      "utc_date": "2026-09-27",
+      "reason": "Lucas approved publishing the verified listing-alias repair and up to five total controlled verification/fix cycles without reapproval. Stop on first verified success. Each attempt max1000 requests/5000 reserved units; preserve prior records and USD5/month provider cap. No email, daily activation, app import or restart."
+    },
+    {
+      "additional_units": 5000,
+      "approval_id": "2026-09-27-alias-verification-3",
+      "daily_ceiling_units": 40000,
+      "rolling_ceiling_units": 40000,
+      "utc_date": "2026-09-27",
+      "reason": "Lucas approved publishing the verified listing-alias repair and up to five total controlled verification/fix cycles without reapproval. Stop on first verified success. Each attempt max1000 requests/5000 reserved units; preserve prior records and USD5/month provider cap. No email, daily activation, app import or restart."
+    },
+    {
+      "additional_units": 5000,
+      "approval_id": "2026-09-27-alias-verification-4",
+      "daily_ceiling_units": 45000,
+      "rolling_ceiling_units": 45000,
+      "utc_date": "2026-09-27",
+      "reason": "Lucas approved publishing the verified listing-alias repair and up to five total controlled verification/fix cycles without reapproval. Stop on first verified success. Each attempt max1000 requests/5000 reserved units; preserve prior records and USD5/month provider cap. No email, daily activation, app import or restart."
+    },
+    {
+      "additional_units": 5000,
+      "approval_id": "2026-09-27-alias-verification-5",
+      "daily_ceiling_units": 50000,
+      "rolling_ceiling_units": 50000,
+      "utc_date": "2026-09-27",
+      "reason": "Lucas approved publishing the verified listing-alias repair and up to five total controlled verification/fix cycles without reapproval. Stop on first verified success. Each attempt max1000 requests/5000 reserved units; preserve prior records and USD5/month provider cap. No email, daily activation, app import or restart."
     }
   ],
   "reservations": [

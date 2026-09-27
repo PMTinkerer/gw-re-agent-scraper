@@ -230,7 +230,7 @@ def _merged_detail(summary, detail, *, cached):
     return merged
 
 
-def _retry_detail(state, url, callback, timestamp, summary, identities):
+def _retry_detail(state, url, callback, timestamp, summary, identities, validate=None):
     """Persist the attempt before calling, and cache success across failed runs."""
     with sqlite3.connect(state, timeout=30) as conn:
         conn.execute("BEGIN IMMEDIATE")
@@ -240,6 +240,8 @@ def _retry_detail(state, url, callback, timestamp, summary, identities):
         ).fetchone()
         if record and record[1]:
             detail = json.loads(record[1])
+            if validate:
+                validate(detail)
             _identity(detail, summary, identities)
             merged = _merged_detail(summary, detail, cached=True)
             if _contract_ready(merged):
@@ -258,6 +260,8 @@ def _retry_detail(state, url, callback, timestamp, summary, identities):
             (url, timestamp),
         )
     detail = callback(url)
+    if validate:
+        validate(detail)
     if (
         not isinstance(detail, dict)
         or not isinstance(detail.get("mls_number"), str)
@@ -335,8 +339,100 @@ def _stage(db_path, stage_path):
         id INTEGER PRIMARY KEY, run_id TEXT NOT NULL, detail_url TEXT NOT NULL,
         discovery_town TEXT NOT NULL, reason TEXT NOT NULL,
         observed_at TEXT NOT NULL)""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS active_refresh_aliases (
+        alias_url TEXT PRIMARY KEY, canonical_url TEXT NOT NULL,
+        mls_number TEXT NOT NULL, city TEXT NOT NULL,
+        verified_at TEXT NOT NULL, run_id TEXT NOT NULL)""")
     conn.commit()
     return conn
+
+
+def _stable_listing_key(url):
+    """Only the human-readable slug may differ; never fuzzy-match addresses."""
+    if not _valid_url(url):
+        return None
+    match = re.fullmatch(
+        r"(/listings/ME/[A-Za-z_-]+/[0-9]{5}/[0-9]+)/[a-zA-Z0-9-]+/([0-9]+)",
+        urlsplit(url).path,
+    )
+    return match.groups() if match else None
+
+
+def _alias_resolution(conn, known, identities, discovered):
+    stable = {}
+    for url in known:
+        key = _stable_listing_key(url)
+        if key:
+            stable.setdefault(key, []).append(url)
+
+    def group(key):
+        urls = stable.get(key, [])
+        if not urls:
+            raise RefreshIncomplete("Missing historical source listing identity")
+        canonical = min(urls, key=lambda url: known[url]["id"])
+        row = known[canonical]
+        if (
+            not row.get("mls_number")
+            or identities.get(row["mls_number"]) != set(urls)
+            or any(
+                known[url].get("mls_number") != row["mls_number"]
+                or _town(known[url]["city"]) != _town(row["city"])
+                for url in urls
+            )
+        ):
+            raise RefreshIncomplete("Ambiguous historical MLS alias identity")
+        return canonical, urls
+
+    aliases = {}
+    for record in conn.execute("SELECT * FROM active_refresh_aliases"):
+        alias, canonical = record["alias_url"], record["canonical_url"]
+        row = known.get(canonical)
+        key = _stable_listing_key(alias)
+        if (
+            not key
+            or alias == canonical
+            or row is None
+            or key != _stable_listing_key(canonical)
+            or group(key)[0] != canonical
+            or record["mls_number"] != row.get("mls_number")
+            or _town(record["city"]) != _town(row["city"])
+        ):
+            raise RefreshIncomplete("Invalid or conflicting verified listing alias")
+        aliases[alias] = canonical
+    seen = set()
+    candidates = {}
+    groups = {}
+    for url in discovered:
+        key = _stable_listing_key(url)
+        if key:
+            if key in seen:
+                raise RefreshIncomplete(
+                    "Multiple current URLs share a source listing identity"
+                )
+            seen.add(key)
+            if key in stable and (len(stable[key]) > 1 or url not in known):
+                canonical, matches = group(key)
+                groups[canonical] = matches
+                if (url not in aliases and url != canonical) or any(
+                    item != canonical and aliases.get(item) != canonical
+                    for item in matches
+                ):
+                    candidates[url] = canonical
+                elif url != canonical:
+                    aliases[url] = canonical
+    return aliases, candidates, groups
+
+
+def _verify_alias_detail(detail, row, url, summary):
+    if (
+        not isinstance(detail, dict)
+        or detail.get("mls_number") != row["mls_number"]
+        or not detail.get("city")
+        or _town(detail["city"]) != _town(row["city"])
+        or _town(row["city"]) != summary["discovery_town"]
+        or (detail.get("detail_url") is not None and detail["detail_url"] != url)
+    ):
+        raise RefreshIncomplete("Unverified listing alias identity")
 
 
 def _publish(db_path, manifest_path, stage_path, manifest, original_hash, temporary):
@@ -442,15 +538,72 @@ def run_active_refresh(
                     identity = row.get("mls_number")
                     if identity:
                         identities.setdefault(identity, set()).add(url)
+                aliases, candidates, alias_groups = _alias_resolution(
+                    conn, known, identities, discovered
+                )
+                observed_urls = set()
                 current_identities = {}
                 unresolved = []
                 for url, summary in discovered.items():
-                    if url in known:
-                        row = known[url]
-                        _identity(summary, row, identities)
+                    canonical = aliases.get(url, candidates.get(url, url))
+                    if canonical in known:
+                        row = known[canonical]
+                        alias_detail = None
+                        if url in candidates:
+                            alias_identities = dict(identities)
+                            alias_identities[row["mls_number"]] = identities[
+                                row["mls_number"]
+                            ] | {url}
+                            detail = _retry_detail(
+                                state_path,
+                                url,
+                                fetch_detail,
+                                started_at,
+                                dict(summary, mls_number=row["mls_number"]),
+                                alias_identities,
+                                validate=lambda detail: _verify_alias_detail(
+                                    detail, row, url, summary
+                                ),
+                            )
+                            if detail is None:
+                                raise RefreshIncomplete(
+                                    "Listing alias details unresolved or retry exhausted"
+                                )
+                            alias_detail = detail
+                            for alias in set(alias_groups.get(canonical, [])) | {url}:
+                                if alias == canonical or alias in aliases:
+                                    continue
+                                conn.execute(
+                                    """INSERT INTO active_refresh_aliases
+                                    (alias_url, canonical_url, mls_number, city, verified_at, run_id)
+                                    VALUES (?, ?, ?, ?, ?, ?)""",
+                                    (
+                                        alias,
+                                        canonical,
+                                        row["mls_number"],
+                                        row["city"],
+                                        started_at,
+                                        run_id,
+                                    ),
+                                )
+                                aliases[alias] = canonical
+                        for duplicate in alias_groups.get(canonical, []):
+                            observed_urls.add(duplicate)
+                        _identity(dict(summary, detail_url=canonical), row, identities)
                         if _town(row["city"]) != summary["discovery_town"]:
                             raise RefreshIncomplete("Known identity changed town")
-                        status = summary["status"]
+                        status = (
+                            alias_detail["status"]
+                            if alias_detail
+                            else summary["status"]
+                        )
+                        if status not in _STATUSES:
+                            raise RefreshIncomplete("Invalid detail status")
+                        if alias_detail:
+                            conn.execute(
+                                "UPDATE maine_transactions SET address=? WHERE detail_url=?",
+                                (alias_detail["address"], canonical),
+                            )
                         price = summary.get("list_price", row["list_price"])
                         if not _contract_ready(
                             dict(row, status=status, list_price=price)
@@ -459,10 +612,10 @@ def run_active_refresh(
                         conn.execute(
                             """UPDATE maine_transactions SET status=?, list_price=?,
                             last_seen_at=? WHERE detail_url=?""",
-                            (status, price, started_at, url),
+                            (status, price, started_at, canonical),
                         )
                         conn.commit()
-                        write_history_if_changed(conn, url, status, price)
+                        write_history_if_changed(conn, canonical, status, price)
                     else:
                         detail = _retry_detail(
                             state_path,
@@ -503,6 +656,7 @@ def run_active_refresh(
                         enrich_listing(conn, url, dict(detail, status=status))
                         identities.setdefault(detail["mls_number"], set()).add(url)
                         row = detail
+                    observed_urls.add(canonical)
                     identity = row.get("mls_number")
                     if identity:
                         if (
@@ -526,13 +680,38 @@ def run_active_refresh(
                         started_at,
                         "active_summary",
                     )
+                # The independent legacy scraper may reactivate or reinsert a
+                # verified secondary URL. Quarantine it even when absent from
+                # today's discovery so the frozen reader cannot expose it.
+                for alias in aliases:
+                    row = known.get(alias)
+                    if row is None or _town(row["city"]) not in canonical_towns:
+                        continue
+                    conn.execute(
+                        "UPDATE maine_transactions SET status='Unverified' WHERE detail_url=?",
+                        (alias,),
+                    )
+                    conn.commit()
+                    write_history_if_changed(
+                        conn, alias, "Unverified", row["list_price"]
+                    )
+                    _observe(
+                        conn,
+                        run_id,
+                        row,
+                        "Unverified",
+                        "verified_source_alias_superseded",
+                        started_at,
+                        "verified_alias",
+                    )
                 for url, row in known.items():
                     # Ignore unrelated historical towns; malformed legacy towns
                     # cannot accidentally be assigned to requested coverage.
                     city = " ".join((row.get("city") or "").strip().lower().split())
                     if (
                         city not in canonical_towns
-                        or url in discovered
+                        or url in aliases
+                        or url in observed_urls
                         or row["status"] not in {"Active", "Unverified"}
                     ):
                         continue
@@ -562,10 +741,12 @@ def run_active_refresh(
                     "SELECT * FROM maine_transactions ORDER BY mls_number"
                 ):
                     row = dict(record)
+                    if row["detail_url"] in aliases:
+                        continue
                     city = " ".join((row.get("city") or "").strip().lower().split())
                     if city not in canonical_towns or not row.get("mls_number"):
                         continue
-                    if row["status"] == "Active" and row["detail_url"] in discovered:
+                    if row["status"] == "Active" and row["detail_url"] in observed_urls:
                         active_ids.append(str(row["mls_number"]))
                     elif _source_status(row["status"]) in _INACTIVE:
                         evidence = conn.execute(
