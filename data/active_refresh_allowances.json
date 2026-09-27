@@ -79,6 +79,15 @@
       "reserved_units": 5000,
       "rolling_ceiling_units": 20000,
       "run_id": "36277036335-1"
+    },
+    {
+      "approval_id": "2026-09-27-parser-performance-test",
+      "daily_ceiling_units": 25000,
+      "finalization": true,
+      "reserved_at": "2026-09-27T14:27:24.366712+00:00",
+      "reserved_units": 5000,
+      "rolling_ceiling_units": 25000,
+      "run_id": "36325959142-1"
     }
   ],
   "schema_version": 1
