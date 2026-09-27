@@ -137,6 +137,15 @@
       "reserved_units": 5000,
       "rolling_ceiling_units": 30000,
       "run_id": "36332562198-1"
+    },
+    {
+      "approval_id": "2026-09-27-alias-verification-2",
+      "daily_ceiling_units": 35000,
+      "finalization": true,
+      "reserved_at": "2026-09-27T17:48:57.343718+00:00",
+      "reserved_units": 5000,
+      "rolling_ceiling_units": 35000,
+      "run_id": "36338317568-1"
     }
   ],
   "schema_version": 1
