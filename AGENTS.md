@@ -1,5 +1,15 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Accepted feed isolation — 2026-09-28
+
+The approved isolation repair stores immutable accepted bundles under
+`data/accepted/bundles/<manifest SHA256>` with an atomic `current.json` pointer.
+Consumer must use this pair, never the legacy weekly database as fallback.
+Bootstrap retains exact September 27 accepted bytes, timestamps, 946 active IDs,
+ten towns and five unresolved listings. It is not a new scrape. Legacy writer,
+frozen helper, source history and reservations remain intact; daily/manual gates
+remain OFF. See docs/accepted-feed-isolation-2026-09-28.md.
+
 ## Superseding bounded release authority — 2026-09-27
 
 Lucas explicitly approved publication and up to FIVE TOTAL controlled live

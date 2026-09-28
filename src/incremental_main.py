@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -140,7 +141,19 @@ def main(argv=None):
         paths = [p for p in (state_path, budget_path) if Path(p).exists()]
         if paths:
             _checkpoint(paths, run_id)
-    _checkpoint(["data/maine_listings.db", "data/active_refresh.json"], run_id)
+    pointer_path = Path("data/accepted/current.json")
+    pointer = json.loads(pointer_path.read_text())
+    bundle = "data/accepted/bundles/" + pointer["manifest_sha256"]
+    _checkpoint(
+        [
+            "data/maine_listings.db",
+            "data/active_refresh.json",
+            str(pointer_path),
+            bundle + "/maine_listings.db",
+            bundle + "/active_refresh.json",
+        ],
+        run_id,
+    )
     print(
         f"Published complete discovery {result['run_id']}: {len(result['active_mls_ids'])} active MLS IDs; "
         f"{len(result.get('unresolved', []))} unresolved new listings; "

@@ -185,6 +185,10 @@ def test_finalization_wires_run_and_request_budgets(tmp_path, monkeypatch):
             kwargs["fetch_summary_range"]("york", None, None)
         with pytest.raises(cli.BudgetExceeded, match="Whole-run"):
             kwargs["fetch_summary_range"]("york", None, None)
+        Path("data/accepted").mkdir(exist_ok=True)
+        Path("data/accepted/current.json").write_text(
+            json.dumps({"manifest_sha256": "a" * 64})
+        )
         return {"run_id": "42-1", "active_mls_ids": []}
 
     monkeypatch.setattr(cli, "run_active_refresh", run)
@@ -247,6 +251,10 @@ def test_price_retry_wires_existing_usage_and_1000_request_ceiling(
             kwargs["fetch_summary_range"]("york", None, None)
         with pytest.raises(cli.BudgetExceeded, match="Whole-run"):
             kwargs["fetch_summary_range"]("york", None, None)
+        Path("data/accepted").mkdir(exist_ok=True)
+        Path("data/accepted/current.json").write_text(
+            json.dumps({"manifest_sha256": "a" * 64})
+        )
         return {"run_id": "42-1", "active_mls_ids": []}
 
     monkeypatch.setattr(cli, "run_active_refresh", run)
@@ -309,6 +317,10 @@ def test_alias_batch_wires_existing_usage_and_1000_request_ceiling(
             kwargs["fetch_summary_range"]("york", None, None)
         with pytest.raises(cli.BudgetExceeded, match="Whole-run"):
             kwargs["fetch_summary_range"]("york", None, None)
+        Path("data/accepted").mkdir(exist_ok=True)
+        Path("data/accepted/current.json").write_text(
+            json.dumps({"manifest_sha256": "a" * 64})
+        )
         return {"run_id": "42-1", "active_mls_ids": []}
 
     monkeypatch.setattr(cli, "run_active_refresh", run)

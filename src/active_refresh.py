@@ -436,6 +436,8 @@ def _verify_alias_detail(detail, row, url, summary):
 
 
 def _publish(db_path, manifest_path, stage_path, manifest, original_hash, temporary):
+    from src.accepted_feed import publish_accepted
+
     if _sha256(db_path) != original_hash:
         raise RefreshIncomplete("Source database changed during refresh")
     wal = Path(str(db_path) + "-wal")
@@ -445,11 +447,24 @@ def _publish(db_path, manifest_path, stage_path, manifest, original_hash, tempor
     manifest_stage.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     backup = temporary / "previous.db"
     shutil.copy2(db_path, backup)
+    manifest_backup = temporary / "previous-manifest.json"
+    if manifest_path.exists():
+        shutil.copy2(manifest_path, manifest_backup)
+    manifest_replaced = False
     os.replace(stage_path, db_path)
     try:
         os.replace(manifest_stage, manifest_path)
+        manifest_replaced = True
+        publish_accepted(
+            db_path.resolve(), manifest_path.read_bytes(), db_path.parent / "accepted"
+        )
     except BaseException:
         os.replace(backup, db_path)
+        if manifest_replaced:
+            if manifest_backup.exists():
+                os.replace(manifest_backup, manifest_path)
+            else:
+                manifest_path.unlink()
         raise
 
 
