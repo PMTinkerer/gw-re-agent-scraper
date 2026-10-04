@@ -2,7 +2,9 @@ name: Incremental Active Listings (no email)
 
 on:
   schedule:
-    - cron: '15 10 * * *'
+    # Weekdays only (Lucas, 2026-10-04): outreach sends Mon-Fri, so weekend scans
+    # would spend credits without being used. Still gated by INCREMENTAL_ACTIVE_ENABLED.
+    - cron: '15 10 * * 1-5'
   workflow_dispatch:
     inputs:
       finalization:

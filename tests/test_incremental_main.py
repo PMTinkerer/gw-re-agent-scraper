@@ -35,7 +35,7 @@ def configure(tmp_path, monkeypatch):
             self.reserve = kwargs["reserve"]
 
         def balance(self):
-            return 1000
+            return 5000
 
         def summary(self, *args):
             self.reserve("summary", "https://mainelistings.com/listings")
@@ -419,3 +419,23 @@ def test_checkpoint_verifies_actual_local_remote_and_rejects_divergence(
     with pytest.raises(subprocess.CalledProcessError):
         cli._checkpoint(["allowance.json"], "run-diverged")
     assert git(remote, "show", "main:allowance.json") == '{"reserved":1000}'
+
+
+def test_weekday_run_uses_approved_request_ledger_limits(tmp_path, monkeypatch):
+    policy, events = configure(tmp_path, monkeypatch)
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "schedule")
+    monkeypatch.setattr(cli, "_checkpoint", lambda paths, run: None)
+    captured = {}
+
+    def stop(*args, **kwargs):
+        captured.update(kwargs)
+        raise RuntimeError("ledger reached")
+
+    monkeypatch.setattr(cli, "BudgetLedger", stop)
+    with pytest.raises(RuntimeError, match="ledger reached"):
+        cli.main(["--billing-proof", str(policy), "--github-publish"])
+    assert captured["daily_limit"] == 2000
+    assert captured["rolling_limit"] == 80000
+    rows = json.loads(Path("data/active_refresh_allowances.json").read_text())
+    assert rows["reservations"][-1]["reserved_units"] == 2000
+    assert events == []
