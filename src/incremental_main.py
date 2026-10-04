@@ -6,13 +6,13 @@ import argparse
 import json
 import os
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .active_refresh import run_active_refresh
 from .refresh_allowance import (
     reserve_run,
-    RUN_UNITS,
-    DAILY_UNITS,
+    normal_allowance,
     FINALIZATION_DAILY_UNITS,
     ALIAS_VERIFICATION_CEILINGS,
 )
@@ -86,9 +86,10 @@ def main(argv=None):
         reserve=lambda *_: None,
         diagnostics_path=".firecrawl/active-refresh-diagnostics",
     )
-    daily_limit = FINALIZATION_DAILY_UNITS if args.finalization else DAILY_UNITS
+    run_size, daily_cap, rolling_cap = normal_allowance(datetime.now(timezone.utc))
+    daily_limit = FINALIZATION_DAILY_UNITS if args.finalization else daily_cap
     if transport.balance() < (
-        FINALIZATION_DAILY_UNITS if args.finalization else RUN_UNITS
+        FINALIZATION_DAILY_UNITS if args.finalization else run_size
     ):
         raise BudgetExceeded(
             "Insufficient existing credits for conservative run allowance"
@@ -101,7 +102,7 @@ def main(argv=None):
     # headroom. The whole-run ceiling remains the returned (at most 5000) units.
     if args.finalization and args.one_time_approval:
         daily_limit += FINALIZATION_DAILY_UNITS
-    request_limits = {"daily_limit": daily_limit}
+    request_limits = {"daily_limit": daily_limit, "rolling_limit": rolling_cap}
     alias_ceiling = ALIAS_VERIFICATION_CEILINGS.get(args.one_time_approval)
     if alias_ceiling is not None:
         request_limits.update(daily_limit=alias_ceiling, rolling_limit=alias_ceiling)

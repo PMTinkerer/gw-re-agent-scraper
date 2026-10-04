@@ -1,5 +1,20 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Weekday refresh caps approved — 2026-10-04 (current)
+
+Lucas approved live outreach preparation with listings refreshed every weekday.
+New normal-run policy from 2026-10-04 00:00 UTC (`normal_allowance`): 2,000
+reserved units per run and per UTC day, 80,000 per trailing 30 days (the window
+still holds 35,000 units of approved September test reservations until about
+October 28). Earlier reservations, dated September exceptions and the 500-unit
+historical floor are unchanged; no ledger row is rewritten or reset. The request
+ledger now receives the same daily/rolling limits. `incremental_active.yml` cron
+is weekdays only and still gated by `INCREMENTAL_ACTIVE_ENABLED`; the USD 5/month
+billing cap, no purchases/upgrades and no-email rules are unchanged. Units are
+conservative reservations (5 per request), not measured credits. Next: Lucas
+re-reads the Firecrawl billing UI (proof expires about 2026-10-26), one approved
+canary verifies complete coverage and actual credits, then daily enable.
+
 ## Accepted feed isolation — 2026-09-28
 
 The approved isolation repair stores immutable accepted bundles under

@@ -12,10 +12,24 @@ RUN_UNITS = 500
 DAILY_UNITS = 500
 ROLLING_UNITS = 10000
 FINALIZATION_DAILY_UNITS = 5000
+# Lucas approved weekday refresh caps on 2026-10-04. Earlier reservations keep the
+# legacy caps above, which also anchor every dated September exception and remain
+# the minimum valid size of a historical reservation.
+WEEKDAY_POLICY_START = datetime(2026, 10, 4, tzinfo=timezone.utc)
+WEEKDAY_RUN_UNITS = 2000
+WEEKDAY_DAILY_UNITS = 2000
+WEEKDAY_ROLLING_UNITS = 80000
 ALIAS_VERIFICATION_CEILINGS = {
     f"2026-09-27-alias-verification-{attempt}": 25000 + 5000 * attempt
     for attempt in range(1, 6)
 }
+
+
+def normal_allowance(now):
+    """Return the (run, daily, rolling) units of a normal run in force at `now`."""
+    if now >= WEEKDAY_POLICY_START:
+        return WEEKDAY_RUN_UNITS, WEEKDAY_DAILY_UNITS, WEEKDAY_ROLLING_UNITS
+    return RUN_UNITS, DAILY_UNITS, ROLLING_UNITS
 
 
 def reserve_run(path, run_id, *, now=None, approval_id="", finalization=False):
@@ -24,6 +38,7 @@ def reserve_run(path, run_id, *, now=None, approval_id="", finalization=False):
     if not run_id or now.tzinfo is None:
         raise ValueError("Run ID and timezone-aware clock required")
     now = now.astimezone(timezone.utc)
+    run_size, daily_cap, rolling_cap = normal_allowance(now)
     with open(str(path) + ".lock", "a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         data = json.loads(path.read_text())
@@ -47,7 +62,7 @@ def reserve_run(path, run_id, *, now=None, approval_id="", finalization=False):
                 or matches[0].get("utc_date") != now.date().isoformat()
                 or type(matches[0].get("additional_units")) is not int
                 or matches[0]["additional_units"]
-                != (FINALIZATION_DAILY_UNITS if finalization else RUN_UNITS)
+                != (FINALIZATION_DAILY_UNITS if finalization else run_size)
             ):
                 raise RuntimeError(
                     "Cannot combine finalization without matching dated 5000-unit approval"
@@ -109,16 +124,16 @@ def reserve_run(path, run_id, *, now=None, approval_id="", finalization=False):
             if timestamp > now - timedelta(days=30):
                 rolling += units
         daily_limit = (
-            FINALIZATION_DAILY_UNITS if finalization else DAILY_UNITS
+            FINALIZATION_DAILY_UNITS if finalization else daily_cap
         ) + additional_units
         daily_limit = explicit_ceilings.get("daily_ceiling_units", daily_limit)
-        rolling_limit = explicit_ceilings.get("rolling_ceiling_units", ROLLING_UNITS)
+        rolling_limit = explicit_ceilings.get("rolling_ceiling_units", rolling_cap)
         # Manual finalization reserves only capacity still available today.
         # Failed reservations remain counted; old rows are never rewritten.
         run_units = (
             min(FINALIZATION_DAILY_UNITS, daily_limit - daily, rolling_limit - rolling)
             if finalization
-            else RUN_UNITS
+            else run_size
         )
         if (
             run_units < RUN_UNITS
