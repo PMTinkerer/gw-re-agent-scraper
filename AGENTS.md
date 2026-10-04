@@ -1,6 +1,18 @@
 # AGENTS.md — gw-re-agent-scraper
 
-## Weekday refresh caps approved — 2026-10-04 (current)
+## Weekday canary result and transient retry — 2026-10-04 (current)
+
+Canary run 37215978499 (normal 2,000-unit reservation) completed ALL discovery:
+154 summary pages across ten towns, no duplicate-pagination repeat. It then made
+5 new-detail requests; the fifth returned a Firecrawl 502 Bad Gateway, which
+ended the run (159 requests / 795 reserved units). Nothing was published or
+imported; the accepted September 27 bundle is unchanged. Lucas then approved
+bounded retries for transient provider failures only: Firecrawl 502/503/504,
+connection errors and timeouts are retried at most twice (5 s, then 15 s), every
+attempt reserved first. All other HTTP errors and content failures still stop
+the run. Next: one new canary on Monday 2026-10-05 (today's allowance is used).
+
+## Weekday refresh caps approved — 2026-10-04
 
 Lucas approved live outreach preparation with listings refreshed every weekday.
 New normal-run policy from 2026-10-04 00:00 UTC (`normal_allowance`): 2,000
