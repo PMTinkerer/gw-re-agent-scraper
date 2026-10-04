@@ -146,6 +146,11 @@
       "reserved_units": 5000,
       "rolling_ceiling_units": 35000,
       "run_id": "36338317568-1"
+    },
+    {
+      "reserved_at": "2026-10-04T16:13:53.721981+00:00",
+      "reserved_units": 2000,
+      "run_id": "37215978499-1"
     }
   ],
   "schema_version": 1
