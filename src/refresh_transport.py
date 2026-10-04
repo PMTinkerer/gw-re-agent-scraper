@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlencode, urlsplit
@@ -21,6 +22,8 @@ from .maine_parser import (
     parse_total_results,
 )
 
+TRANSIENT_STATUSES = frozenset({502, 503, 504})
+TRANSIENT_BACKOFF_SECONDS = (5, 15)
 API = "https://api.firecrawl.dev/v2"
 STATUS_JS = r"""(() => {
  const texts = Array.from(document.scripts).map(s => s.textContent).join('\n');
@@ -121,6 +124,35 @@ class RefreshTransport:
             raise BillingPolicyError("Credit balance unavailable")
         return value
 
+    def _post_scrape(self, kind, url, payload):
+        """One paid request, retried only for transient provider gateway failures.
+
+        Lucas approved at most two retries (5 s, then 15 s) on 2026-10-04 after a
+        single Firecrawl 502 ended an otherwise complete canary. Every attempt is
+        reserved first; other errors and content failures still stop the run.
+        """
+        for attempt, wait in enumerate((0, *TRANSIENT_BACKOFF_SECONDS)):
+            last = attempt == len(TRANSIENT_BACKOFF_SECONDS)
+            if wait:
+                time.sleep(wait)
+            self.reserve(kind, url)
+            try:
+                response = self.session.post(
+                    API + "/scrape",
+                    json=payload,
+                    headers={"Authorization": "Bearer " + self.key},
+                    timeout=(10, 100),
+                    allow_redirects=False,
+                )
+            except (requests.ConnectionError, requests.Timeout):
+                if last:
+                    raise
+                continue
+            if getattr(response, "status_code", 200) in TRANSIENT_STATUSES and not last:
+                continue
+            response.raise_for_status()
+            return response.json()
+
     def _scrape(self, url, kind, script=None):
         parts = urlsplit(url)
         if (
@@ -147,16 +179,7 @@ class RefreshTransport:
             ]
         if kind == "summary" and self.diagnostics:
             self.diagnostics.check_capacity()
-        self.reserve(kind, url)
-        response = self.session.post(
-            API + "/scrape",
-            json=payload,
-            headers={"Authorization": "Bearer " + self.key},
-            timeout=(10, 100),
-            allow_redirects=False,
-        )
-        response.raise_for_status()
-        result = response.json()
+        result = self._post_scrape(kind, url, payload)
         data = result.get("data")
         if kind == "summary" and self.diagnostics and isinstance(data, dict):
             self.diagnostics.save(url, data)
