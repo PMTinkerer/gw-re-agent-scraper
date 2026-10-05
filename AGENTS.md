@@ -1,6 +1,17 @@
 # AGENTS.md — gw-re-agent-scraper
 
-## Weekday canary result and transient retry — 2026-10-04 (current)
+## Monday canary and Active Under Contract cards — 2026-10-05 (current)
+
+Canary run 37314283983 (weekday caps, transient retries) stopped on one Wells
+summary page (Active, max $199,900): a card labelled "Active Under Contract",
+which the summary-card parser did not recognise, so it failed closed. Offline
+replay of all 118 saved pages reproduced exactly that one card. The parser now
+normalizes "Active Under Contract" to Pending, matching the existing detail and
+status mapping in active_refresh; any other unknown status still fails closed.
+All 118 saved pages now pass full summary validation. Nothing was published or
+imported. Next canary needs a new UTC day (today's allowance is reserved).
+
+## Weekday canary result and transient retry — 2026-10-04
 
 Canary run 37215978499 (normal 2,000-unit reservation) completed ALL discovery:
 154 summary pages across ten towns, no duplicate-pagination repeat. It then made

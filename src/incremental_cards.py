@@ -15,7 +15,8 @@ _BREAK = r"\\\\\s*\\\\\s*"
 # Compact map cards and repeated photo links do not have this structure.
 _CARD_START = re.compile(r"\$[^\n\\]*" + _BREAK)
 _CARD = re.compile(
-    r"\$\s*((?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]+))\s*(Active|New Listing|Pending)"
+    r"\$\s*((?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]+))\s*"
+    r"(Active Under Contract|Active|New Listing|Pending)"
     + _BREAK
     + r"(?:\*\*([^*]+)\*\*\s+\*\*([^*]+)\*\*"
     + _BREAK
@@ -33,6 +34,11 @@ _CARD = re.compile(
     + r"\((https://mainelistings\.com/listings/[^)]+)\)",
     re.DOTALL,
 )
+
+
+# Same normalization as detail/status evidence in active_refresh: a home under
+# contract is Pending, never available for outreach.
+_STATUS = {"New Listing": "Active", "Active Under Contract": "Pending"}
 
 
 class ActiveCardParseError(ValueError):
@@ -65,7 +71,7 @@ def parse_active_cards(markdown):
         )
         cards.append(
             {
-                "status": "Active" if match[2] == "New Listing" else match[2],
+                "status": _STATUS.get(match[2], match[2]),
                 "sale_price": None,
                 "list_price": int(match[1].replace(",", "")),
                 "address": match[3].strip() if match[3] is not None else None,
