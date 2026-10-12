@@ -1,6 +1,6 @@
 # Maine MLS Agent Leaderboard -- Southern Coastal Maine
-_Generated: 2026-10-05 11:47 UTC | Source: MaineListings.com (MREIS MLS) | Date range: 2011-02-23 to 2026-10-02_
-_Enriched: 17,041 / 17,097 closed transactions | Listing agent: 17,097 | Buyer agent: 17,034_
+_Generated: 2026-10-12 11:49 UTC | Source: MaineListings.com (MREIS MLS) | Date range: 2011-02-23 to 2026-10-05_
+_Enriched: 17,042 / 17,136 closed transactions | Listing agent: 17,136 | Buyer agent: 17,035_
 
 > Unique to MLS data: every transaction includes both listing and buyer agent, so buyer-side performance is visible.
 
@@ -122,7 +122,7 @@ _Office branches kept separate (branches compete with each other)._
 | 5 | Portside Real Estate Group | 1536 | 183 | $989.0M | $644K | Grainne Archer, Jeffrey Rioux, Rebecca Bassett |
 | 6 | Bean Group | 1510 | 253 | $697.6M | $462K | Janna Syrene, Stephen Erickson, Jeffrey Walker |
 | 7 | Pack Maynard and Associates | 1320 | 25 | $1279.1M | $969K | Victoria Benenti, Corey Tracy, Jessica Girard |
-| 8 | Better Homes & Gardens Real Estate/The Masiello Group | 1038 | 173 | $604.1M | $582K | Jonathan Safford, Peter Larochelle, Jennifer Laverdiere |
+| 8 | Better Homes & Gardens Real Estate/The Masiello Group | 1039 | 174 | $605.0M | $582K | Jonathan Safford, Peter Larochelle, Jennifer Laverdiere |
 | 9 | Anne Erwin Sotheby's International Realty | 945 | 8 | $944.0M | $999K | Anne Erwin Real Estate, Walter Kallenback Jr, Louise Ducharme |
 | 10 | Legacy Properties Sotheby's International Realty | 861 | 74 | $1031.6M | $1.2M | Elizabeth Coughlan, William Gaynor, Christina Stone |
 | 11 | EXP Realty | 833 | 161 | $463.7M | $557K | Roslind Anton, Janna Syrene, Kimberly Tarbox |
@@ -240,18 +240,18 @@ _Office branches kept separate (branches compete with each other)._
 
 ## Data Summary
 
-- **Total closed transactions discovered:** 17,097
-- **Successfully enriched:** 17,041
-- **With listing agent:** 17,097
-- **With buyer agent:** 17,034
-- **Date range:** 2011-02-23 to 2026-10-02
+- **Total closed transactions discovered:** 17,136
+- **Successfully enriched:** 17,042
+- **With listing agent:** 17,136
+- **With buyer agent:** 17,035
+- **Date range:** 2011-02-23 to 2026-10-05
 - **Per-town breakdown:**
   - Scarborough: 2,148 sales
   - Kennebunk: 1,977 sales
   - Saco: 1,907 sales
   - York: 1,865 sales
   - Old Orchard Beach: 1,854 sales
-  - Wells: 1,848 sales
+  - Wells: 1,849 sales
   - Kittery: 1,830 sales
   - Biddeford: 1,564 sales
   - Kennebunkport: 1,294 sales
