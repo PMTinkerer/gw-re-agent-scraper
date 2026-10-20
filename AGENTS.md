@@ -1,6 +1,21 @@
 # AGENTS.md — gw-re-agent-scraper
 
-## Monday canary and Active Under Contract cards — 2026-10-05 (current)
+## Listing-agent identity — 2026-10-20 (current)
+
+An outside audit found the detail extractor took each agent field from the
+first non-empty match, and `list_agent_email` also matched inside
+`co_list_agent_email`. A populated co-agent could therefore supply the name
+while the primary supplied the email. A name/email heuristic on the accepted
+feed found about 385 such rows (2 active: 525 Post Road, Wells, Kimberly
+Bohn beside jennifer.moore@remax.net). DETAIL_EXTRACT_JS now matches exact keys only,
+also scans the evaluated `window.__NUXT__` state (resolves hoisted values),
+and takes an agent's name/MLS ID/email only when each has one candidate.
+Otherwise the contact is null and `listing_agent_ambiguous` is true; the
+listing is still published (no error). Unverified against a live page: the
+cloud cannot reach mainelistings.com. After the next refresh, check how many
+new active listings came through with no email. Existing rows are unchanged.
+
+## Monday canary and Active Under Contract cards — 2026-10-05
 
 Canary run 37314283983 (weekday caps, transient retries) stopped on one Wells
 summary page (Active, max $199,900): a card labelled "Active Under Contract",
