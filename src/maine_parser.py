@@ -104,7 +104,11 @@ def parse_total_results(markdown: str) -> int | None:
 # JavaScript to extract agent/listing data from the NUXT blob
 # in mainelistings.com detail pages. The page has TWO list_agent
 # objects — the first is co_list_agent (usually null/minified 'a'),
-# the second has actual data. We find the one with a quoted email.
+# the second has actual data. Agent contacts are taken only when the page
+# offers exactly one candidate for each of name, MLS ID and email; a
+# populated co-agent (or a value hoisted into a NUXT variable) otherwise
+# could put one person's name beside another person's email. Ambiguous
+# contacts are left empty and flagged, never guessed.
 DETAIL_EXTRACT_JS = '''(function(){
     var scripts = document.querySelectorAll('script');
     var result = {error: null};
@@ -136,19 +140,69 @@ DETAIL_EXTRACT_JS = '''(function(){
         return null;
     }
 
+    function decodeU(s) {
+        return s.replace(/\\\\u([0-9a-fA-F]{4})/g, function(_, h) {
+            return String.fromCharCode(parseInt(h, 16));
+        });
+    }
+    // Every distinct non-empty quoted value for this exact key. The key must
+    // not be the tail of a longer one: co_list_agent_email ends in
+    // list_agent_email. Keys may be bare (NUXT source) or quoted (JSON).
+    function quotedValues(texts, field, fold) {
+        var re = new RegExp('(?:^|[^A-Za-z0-9_$])"?' + field + '"?:"([^"]*)"', 'g');
+        var seen = [];
+        for (var t = 0; t < texts.length; t++) {
+            var m;
+            while ((m = re.exec(texts[t])) !== null) {
+                var v = decodeU(m[1]).trim();
+                if (fold) v = v.toLowerCase();
+                if (v && seen.indexOf(v) < 0) seen.push(v);
+            }
+        }
+        return seen;
+    }
+    // One person's name, MLS ID and email, or none of them when any field
+    // has more than one candidate on the page.
+    function pickAgent(texts, prefix) {
+        var name = quotedValues(texts, prefix + '_full_name', false);
+        var id = quotedValues(texts, prefix + '_mls_id', false);
+        var email = quotedValues(texts, prefix + '_email', true);
+        if (name.length > 1 || id.length > 1 || email.length > 1) {
+            return {ambiguous: true, name: null, id: null, email: null};
+        }
+        return {ambiguous: false, name: name[0] || null, id: id[0] || null,
+                email: email[0] || null};
+    }
+    // The evaluated NUXT state resolves values the payload hoisted into
+    // variables, which the source text only shows as bare identifiers.
+    var resolved = null;
+    try {
+        if (typeof window !== 'undefined' && window.__NUXT__ &&
+                typeof window.__NUXT__ === 'object') {
+            resolved = JSON.stringify(window.__NUXT__);
+        }
+    } catch (e) {
+        resolved = null;
+    }
+
     for (var i = 0; i < scripts.length; i++) {
         var txt = scripts[i].textContent;
         if (txt.indexOf('buyer_agent_full_name') < 0) continue;
+        var texts = resolved ? [txt, resolved] : [txt];
 
         // Agents + offices
-        result.listing_agent       = pickQuoted(txt, 'list_agent_full_name');
-        result.listing_agent_id    = pickQuoted(txt, 'list_agent_mls_id');
-        result.listing_agent_email = pickQuoted(txt, 'list_agent_email');
-        result.listing_office      = pickQuoted(txt, 'list_office_name');
-        result.buyer_agent         = pickQuoted(txt, 'buyer_agent_full_name');
-        result.buyer_agent_id      = pickQuoted(txt, 'buyer_agent_mls_id');
-        result.buyer_agent_email   = pickQuoted(txt, 'buyer_agent_email');
-        result.buyer_office        = pickQuoted(txt, 'buyer_office_name');
+        var la = pickAgent(texts, 'list_agent');
+        var ba = pickAgent(texts, 'buyer_agent');
+        result.listing_agent       = la.name;
+        result.listing_agent_id    = la.id;
+        result.listing_agent_email = la.email;
+        result.listing_agent_ambiguous = la.ambiguous;
+        result.listing_office      = quotedValues([txt], 'list_office_name', false)[0] || null;
+        result.buyer_agent         = ba.name;
+        result.buyer_agent_id      = ba.id;
+        result.buyer_agent_email   = ba.email;
+        result.buyer_agent_ambiguous = ba.ambiguous;
+        result.buyer_office        = quotedValues([txt], 'buyer_office_name', false)[0] || null;
 
         // Transaction details
         var cp = pickQuoted(txt, 'close_price');
@@ -178,7 +232,10 @@ DETAIL_EXTRACT_JS = '''(function(){
         break;
     }
 
-    if (!result.listing_agent && !result.buyer_agent) {
+    // An ambiguous contact is still a listing with data: keep its facts and
+    // publish it without a contact rather than failing the page.
+    if (!result.listing_agent && !result.buyer_agent &&
+            !result.listing_agent_ambiguous && !result.buyer_agent_ambiguous) {
         result.error = 'no agent data found in NUXT blob';
     }
 
