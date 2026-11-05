@@ -1,5 +1,29 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Open house alerts — 2026-11-05 (current)
+
+Lucas asked for an email whenever a home over $1M (with $1.2M highlighted) in
+the ten towns has an open house scheduled. After each published weekday
+refresh, `src/open_houses.py` runs one search per town with the public filter
+`open_house_end_time_after=now&min_list_price=1000000` (more pages only when the
+count needs them) and writes `data/open_houses.json`. Every request goes
+through the same whole-run reservation; a budget stop marks the remaining towns
+`not_scanned`, and any failure leaves the published feed untouched. A failed
+town is never reported as "no open houses". The results page shape is
+UNVERIFIED (the cloud cannot reach mainelistings.com): the in-page script
+returns card text plus any page-state objects whose keys mention open houses,
+and saves that output to the run's diagnostics artifact. Check the first run's
+artifact and fix field names before trusting times. Naive source times are
+read as Eastern. The outreach app emails Lucas (Resend, never agents).
+
+Found the same day: every weekday refresh since 2026-10-27 failed with
+BillingPolicyError because `config/active-refresh-billing.json` (verified
+2026-09-26) passed its 30-day limit. Lucas then gave a standing approval
+(2026-11-05, ~99K credits left) to keep using existing credits indefinitely.
+The proof now carries `standing_approval`, which removes ONLY the 30-day
+expiry; the key hash, the USD 5/month limit, the credit-balance check and all
+run/daily/rolling caps still apply. Do not remove it without Lucas.
+
 ## Listing-agent identity — 2026-10-20 (current)
 
 An outside audit found the detail extractor took each agent field from the

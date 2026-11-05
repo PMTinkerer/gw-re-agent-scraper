@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .active_refresh import run_active_refresh
+from .open_houses import OUTPUT_PATH as OPEN_HOUSE_PATH, run_open_house_pass
 from .refresh_allowance import (
     reserve_run,
     normal_allowance,
@@ -42,6 +43,34 @@ def _checkpoint(paths, run_id):
     remote = _git("ls-remote", "origin", "refs/heads/main").split()
     if not remote or remote[0] != _git("rev-parse", "HEAD"):
         raise RuntimeError("Remote reservation checkpoint not verified")
+
+
+def _publish_open_houses(transport, run_id, budget_path):
+    """Open house alerts ride after a published feed and can never undo it.
+
+    Every request still goes through the same whole-run reservation callback.
+    Any failure here leaves the accepted feed exactly as just published.
+    """
+    try:
+        document = run_open_house_pass(
+            transport.open_house_page,
+            TOWNS,
+            run_id=run_id,
+            stop_errors=(BudgetExceeded,),
+        )
+        paths = [OPEN_HOUSE_PATH] + (
+            [budget_path] if Path(budget_path).exists() else []
+        )
+        _checkpoint(paths, run_id)
+    except Exception as exc:  # never fail the already-published refresh
+        print(f"Open house pass not published: {type(exc).__name__}")
+        return None
+    complete = sum(t["status"] == "complete" for t in document["towns"].values())
+    print(
+        f"Open houses: {len(document['open_houses'])} at or above "
+        f"${document['min_list_price']:,} across {complete}/{len(TOWNS)} towns."
+    )
+    return document
 
 
 def main(argv=None):
@@ -160,6 +189,7 @@ def main(argv=None):
         f"{len(result.get('unresolved', []))} unresolved new listings; "
         f"{requested} reserved units (not billed credits). No notifications."
     )
+    _publish_open_houses(transport, run_id, budget_path)
 
 
 if __name__ == "__main__":

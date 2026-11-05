@@ -326,6 +326,23 @@ class RefreshTransport:
             raise RefreshIncomplete("Missing structured listing extraction")
         return results[0]
 
+    def open_house_page(self, url):
+        """One open house results page; the parsing lives in open_houses."""
+        from .open_houses import OPEN_HOUSE_JS
+
+        data = self._scrape(url, "open_house", OPEN_HOUSE_JS)
+        results = data.get("actions", {}).get("javascriptReturns")
+        if not isinstance(results, list) or len(results) != 1:
+            raise RefreshIncomplete("Missing open house page extraction")
+        value = results[0]
+        value = value.get("value", value) if isinstance(value, dict) else value
+        if self.diagnostics and isinstance(value, str):
+            # Bounded public evidence of the page's open house shape for replay.
+            self.diagnostics.save(
+                url, {"markdown": value, "metadata": data.get("metadata")}
+            )
+        return value
+
     def detail(self, url):
         result = self._detail_result(url, "new_detail", INCREMENTAL_DETAIL_JS)
         return parse_detail_response(result)
