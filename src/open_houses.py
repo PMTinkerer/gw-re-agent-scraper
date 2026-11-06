@@ -149,6 +149,20 @@ def _parse_card(card):
         if re.search(r",\s*ME\s+\d{5}", line) and index:
             address = lines[index - 1]
             break
+    town = (listing_town(card["url"]) or "").lower()
+    for index, line in enumerate(lines):
+        # Layout from 2026-11-06: one "street, City" line above the office.
+        street, comma, city = line.rpartition(",")
+        if (
+            address is None
+            and comma
+            and street.strip()
+            and town
+            and city.strip().lower() == town
+            and index + 1 < len(lines)
+            and lines[index + 1].startswith("Brought to you by")
+        ):
+            address = street.strip()
     return {
         "detail_url": card["url"],
         "listing_id": listing_source_id(card["url"]),

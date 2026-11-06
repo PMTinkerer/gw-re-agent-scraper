@@ -86,6 +86,19 @@ def test_card_open_house_line_is_kept_as_text():
     assert cards[0]["card_open_house_text"] == ["Open House: Sat 11/8 11am-1pm"]
 
 
+def test_card_in_the_november_layout_keeps_address_office_and_time():
+    text = (
+        "Active\nOpen House: Sun. 11:00am-12:30pm\n$1,499,000\n"
+        "3 Beds · 4 Baths · 3,235 sqft\n2 Main Street, #18-501, York\n"
+        "Brought to you by Portside Real Estate Group"
+    )
+    _, _, cards = oh.parse_open_house_page(page([{"url": URL_A, "text": text}]))
+    assert cards[0]["address"] == "2 Main Street, #18-501"
+    assert cards[0]["list_price"] == 1499000
+    assert cards[0]["listing_office"] == "Portside Real Estate Group"
+    assert cards[0]["card_open_house_text"] == ["Open House: Sun. 11:00am-12:30pm"]
+
+
 @pytest.mark.parametrize(
     "bad",
     [

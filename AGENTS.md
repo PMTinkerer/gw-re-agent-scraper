@@ -1,5 +1,20 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## New result-card layout — 2026-11-06 (current)
+
+The first manual refresh after the billing fix (run 42276461389) passed the
+billing check, then stopped on page one: mainelistings.com changed every Active
+result card. New order: photo, status, optional "Open House: Sun. 11:00am-
+12:30pm" line, price, one facts line ("3 Beds · 5 Baths · 3,490 sqft", any part
+may be missing, or the whole line), then bold "street, City"; the ZIP is only in
+the listing link. `parse_active_cards` reads this layout (chosen per page) and
+keeps the old one. Unknown status, unknown extra lines, unparsed facts and
+stray footers still fail closed. The saved page is
+`tests/fixtures/biddeford-active-cards-2026-11-06.json`. Detail pages after the
+change are not yet verified. Diagnostics artifacts cannot be downloaded from
+the cloud; a push-triggered workflow that runs `gh run download` and prints the
+JSON to its log works (remove it afterwards).
+
 ## Open house alerts — 2026-11-05 (current)
 
 Lucas asked for an email whenever a home over $1M (with $1.2M highlighted) in
