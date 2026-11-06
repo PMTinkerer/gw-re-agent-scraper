@@ -59,6 +59,24 @@ def _result_count_tokens(text):
     return tokens
 
 
+def _standing_approval(data):
+    """Lucas's 2026-11-05 approval to keep using existing credits indefinitely.
+
+    It removes only the 30-day re-verification. The key must still match, the
+    recorded billing setting must still be within the USD 5/month limit, and a
+    run still needs enough remaining credits before it reserves anything.
+    """
+    approval = data.get("standing_approval")
+    return (
+        isinstance(approval, dict)
+        and isinstance(approval.get("approved_by"), str)
+        and approval["approved_by"].strip() != ""
+        and isinstance(approval.get("statement"), str)
+        and approval["statement"].strip() != ""
+        and isinstance(approval.get("approved_at"), str)
+    )
+
+
 def verify_billing_policy(path, api_key, *, now=None):
     """Explicit dated operator evidence; never infer billing policy from balance."""
     try:
@@ -79,7 +97,8 @@ def verify_billing_policy(path, api_key, *, now=None):
             != hashlib.sha256(api_key.encode()).hexdigest()
             or not isinstance(data.get("evidence"), str)
             or not data["evidence"].strip()
-            or not timedelta(0) <= age <= timedelta(days=30)
+            or age < timedelta(0)
+            or (age > timedelta(days=30) and not _standing_approval(data))
         ):
             raise ValueError("unverified policy")
     except (OSError, KeyError, TypeError, ValueError) as exc:
@@ -306,6 +325,23 @@ class RefreshTransport:
         if not isinstance(results, list) or len(results) != 1:
             raise RefreshIncomplete("Missing structured listing extraction")
         return results[0]
+
+    def open_house_page(self, url):
+        """One open house results page; the parsing lives in open_houses."""
+        from .open_houses import OPEN_HOUSE_JS
+
+        data = self._scrape(url, "open_house", OPEN_HOUSE_JS)
+        results = data.get("actions", {}).get("javascriptReturns")
+        if not isinstance(results, list) or len(results) != 1:
+            raise RefreshIncomplete("Missing open house page extraction")
+        value = results[0]
+        value = value.get("value", value) if isinstance(value, dict) else value
+        if self.diagnostics and isinstance(value, str):
+            # Bounded public evidence of the page's open house shape for replay.
+            self.diagnostics.save(
+                url, {"markdown": value, "metadata": data.get("metadata")}
+            )
+        return value
 
     def detail(self, url):
         result = self._detail_result(url, "new_detail", INCREMENTAL_DETAIL_JS)

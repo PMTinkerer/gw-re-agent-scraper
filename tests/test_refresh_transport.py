@@ -87,6 +87,60 @@ def test_billing_gate(changes, tmp_path):
         verify_billing_policy(proof(tmp_path, **changes), "fixture-key")
 
 
+STANDING = {
+    "approved_by": "Lucas Knowles",
+    "approved_at": "2026-11-05T18:49:37+00:00",
+    "statement": "approval to use existing credits indefinitely",
+}
+
+
+def test_standing_approval_removes_only_the_30_day_expiry(tmp_path):
+    old = "2026-09-26T16:29:53+00:00"
+    verify_billing_policy(
+        proof(tmp_path, verified_at=old, standing_approval=STANDING),
+        "fixture-key",
+        now=datetime(2027, 6, 1, tzinfo=timezone.utc),
+    )
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"api_key_sha256": "wrong"},
+        {"pay_as_you_go_enabled": True, "monthly_limit_usd": 10, "currency": "USD"},
+        {"verified_at": "2999-01-01T00:00:00+00:00"},
+        {"standing_approval": {**STANDING, "statement": " "}},
+        {"standing_approval": "yes"},
+    ],
+)
+def test_standing_approval_keeps_every_other_check(tmp_path, changes):
+    with pytest.raises(BillingPolicyError):
+        verify_billing_policy(
+            proof(
+                tmp_path,
+                **{
+                    "verified_at": "2026-09-26T16:29:53+00:00",
+                    "standing_approval": STANDING,
+                    **changes,
+                },
+            ),
+            "fixture-key",
+        )
+
+
+def test_checked_in_proof_carries_the_standing_approval(tmp_path):
+    root = Path(__file__).resolve().parents[1]
+    data = json.loads((root / "config/active-refresh-billing.json").read_text())
+    assert data["pay_as_you_go_enabled"] is True and data["monthly_limit_usd"] == 5
+    # Same file with a fixture key hash still passes long after verified_at.
+    data["api_key_sha256"] = hashlib.sha256(b"fixture-key").hexdigest()
+    path = tmp_path / "billing.json"
+    path.write_text(json.dumps(data))
+    verify_billing_policy(
+        path, "fixture-key", now=datetime(2028, 1, 1, tzinfo=timezone.utc)
+    )
+
+
 def test_explicitly_approved_five_dollar_policy(tmp_path):
     verify_billing_policy(
         proof(

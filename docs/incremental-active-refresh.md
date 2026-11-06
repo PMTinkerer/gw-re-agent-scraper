@@ -144,3 +144,10 @@ Normal/default/scheduled runs retain 500. Request-level and whole-run limits
 both enforce the selected policy; exceptions cannot stack. No ledger reset,
 provider cap increase, email or recurring activation. Stop using the temporary
 input after finalization. See `finalization-allowance-2026-09-26.md`.
+
+## Standing billing approval (2026-11-05)
+
+Lucas approved using the account's existing credits indefinitely. The billing
+proof's `standing_approval` object lifts only the 30-day re-verification in
+`verify_billing_policy`. Key match, the USD 5/month Pay-as-you-go limit, the
+balance check and every reservation cap are unchanged.
