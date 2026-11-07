@@ -1,6 +1,22 @@
 # AGENTS.md — gw-re-agent-scraper
 
-## New result-card layout — 2026-11-06 (current)
+## Status checks kept between runs — 2026-11-07 (current)
+
+Rerun 42316627167 (new card layout fix) read all 146 summary pages (907
+listings, 0 parse failures) and 68 of 72 new detail pages, then hit the
+90-minute job limit during targeted status checks: after the 11-day outage, 340
+known listings were absent from the Active search (174 Active, 166 already
+Unverified, which are re-checked every run). That is more than one run's time
+and its 2,000-unit cap, and since nothing was published every check was lost.
+`src/status_cache.py` now stores each status answer in
+`data/active_refresh_retries.db` (`status_checks`), pushes it every 20 checks,
+and reuses an answer for up to 7 days while the listing stays absent. Reuse
+never makes a listing eligible (unresolved stays Unverified; a returning listing
+is seen fresh in the Active search). Job timeout raised to 150 minutes; caps
+unchanged. Expected: the backlog drains over two normal weekday runs. The run
+now prints status-check progress to the log.
+
+## New result-card layout — 2026-11-06
 
 The first manual refresh after the billing fix (run 42276461389) passed the
 billing check, then stopped on page one: mainelistings.com changed every Active
