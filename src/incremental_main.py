@@ -20,6 +20,7 @@ from .refresh_allowance import (
 from .refresh_budget import BudgetExceeded, BudgetLedger
 from .refresh_transport import RefreshTransport, verify_billing_policy
 from .state import TOWNS
+from .status_cache import StatusCache
 
 EXPECTED_ORIGIN = "https://github.com/PMTinkerer/gw-re-agent-scraper.git"
 
@@ -155,6 +156,11 @@ def main(argv=None):
             _checkpoint([state_path, budget_path], run_id)
 
     transport.reserve = before_request
+    status_checks = StatusCache(
+        state_path,
+        transport.status,
+        lambda: _checkpoint([state_path, budget_path], run_id),
+    )
     try:
         result = run_active_refresh(
             db_path="data/maine_listings.db",
@@ -164,7 +170,7 @@ def main(argv=None):
             run_id=run_id,
             fetch_summary_range=transport.summary_range,
             fetch_detail=transport.detail,
-            fetch_status=transport.status,
+            fetch_status=status_checks,
         )
     finally:
         # No broad git add data/. Publication is absent on an incomplete run.
@@ -187,7 +193,8 @@ def main(argv=None):
     print(
         f"Published complete discovery {result['run_id']}: {len(result['active_mls_ids'])} active MLS IDs; "
         f"{len(result.get('unresolved', []))} unresolved new listings; "
-        f"{requested} reserved units (not billed credits). No notifications."
+        f"{requested} reserved units (not billed credits); status checks "
+        f"{status_checks.fresh} new, {status_checks.reused} reused. No notifications."
     )
     _publish_open_houses(transport, run_id, budget_path)
 

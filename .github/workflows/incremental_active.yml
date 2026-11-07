@@ -30,7 +30,9 @@ jobs:
     # Deliberately OFF until operator billing and first-run acceptance are verified.
     if: vars.INCREMENTAL_ACTIVE_ENABLED == 'true' || (github.event_name == 'workflow_dispatch' && vars.INCREMENTAL_ACTIVE_CANARY == 'true')
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # Raised from 90 (2026-11-07): run 42316627167 needed 340 status checks
+    # after an 11-day outage and was cut off. Units stay capped by the allowance.
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:

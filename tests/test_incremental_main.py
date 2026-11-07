@@ -1,4 +1,5 @@
 import json
+import sqlite3
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -439,3 +440,25 @@ def test_weekday_run_uses_approved_request_ledger_limits(tmp_path, monkeypatch):
     rows = json.loads(Path("data/active_refresh_allowances.json").read_text())
     assert rows["reservations"][-1]["reserved_units"] == 2000
     assert events == []
+
+
+def test_status_checks_are_recorded_and_survive_an_unpublished_run(
+    tmp_path, monkeypatch
+):
+    policy, events = configure(tmp_path, monkeypatch)
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
+    monkeypatch.setattr(cli, "_checkpoint", lambda paths, run: None)
+    url = "https://mainelistings.com/listings/ME/York/03909/10376/1-a-york-me-03909/7"
+
+    def run(**kwargs):
+        kwargs["fetch_status"](url)
+        raise RuntimeError("cut off before publication")
+
+    monkeypatch.setattr(cli, "run_active_refresh", run)
+    with pytest.raises(RuntimeError, match="cut off"):
+        cli.main(["--billing-proof", str(policy), "--github-publish"])
+    assert events == ["paid"]
+    with sqlite3.connect("data/active_refresh_retries.db") as conn:
+        assert conn.execute("SELECT detail_url FROM status_checks").fetchall() == [
+            (url,)
+        ]
