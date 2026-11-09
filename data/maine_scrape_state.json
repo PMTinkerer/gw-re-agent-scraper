@@ -2,55 +2,55 @@
   "towns": {
     "kittery": {
       "status": "complete",
-      "listings_found": 33,
-      "completed_at": "2026-11-02T11:35:51.270206"
+      "listings_found": 0,
+      "completed_at": "2026-11-09T11:35:55.529230"
     },
     "york": {
       "status": "complete",
-      "listings_found": 34,
-      "completed_at": "2026-11-02T11:35:51.960384"
+      "listings_found": 0,
+      "completed_at": "2026-11-09T11:35:56.862227"
     },
     "ogunquit": {
       "status": "complete",
-      "listings_found": 37,
-      "completed_at": "2026-11-02T11:35:51.281171"
+      "listings_found": 0,
+      "completed_at": "2026-11-09T11:35:56.675997"
     },
     "wells": {
       "status": "complete",
-      "listings_found": 45,
-      "completed_at": "2026-11-02T11:35:51.040588"
+      "listings_found": 0,
+      "completed_at": "2026-11-09T11:35:56.754853"
     },
     "kennebunk": {
       "status": "complete",
-      "listings_found": 62,
-      "completed_at": "2026-11-02T11:36:04.142390"
+      "listings_found": 0,
+      "completed_at": "2026-11-09T11:35:56.746414"
     },
     "kennebunkport": {
       "status": "complete",
-      "listings_found": 31,
-      "completed_at": "2026-11-02T11:35:51.316422"
+      "listings_found": 0,
+      "completed_at": "2026-11-09T11:35:56.279972"
     },
     "biddeford": {
       "status": "complete",
-      "listings_found": 27,
-      "completed_at": "2026-11-02T11:35:51.547754"
+      "listings_found": 0,
+      "completed_at": "2026-11-09T11:35:56.627433"
     },
     "saco": {
       "status": "complete",
-      "listings_found": 39,
-      "completed_at": "2026-11-02T11:35:50.958345"
+      "listings_found": 0,
+      "completed_at": "2026-11-09T11:35:56.838870"
     },
     "old_orchard_beach": {
       "status": "complete",
-      "listings_found": 36,
-      "completed_at": "2026-11-02T11:35:50.634532"
+      "listings_found": 0,
+      "completed_at": "2026-11-09T11:35:57.310302"
     },
     "scarborough": {
       "status": "complete",
-      "listings_found": 39,
-      "completed_at": "2026-11-02T11:35:50.813688"
+      "listings_found": 0,
+      "completed_at": "2026-11-09T11:35:56.906391"
     }
   },
-  "last_run": "2026-11-02T11:41:16.954922",
+  "last_run": "2026-11-09T11:44:04.806801",
   "created_at": "2026-04-16T01:12:00.608461"
 }

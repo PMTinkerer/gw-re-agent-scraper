@@ -1,6 +1,6 @@
 # Maine MLS Agent Leaderboard -- Southern Coastal Maine
-_Generated: 2026-11-02 11:41 UTC | Source: MaineListings.com (MREIS MLS) | Date range: 2011-02-23 to 2026-10-30_
-_Enriched: 17,183 / 17,256 closed transactions | Listing agent: 17,256 | Buyer agent: 17,176_
+_Generated: 2026-11-09 11:44 UTC | Source: MaineListings.com (MREIS MLS) | Date range: 2011-02-23 to 2026-11-05_
+_Enriched: 17,184 / 17,257 closed transactions | Listing agent: 17,257 | Buyer agent: 17,177_
 
 > Unique to MLS data: every transaction includes both listing and buyer agent, so buyer-side performance is visible.
 
@@ -8,7 +8,7 @@ _Enriched: 17,183 / 17,256 closed transactions | Listing agent: 17,256 | Buyer a
 
 | Rank | Agent | Office | Total | List | Buy | Volume | Avg | Primary Towns | Most Recent |
 |------|-------|--------|-------|------|-----|--------|-----|---------------|-------------|
-| 1 | Troy Williams | Keller Williams Coastal and Lakes & Mountains Realty | 654 | 255 | 399 | $516.6M | $790K | York, Kittery, Wells | 2026-10-23 |
+| 1 | Troy Williams | Keller Williams Coastal and Lakes & Mountains Realty | 655 | 256 | 399 | $516.9M | $789K | York, Kittery, Wells | 2026-11-05 |
 | 2 | Donald Wunder | RE/MAX Realty One | 354 | 202 | 152 | $284.4M | $803K | Ogunquit, York, Wells | 2026-10-02 |
 | 3 | Pamela Moody-Maxon | Moody Maxon Real Estate | 348 | 188 | 160 | $134.0M | $385K | Wells, Kennebunk, Ogunquit | 2026-10-23 |
 | 4 | Carrie Scovi Amy Foley | Signature Homes Real Estate Group, LLC | 253 | 168 | 85 | $123.3M | $487K | Scarborough, Biddeford, Wells | 2026-10-29 |
@@ -43,7 +43,7 @@ _Enriched: 17,183 / 17,256 closed transactions | Listing agent: 17,256 | Buyer a
 
 | Rank | Agent | Office | Sides | Volume | Avg | $500K+ | Primary Towns | Most Recent |
 |------|-------|--------|-------|--------|-----|--------|---------------|-------------|
-| 1 | Troy Williams | Keller Williams Coastal and Lakes & Mountains Realty | 255 | $214.4M | $841K | 188 | York, Kittery, Wells | 2026-10-23 |
+| 1 | Troy Williams | Keller Williams Coastal and Lakes & Mountains Realty | 256 | $214.8M | $839K | 188 | York, Kittery, Wells | 2026-11-05 |
 | 2 | Donald Wunder | RE/MAX Realty One | 202 | $157.8M | $781K | 141 | Ogunquit, York, Wells | 2026-10-02 |
 | 3 | Pamela Moody-Maxon | Moody Maxon Real Estate | 188 | $72.4M | $385K | 62 | Wells, Ogunquit, Kennebunk | 2026-10-23 |
 | 4 | Carrie Scovi Amy Foley | Signature Homes Real Estate Group, LLC | 168 | $83.4M | $497K | 64 | Scarborough, Biddeford, Wells | 2026-10-29 |
@@ -117,7 +117,7 @@ _Office branches kept separate (branches compete with each other)._
 |------|-----------|-------|--------|--------|-----|------------|
 | 1 | Keller Williams Realty | 3569 | 389 | $2083.8M | $584K | Scott Townsend, Jeffrey Mateja, Cynthia Dubois-Cote |
 | 2 | Coldwell Banker Realty | 2623 | 291 | $1332.5M | $508K | Julie Barros, Catherine Bame, Margaret Mailman |
-| 3 | Keller Williams Coastal and Lakes & Mountains Realty | 2429 | 263 | $1578.3M | $650K | Troy Williams, Heidi Hayes, Nola Cady |
+| 3 | Keller Williams Coastal and Lakes & Mountains Realty | 2430 | 263 | $1578.7M | $650K | Troy Williams, Heidi Hayes, Nola Cady |
 | 4 | RE/MAX Realty One | 1641 | 96 | $964.7M | $588K | Donald Wunder, Abigail Douris, Carolyn Weller |
 | 5 | Portside Real Estate Group | 1556 | 184 | $1009.8M | $649K | Grainne Archer, Jeffrey Rioux, Rebecca Bassett |
 | 6 | Bean Group | 1510 | 253 | $697.6M | $462K | Janna Syrene, Stephen Erickson, Jeffrey Walker |
@@ -152,7 +152,7 @@ _Office branches kept separate (branches compete with each other)._
 
 | Rank | Agent | Office | Total | List | Buy | Volume |
 |------|-------|--------|-------|------|-----|--------|
-| 1 | Troy Williams | Keller Williams Coastal and Lakes & Mountains Realty | 414 | 173 | 241 | $353.9M |
+| 1 | Troy Williams | Keller Williams Coastal and Lakes & Mountains Realty | 415 | 174 | 241 | $354.2M |
 | 2 | Heidi Hayes | Keller Williams Coastal and Lakes & Mountains Realty | 99 | 99 | 0 | $78.1M |
 | 3 | Jeffrey Jellison | CENTURY 21 Atlantic Realty | 90 | 66 | 24 | $74.6M |
 | 4 | Tracy Jackson McCarty | The Aland Realty Group, LLC | 89 | 47 | 42 | $89.7M |
@@ -240,16 +240,16 @@ _Office branches kept separate (branches compete with each other)._
 
 ## Data Summary
 
-- **Total closed transactions discovered:** 17,256
-- **Successfully enriched:** 17,183
-- **With listing agent:** 17,256
-- **With buyer agent:** 17,176
-- **Date range:** 2011-02-23 to 2026-10-30
+- **Total closed transactions discovered:** 17,257
+- **Successfully enriched:** 17,184
+- **With listing agent:** 17,257
+- **With buyer agent:** 17,177
+- **Date range:** 2011-02-23 to 2026-11-05
 - **Per-town breakdown:**
   - Scarborough: 2,167 sales
   - Kennebunk: 1,992 sales
   - Saco: 1,922 sales
-  - York: 1,885 sales
+  - York: 1,886 sales
   - Wells: 1,875 sales
   - Old Orchard Beach: 1,867 sales
   - Kittery: 1,841 sales
