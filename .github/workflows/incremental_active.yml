@@ -30,7 +30,9 @@ jobs:
     # Deliberately OFF until operator billing and first-run acceptance are verified.
     if: vars.INCREMENTAL_ACTIVE_ENABLED == 'true' || (github.event_name == 'workflow_dispatch' && vars.INCREMENTAL_ACTIVE_CANARY == 'true')
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # Discovery (~26 min cold) + new details + at most 120 status checks (~30 min)
+    # + open houses. Credits stay bounded by the run reservation, not this limit.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:

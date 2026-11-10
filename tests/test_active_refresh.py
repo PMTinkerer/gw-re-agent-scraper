@@ -705,3 +705,107 @@ def test_partial_detail_can_recover_on_its_last_allowed_attempt(setup):
             "SELECT attempts, detail_json FROM new_listing_retries"
         ).fetchone()
         assert attempts == 2 and json.loads(cached)["list_date"] == "2026-09-01"
+
+
+def _add_active(setup, keys):
+    conn = get_connection(str(setup["db_path"]))
+    for key in keys:
+        row = card(key)
+        upsert_listing(conn, row)
+        enrich_listing(
+            conn,
+            row["detail_url"],
+            {"mls_number": key, "status": "Active", "list_date": "2026-09-01"},
+        )
+    conn.close()
+
+
+def _at(day):
+    return lambda: datetime(2026, 11, day, 10, 15, tzinfo=timezone.utc)
+
+
+def _run(setup, day, cards, checked, status=None, **options):
+    def fetch_status(url):
+        checked.append(url.rsplit("/", 1)[1])
+        return status
+
+    return run_active_refresh(
+        **setup,
+        fetch_summary=lambda town, page: SummaryPage(town, page, 1, len(cards), cards),
+        fetch_detail=lambda url: None,
+        fetch_status=fetch_status,
+        now=_at(day),
+        **options,
+    )
+
+
+def test_unresolved_rows_are_not_rechecked_every_weekday(setup):
+    """Unverified rows used to cost one paid request every run, forever."""
+    checked = []
+    _run(setup, 2, [card("old")], checked)
+    assert checked == ["gone"] and rows(setup)["gone"]["status"] == "Unverified"
+    for day in (3, 4, 5, 6, 8):
+        _run(setup, day, [card("old")], checked)
+    assert checked == ["gone"]
+    _run(setup, 9, [card("old")], checked, status={"status": "Closed"})
+    assert checked == ["gone", "gone"] and rows(setup)["gone"]["status"] == "Closed"
+
+
+def test_status_checks_are_capped_and_overflow_is_deferred_not_guessed(setup):
+    _add_active(setup, ["a1", "a2", "a3"])
+    checked = []
+    manifest = _run(
+        setup,
+        2,
+        [card("old")],
+        checked,
+        status={"status": "Closed"},
+        max_status_checks=2,
+    )
+    assert len(checked) == 2
+    deferred = {k for k in ("a1", "a2", "a3", "gone") if k not in checked}
+    state = rows(setup)
+    assert {state[k]["status"] for k in checked} == {"Closed"}
+    assert {state[k]["status"] for k in deferred} == {"Unverified"}
+    reasons = {r["mls_number"]: r["reason"] for r in manifest["inactive"]}
+    assert {reasons[k] for k in deferred} == {
+        "absent_from_complete_active_search_status_deferred"
+    }
+    assert manifest["active_mls_ids"] == ["old"]
+    # Deferred rows were never checked, so they are first in the next run.
+    later = []
+    _run(
+        setup,
+        3,
+        [card("old")],
+        later,
+        status={"status": "Closed"},
+        max_status_checks=2,
+    )
+    assert sorted(later) == sorted(deferred)
+    assert {rows(setup)[k]["status"] for k in deferred} == {"Closed"}
+
+
+def test_newly_absent_active_rows_are_checked_before_old_unverified(setup):
+    checked = []
+    _run(setup, 2, [card("old")], checked)  # gone -> Unverified on Nov 2
+    _add_active(setup, ["fresh"])
+    later = []
+    _run(setup, 10, [card("old")], later, max_status_checks=1)
+    assert later == ["fresh"]
+    assert rows(setup)["gone"]["status"] == "Unverified"
+
+
+def test_zero_status_budget_makes_no_requests(setup):
+    checked = []
+    manifest = _run(setup, 2, [card("old")], checked, max_status_checks=0)
+    assert checked == []
+    assert rows(setup)["gone"]["status"] == "Unverified"
+    assert manifest["complete"] is True
+
+
+@pytest.mark.parametrize("option", ["max_status_checks", "unverified_recheck_days"])
+@pytest.mark.parametrize("value", [-1, 1.5, None])
+def test_invalid_status_limits_rejected(setup, option, value):
+    with pytest.raises(ValueError):
+        _run(setup, 2, [card("old")], [], **{option: value})
