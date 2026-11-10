@@ -19,7 +19,7 @@ import sqlite3
 import tempfile
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable
 from urllib.parse import urlsplit
@@ -43,6 +43,16 @@ class SummaryPage:
 
 _INACTIVE = {"Closed", "Sold", "Pending", "Withdrawn", "Cancelled", "Unverified"}
 _STATUSES = _INACTIVE | {"Active"}
+
+# Targeted status checks run one paid request at a time (~15 s each). Unbounded,
+# they grew from 80 to 178 per run because rows the source never resolves stayed
+# Unverified and were re-checked every weekday (1,577 of 1,826 checks through
+# 2026-10-26 came back unresolved, 56 listings 13 times). After the 2026-10-27 to
+# 2026-11-06 outage the backlog pushed runs past the 90-minute job limit and the
+# 2,000-unit run reservation. Newly absent Active rows always go first; a row
+# that is still Unverified is re-checked at most once per interval, oldest first.
+STATUS_CHECKS_PER_RUN = 120
+UNVERIFIED_RECHECK_DAYS = 7
 
 
 def _source_status(value):
@@ -299,6 +309,58 @@ def _observe(conn, run_id, row, status, reason, timestamp, source):
     conn.commit()
 
 
+def _status_queue(
+    conn,
+    known,
+    canonical_towns,
+    aliases,
+    observed_urls,
+    started_at,
+    max_checks,
+    recheck_days,
+):
+    """Split absent rows into (checked now, deferred Active rows), both [(url, row)].
+
+    Newly absent Active rows come first in URL order. Unverified rows follow,
+    never-checked first then oldest check, and only when the last targeted
+    check is at least ``recheck_days`` old. Unverified rows past the budget are
+    simply left for a later run; Active rows past it are returned as deferred.
+    """
+    cutoff = datetime.fromisoformat(started_at) - timedelta(days=recheck_days)
+    absent, stale = [], []
+    for url, row in sorted(known.items()):
+        # Ignore unrelated historical towns; malformed legacy towns
+        # cannot accidentally be assigned to requested coverage.
+        city = " ".join((row.get("city") or "").strip().lower().split())
+        if (
+            city not in canonical_towns
+            or url in aliases
+            or url in observed_urls
+            or row["status"] not in {"Active", "Unverified"}
+        ):
+            continue
+        if row["status"] == "Active":
+            absent.append((url, row))
+            continue
+        last = conn.execute(
+            """SELECT MAX(observed_at) FROM active_refresh_observations
+            WHERE detail_url=? AND source='targeted_status'""",
+            (url,),
+        ).fetchone()[0]
+        if last is not None:
+            checked = datetime.fromisoformat(last)
+            if checked.tzinfo is None:
+                checked = checked.replace(tzinfo=timezone.utc)
+            if checked > cutoff:
+                continue
+        stale.append((last is not None, last or "", url, row))
+    stale.sort(key=lambda item: item[:3])
+    queue = absent + [(url, row) for _, _, url, row in stale]
+    checks = queue[:max_checks]
+    deferred = [item for item in queue[max_checks:] if item[1]["status"] == "Active"]
+    return checks, deferred
+
+
 def _identity(detail, row, identities):
     expected_town = row.get("city") or row.get("discovery_town")
     if detail.get("city") is not None and _town(detail["city"]) != _town(expected_town):
@@ -481,6 +543,8 @@ def run_active_refresh(
     now: Callable[[], datetime] | None = None,
     max_pages: int = 90,
     run_id: str | None = None,
+    max_status_checks: int = STATUS_CHECKS_PER_RUN,
+    unverified_recheck_days: int = UNVERIFIED_RECHECK_DAYS,
 ) -> dict:
     """Publish only a complete, checksum-bound Active coverage snapshot.
 
@@ -489,6 +553,10 @@ def run_active_refresh(
     """
     if type(max_pages) is not int or max_pages < 1:
         raise ValueError("max_pages must be a positive integer")
+    if type(max_status_checks) is not int or max_status_checks < 0:
+        raise ValueError("max_status_checks must be a non-negative integer")
+    if type(unverified_recheck_days) is not int or unverified_recheck_days < 0:
+        raise ValueError("unverified_recheck_days must be a non-negative integer")
     if (fetch_summary is None) == (fetch_summary_range is None):
         raise ValueError("Select exactly one discovery mechanism")
     canonical_towns = sorted({_town(town) for town in towns})
@@ -719,17 +787,35 @@ def run_active_refresh(
                         started_at,
                         "verified_alias",
                     )
-                for url, row in known.items():
-                    # Ignore unrelated historical towns; malformed legacy towns
-                    # cannot accidentally be assigned to requested coverage.
-                    city = " ".join((row.get("city") or "").strip().lower().split())
-                    if (
-                        city not in canonical_towns
-                        or url in aliases
-                        or url in observed_urls
-                        or row["status"] not in {"Active", "Unverified"}
-                    ):
-                        continue
+                checks, deferred = _status_queue(
+                    conn,
+                    known,
+                    canonical_towns,
+                    aliases,
+                    observed_urls,
+                    started_at,
+                    max_status_checks,
+                    unverified_recheck_days,
+                )
+                for url, row in deferred:
+                    # Over this run's check budget: no request, and never a
+                    # guessed sale. A later run checks it from the Unverified queue.
+                    conn.execute(
+                        "UPDATE maine_transactions SET status='Unverified' WHERE detail_url=?",
+                        (url,),
+                    )
+                    conn.commit()
+                    write_history_if_changed(conn, url, "Unverified", row["list_price"])
+                    _observe(
+                        conn,
+                        run_id,
+                        row,
+                        "Unverified",
+                        "absent_from_complete_active_search_status_deferred",
+                        started_at,
+                        "deferred_status",
+                    )
+                for url, row in checks:
                     detail = fetch_status(url)
                     if isinstance(detail, dict):
                         _identity(detail, row, identities)

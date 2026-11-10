@@ -130,12 +130,30 @@ class RefreshTransport:
             )
 
     def balance(self):
-        response = self.session.get(
-            API + "/team/credit-usage",
-            headers={"Authorization": "Bearer " + self.key},
-            timeout=(10, 20),
-            allow_redirects=False,
-        )
+        """Free balance read, retried like scrapes on transient provider failures.
+
+        It runs before every reservation, so one slow reply used to end the whole
+        run (2026-11-09: a 20 s read timeout stopped discovery after 21 pages).
+        A retry costs no credits; any other error still fails closed.
+        """
+        for attempt, wait in enumerate((0, *TRANSIENT_BACKOFF_SECONDS)):
+            last = attempt == len(TRANSIENT_BACKOFF_SECONDS)
+            if wait:
+                time.sleep(wait)
+            try:
+                response = self.session.get(
+                    API + "/team/credit-usage",
+                    headers={"Authorization": "Bearer " + self.key},
+                    timeout=(10, 20),
+                    allow_redirects=False,
+                )
+            except (requests.ConnectionError, requests.Timeout):
+                if last:
+                    raise
+                continue
+            if getattr(response, "status_code", 200) in TRANSIENT_STATUSES and not last:
+                continue
+            break
         response.raise_for_status()
         result = response.json()
         value = result.get("data", {}).get("remainingCredits")

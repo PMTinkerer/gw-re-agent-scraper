@@ -1,5 +1,26 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Weekday refresh outgrew its 90-minute job — 2026-11-10 (current)
+
+Every weekday run from 2026-10-27 to 2026-11-10 failed or was cancelled. After
+the billing (11-05) and card-layout (11-06) fixes, three causes remained:
+(1) Targeted status checks were unbounded. A row the detail page never resolves
+stays Unverified and was re-checked on every run; checks grew 80 -> 178 per run
+and 1,577 of 1,826 came back unresolved (56 listings 13 times each). At ~15 s
+each that was ~45 min per run. After the outage backlog, runs 42316627167 and
+42797877749 finished discovery and new details, then hit the 90-minute limit
+mid status checks.
+(2) Run 42599815127 stopped on one 20 s read timeout of the free balance read,
+which runs before every reservation. (3) The job limit itself.
+Fix: newly absent Active rows are checked first; Unverified rows are re-checked
+at most once per 7 days, oldest first; at most 120 checks per run
+(`STATUS_CHECKS_PER_RUN`). Absent Active rows over the cap become Unverified with
+reason `absent_from_complete_active_search_status_deferred` (no request, never a
+guessed sale) and lead the next run's queue. The balance read now retries
+timeouts, connection errors and 502/503/504 twice (5 s, 15 s); it costs no
+credits. Job limit 90 -> 120 min (public repo; credits stay bounded by the run
+reservation). Weekly Closed discovery still flips unresolved rows when they sell.
+
 ## New result-card layout — 2026-11-06 (current)
 
 The first manual refresh after the billing fix (run 42276461389) passed the
