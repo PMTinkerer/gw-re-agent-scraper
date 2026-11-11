@@ -1,0 +1,117 @@
+{
+  "generated_at": "2026-11-11T11:15:48.787638+00:00",
+  "min_list_price": 1000000,
+  "open_houses": [
+    {
+      "address": "134 Stewart Drive",
+      "card_open_house_text": [
+        "Open House: Sat. 11:00am-1:00pm"
+      ],
+      "city": "Scarborough",
+      "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/134-stewart-drive-scarborough-me-04074/739455345",
+      "list_price": 1450000,
+      "listing_id": "739455345",
+      "listing_office": "Bedard Homes and Realty",
+      "windows": []
+    },
+    {
+      "address": "12 Shipwreck Road",
+      "card_open_house_text": [
+        "Open House: Sun. 11:00am-1:00pm"
+      ],
+      "city": "Scarborough",
+      "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/12-shipwreck-road-scarborough-me-04074/836453705",
+      "list_price": 1260000,
+      "listing_id": "836453705",
+      "listing_office": "Keller Williams Realty",
+      "windows": []
+    },
+    {
+      "address": "12 Depot Street",
+      "card_open_house_text": [
+        "Open House: Sat. 2:30pm-4:00pm"
+      ],
+      "city": "Kennebunk",
+      "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/12-depot-street-kennebunk-me-04043/789930046",
+      "list_price": 1250000,
+      "listing_id": "789930046",
+      "listing_office": "Pack Maynard and Associates",
+      "windows": []
+    },
+    {
+      "address": "27 Pocahontas Road",
+      "card_open_house_text": [
+        "Open House: Sun. 12:00pm-2:00pm"
+      ],
+      "city": "Kittery",
+      "detail_url": "https://mainelistings.com/listings/ME/Kittery/03905/10376/27-pocahontas-road-kittery-me-03905/815628119",
+      "list_price": 1150000,
+      "listing_id": "815628119",
+      "listing_office": "The Aland Realty Group",
+      "windows": [
+        {
+          "end": "2026-11-15T19:00:00+00:00",
+          "start": "2026-11-15T17:00:00+00:00",
+          "type": "Public"
+        }
+      ]
+    },
+    {
+      "address": "36 Quail Run",
+      "card_open_house_text": [
+        "Open House: Wed. 4:00pm-6:00pm"
+      ],
+      "city": "Kennebunk",
+      "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/36-quail-run-kennebunk-me-04043/810291824",
+      "list_price": 1050000,
+      "listing_id": "810291824",
+      "listing_office": "Keller Williams Realty",
+      "windows": []
+    }
+  ],
+  "run_id": "43002358882-1",
+  "schema_version": 1,
+  "source": "mainelistings.com open_house_end_time_after=now",
+  "towns": {
+    "Biddeford": {
+      "count": 0,
+      "status": "complete"
+    },
+    "Kennebunk": {
+      "count": 2,
+      "status": "complete"
+    },
+    "Kennebunkport": {
+      "count": 0,
+      "status": "complete"
+    },
+    "Kittery": {
+      "count": 1,
+      "status": "complete"
+    },
+    "Ogunquit": {
+      "count": 0,
+      "status": "complete"
+    },
+    "Old Orchard Beach": {
+      "count": 0,
+      "status": "complete"
+    },
+    "Saco": {
+      "count": 0,
+      "status": "complete"
+    },
+    "Scarborough": {
+      "count": 2,
+      "status": "complete"
+    },
+    "Wells": {
+      "count": 0,
+      "status": "complete"
+    },
+    "York": {
+      "count": 0,
+      "status": "complete"
+    }
+  }
+}
