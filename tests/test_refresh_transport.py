@@ -481,3 +481,34 @@ def test_second_live_scan_duplicate_never_becomes_complete_coverage(
         parse_qs(urlsplit(post["json"]["url"]).query)["sort_by"] == ["list_price"]
         for post in session.posts
     )
+
+
+@pytest.mark.parametrize("code", [404, 410, 500])
+def test_listing_page_non_200_is_a_distinct_source_unavailable_error(tmp_path, code):
+    """Run 43199095933 died on one status page that did not answer 200."""
+    from src.active_refresh import SourcePageUnavailable
+
+    session = Session({"rawHtml": "<html></html>", "metadata": {"statusCode": code}})
+    transport = RefreshTransport(
+        api_key="fixture-key",
+        policy_path=proof(tmp_path),
+        reserve=lambda *a: None,
+        session=session,
+    )
+    with pytest.raises(SourcePageUnavailable, match=str(code)):
+        transport.status("https://mainelistings.com/listings/ME/York/example")
+
+
+def test_missing_source_status_code_is_not_treated_as_unavailable(tmp_path):
+    from src.active_refresh import RefreshIncomplete, SourcePageUnavailable
+
+    session = Session({"rawHtml": "<html></html>", "metadata": {}})
+    transport = RefreshTransport(
+        api_key="fixture-key",
+        policy_path=proof(tmp_path),
+        reserve=lambda *a: None,
+        session=session,
+    )
+    with pytest.raises(RefreshIncomplete) as caught:
+        transport.status("https://mainelistings.com/listings/ME/York/example")
+    assert not isinstance(caught.value, SourcePageUnavailable)

@@ -7,7 +7,13 @@ from datetime import datetime, timezone
 
 import pytest
 
-from src.active_refresh import RefreshIncomplete, SummaryPage, run_active_refresh
+from src.active_refresh import (
+    MAX_UNAVAILABLE_STATUS_PAGES,
+    RefreshIncomplete,
+    SourcePageUnavailable,
+    SummaryPage,
+    run_active_refresh,
+)
 from src.maine_database import get_connection, init_db, upsert_listing, enrich_listing
 
 
@@ -377,6 +383,43 @@ def test_status_transport_failure_aborts_all_updates(setup):
 
     with pytest.raises(TimeoutError):
         execute(setup, [card("old")], fetch_status=unavailable)
+    assert setup["db_path"].read_bytes() == before
+
+
+def test_unavailable_status_page_leaves_listing_unverified_and_run_completes(setup):
+    """One removed listing page must not abort the whole weekday refresh."""
+
+    def gone_page(url):
+        raise SourcePageUnavailable("Listing source response not verified (HTTP 404)")
+
+    result = execute(setup, [card("old")], fetch_status=gone_page)
+    assert result["complete"] is True
+    assert rows(setup)["gone"]["status"] == "Unverified"
+    gone = next(row for row in result["inactive"] if row["mls_number"] == "gone")
+    assert gone["status"] == "Unverified"
+    assert gone["reason"] == "absent_from_complete_active_search_status_unresolved"
+
+
+def test_many_unavailable_status_pages_still_abort_all_updates(setup):
+    """A block or outage looks like many unavailable pages: fail closed."""
+    conn = get_connection(str(setup["db_path"]))
+    extra = [f"gone{i}" for i in range(MAX_UNAVAILABLE_STATUS_PAGES)]
+    for key in extra:
+        upsert_listing(conn, card(key))
+        enrich_listing(
+            conn,
+            card(key)["detail_url"],
+            dict(mls_number=key, status="Active", list_date="2026-09-01"),
+        )
+    conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    conn.close()
+    before = setup["db_path"].read_bytes()
+
+    def gone_page(url):
+        raise SourcePageUnavailable("Listing source response not verified (HTTP 403)")
+
+    with pytest.raises(SourcePageUnavailable):
+        execute(setup, [card("old")], fetch_status=gone_page)
     assert setup["db_path"].read_bytes() == before
 
 

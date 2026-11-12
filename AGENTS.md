@@ -1,6 +1,19 @@
 # AGENTS.md — gw-re-agent-scraper
 
-## Weekday refresh outgrew its 90-minute job — 2026-11-10 (current)
+## One bad listing page no longer stops the run — 2026-11-12 (current)
+
+Run 43199095933 stopped during targeted status checks: one listing's detail
+page answered with a non-200 status, `_scrape` raised RefreshIncomplete, and
+the whole refresh aborted with nothing published. A status check is only a
+re-check of a listing already absent from a complete Active search, so a
+non-200 page now raises `SourcePageUnavailable` (a RefreshIncomplete
+subclass) and that listing becomes Unverified with reason
+`absent_from_complete_active_search_status_unresolved`, never a guessed sale.
+More than `MAX_UNAVAILABLE_STATUS_PAGES` (5) such pages in one run still
+aborts every update. Discovery and new-detail fetches still fail closed on
+any non-200, and a missing status code or a transport error still aborts.
+
+## Weekday refresh outgrew its 90-minute job — 2026-11-10
 
 Every weekday run from 2026-10-27 to 2026-11-10 failed or was cancelled. After
 the billing (11-05) and card-layout (11-06) fixes, three causes remained:
