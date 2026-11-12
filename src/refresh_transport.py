@@ -12,7 +12,7 @@ from urllib.parse import urlencode, urlsplit
 
 import requests
 
-from .active_refresh import RefreshIncomplete, SummaryPage, _town
+from .active_refresh import RefreshIncomplete, SourcePageUnavailable, SummaryPage, _town
 from .incremental_cards import ActiveCardParseError, parse_active_cards
 from .incremental_detail import INCREMENTAL_DETAIL_JS
 from .refresh_diagnostics import SummaryDiagnostics
@@ -223,8 +223,12 @@ class RefreshTransport:
         if result.get("success") is not True or not isinstance(data, dict):
             raise RefreshIncomplete("Firecrawl scrape did not return a document")
         status = data.get("metadata", {}).get("statusCode")
-        if type(status) is not int or status != 200:
+        if type(status) is not int:
             raise RefreshIncomplete("Listing source response not verified successful")
+        if status != 200:
+            raise SourcePageUnavailable(
+                f"Listing source response not verified successful (HTTP {status})"
+            )
         text = data.get("rawHtml" if script else "markdown")
         if not isinstance(text, str) or len(text) > 10_000_000:
             raise RefreshIncomplete("Missing or excessive listing source content")

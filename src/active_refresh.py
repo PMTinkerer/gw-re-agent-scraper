@@ -32,6 +32,15 @@ class RefreshIncomplete(RuntimeError):
     """The previous database and coverage manifest must remain authoritative."""
 
 
+class SourcePageUnavailable(RefreshIncomplete):
+    """The listing site answered, but with a non-200 page for this listing.
+
+    Raised only for a single listing's page. Discovery and new-detail callers
+    still treat it as RefreshIncomplete; targeted status checks may record the
+    listing as Unverified instead (a bounded number per run, see below).
+    """
+
+
 @dataclass(frozen=True)
 class SummaryPage:
     town: str
@@ -42,6 +51,10 @@ class SummaryPage:
 
 
 _INACTIVE = {"Closed", "Sold", "Pending", "Withdrawn", "Cancelled", "Unverified"}
+# A listing page the site no longer serves (removed listing) leaves that row
+# Unverified rather than aborting the whole run. More than this many in one
+# run looks systemic (a block or outage), so the run still fails closed.
+MAX_UNAVAILABLE_STATUS_PAGES = 5
 _STATUSES = _INACTIVE | {"Active"}
 
 # Targeted status checks run one paid request at a time (~15 s each). Unbounded,
@@ -815,8 +828,15 @@ def run_active_refresh(
                         started_at,
                         "deferred_status",
                     )
+                unavailable_pages = 0
                 for url, row in checks:
-                    detail = fetch_status(url)
+                    try:
+                        detail = fetch_status(url)
+                    except SourcePageUnavailable:
+                        unavailable_pages += 1
+                        if unavailable_pages > MAX_UNAVAILABLE_STATUS_PAGES:
+                            raise
+                        detail = None
                     if isinstance(detail, dict):
                         _identity(detail, row, identities)
                     status = detail.get("status") if isinstance(detail, dict) else None
