@@ -9,7 +9,9 @@ import pytest
 
 from src.active_refresh import (
     MAX_UNAVAILABLE_STATUS_PAGES,
+    MIN_CHECKS_FOR_ALL_REMOVED_GUARD,
     RefreshIncomplete,
+    SourcePageRemoved,
     SourcePageUnavailable,
     SummaryPage,
     run_active_refresh,
@@ -421,6 +423,63 @@ def test_many_unavailable_status_pages_still_abort_all_updates(setup):
     with pytest.raises(SourcePageUnavailable):
         execute(setup, [card("old")], fetch_status=gone_page)
     assert setup["db_path"].read_bytes() == before
+
+
+def _add_active_rows(setup, keys):
+    conn = get_connection(str(setup["db_path"]))
+    for key in keys:
+        upsert_listing(conn, card(key))
+        enrich_listing(
+            conn,
+            card(key)["detail_url"],
+            dict(mls_number=key, status="Active", list_date="2026-09-01"),
+        )
+    conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    conn.close()
+
+
+def test_many_removed_status_pages_leave_listings_unverified(setup):
+    """Run 43408069160: delisted homes answer 404; that is not an outage."""
+    extra = [f"gone{i}" for i in range(MAX_UNAVAILABLE_STATUS_PAGES * 2)]
+    _add_active_rows(setup, extra)
+
+    def removed(url):
+        raise SourcePageRemoved("Listing source page no longer exists (HTTP 404)")
+
+    result = execute(setup, [card("old")], fetch_status=removed)
+    assert result["complete"] is True
+    stored = rows(setup)
+    for key in ["gone", *extra]:
+        assert stored[key]["status"] == "Unverified"
+
+
+def test_every_status_page_removed_still_aborts_all_updates(setup):
+    """Every page 404 looks like moved URLs, not a wave of delistings."""
+    extra = [f"gone{i}" for i in range(MIN_CHECKS_FOR_ALL_REMOVED_GUARD)]
+    _add_active_rows(setup, extra)
+    before = setup["db_path"].read_bytes()
+
+    def removed(url):
+        raise SourcePageRemoved("Listing source page no longer exists (HTTP 404)")
+
+    with pytest.raises(SourcePageRemoved):
+        execute(setup, [card("old")], fetch_status=removed)
+    assert setup["db_path"].read_bytes() == before
+
+
+def test_one_live_page_among_many_removed_lets_the_run_complete(setup):
+    extra = [f"gone{i}" for i in range(MIN_CHECKS_FOR_ALL_REMOVED_GUARD)]
+    _add_active_rows(setup, extra)
+
+    def mostly_removed(url):
+        if url == card("gone0")["detail_url"]:
+            return dict(mls_number="gone0", status="Closed")
+        raise SourcePageRemoved("Listing source page no longer exists (HTTP 410)")
+
+    result = execute(setup, [card("old")], fetch_status=mostly_removed)
+    assert result["complete"] is True
+    assert rows(setup)["gone0"]["status"] == "Closed"
+    assert rows(setup)["gone1"]["status"] == "Unverified"
 
 
 def test_publication_manifest_replace_failure_rolls_back_database(setup, monkeypatch):

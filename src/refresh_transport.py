@@ -12,7 +12,13 @@ from urllib.parse import urlencode, urlsplit
 
 import requests
 
-from .active_refresh import RefreshIncomplete, SourcePageUnavailable, SummaryPage, _town
+from .active_refresh import (
+    RefreshIncomplete,
+    SourcePageRemoved,
+    SourcePageUnavailable,
+    SummaryPage,
+    _town,
+)
 from .incremental_cards import ActiveCardParseError, parse_active_cards
 from .incremental_detail import INCREMENTAL_DETAIL_JS
 from .refresh_diagnostics import SummaryDiagnostics
@@ -225,6 +231,10 @@ class RefreshTransport:
         status = data.get("metadata", {}).get("statusCode")
         if type(status) is not int:
             raise RefreshIncomplete("Listing source response not verified successful")
+        if status in (404, 410):
+            raise SourcePageRemoved(
+                f"Listing source page no longer exists (HTTP {status})"
+            )
         if status != 200:
             raise SourcePageUnavailable(
                 f"Listing source response not verified successful (HTTP {status})"
