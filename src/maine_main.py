@@ -12,6 +12,7 @@ from datetime import datetime
 from .maine_database import _DEFAULT_DB, get_connection, init_db
 from .maine_firecrawl import discover_listings, enrich_listings
 from .maine_notifier import notify_failure, notify_success
+from .ops_alert import errors_fired
 from .maine_state import load_state, save_state
 from .state import TOWNS as _CANONICAL_TOWNS
 
@@ -111,6 +112,12 @@ def send_anomaly_alert(*, run_id: str) -> None:
             'log before the next cron fires.'
         ),
         run_id=run_id,
+        key='maine_active_zero_deltas',
+        detail=(
+            'All 10 towns scraped but no new listings and no status changes. '
+            'Usually a site change, block or parser break: check '
+            'mainelistings.com and this run\'s log.'
+        ),
     )
 
 
@@ -127,6 +134,12 @@ def _notify_enrichment_result(result: dict, run_id: str) -> None:
             f'(of {total}), the circuit breaker tripped and stopped the run. '
             f'The DB has been saved. Re-run with `--enrich` to resume.',
             run_id=run_id,
+            key='maine_enrichment_circuit_breaker',
+            detail=(
+                f'Stopped after {enriched} enriched and {failed} failed '
+                f'of {total}. DB saved; the next run resumes (or re-run '
+                f'with --enrich).'
+            ),
         )
         return
 
@@ -149,9 +162,29 @@ def _notify_enrichment_result(result: dict, run_id: str) -> None:
             'Enrichment completed with elevated failure rate',
             f'{summary}\n\n{details}',
             run_id=run_id,
+            key='maine_enrichment_failure_rate',
+            detail=f'{summary}. Failures are retried on the next run.',
+            severity='warn',
         )
     else:
         notify_success(summary, details=details)
+
+
+def _alert_exit_code() -> int:
+    """Non-zero when an error alert fired, so the run shows red on the board.
+
+    With OPS_ALERT_ERRORS_FILE set (the GitHub workflow) the keys are written
+    there instead and the workflow's last step fails the job, after the data
+    commit and Pages deploy have run.
+    """
+    if not errors_fired:
+        return 0
+    path = os.environ.get('OPS_ALERT_ERRORS_FILE')
+    if path:
+        with open(path, 'a') as f:
+            f.write(''.join(f'{key}\n' for key in errors_fired))
+        return 0
+    return 1
 
 
 def main() -> int:
@@ -273,6 +306,11 @@ def main() -> int:
                 'Enrichment crashed unexpectedly',
                 f'{type(exc).__name__}: {exc}',
                 run_id=run_id,
+                key='maine_enrichment_crashed',
+                detail=(
+                    f'{type(exc).__name__} during enrichment. See the run '
+                    f'log; the DB backup is in data/.'
+                ),
             )
             raise
         logger.info(
@@ -310,7 +348,7 @@ def main() -> int:
 
     save_state(state, args.state)
     conn.close()
-    return 0
+    return _alert_exit_code()
 
 
 if __name__ == '__main__':

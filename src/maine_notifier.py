@@ -1,8 +1,10 @@
 """Notification helpers for Maine Listings pipeline.
 
-Sends Pushover (real-time) + Resend (email summary) alerts on failures,
-circuit-breaker aborts, and completion summaries. Reads credentials from
-~/.env (shared across all projects) or project .env.
+Failures go to the Project Board as an OPS_ALERT log line (see
+src/ops_alert.py) plus Pushover. The failure email is OFF unless
+OPS_ALERT_EMAIL is "1"/"true" (rollback switch). Completion summaries are
+unchanged (Pushover + Resend email). Reads credentials from ~/.env (shared
+across all projects) or project .env.
 
 Silent no-ops if keys are missing — the pipeline should never crash because
 a notifier isn't configured.
@@ -15,6 +17,8 @@ from typing import Optional
 
 import urllib.request
 import urllib.parse
+
+from .ops_alert import ops_alert
 
 logger = logging.getLogger(__name__)
 
@@ -123,19 +127,36 @@ def send_email(
         return False
 
 
-def notify_failure(context: str, error: str, *, run_id: Optional[str] = None) -> None:
-    """High-priority alert: pipeline hit a failure.
+def failure_email_enabled() -> bool:
+    """Rollback switch: OPS_ALERT_EMAIL=1/true restores the failure email."""
+    return (_get_env('OPS_ALERT_EMAIL') or '').strip().lower() in ('1', 'true')
 
-    Fires Pushover (priority 1 = bypasses quiet hours) + Resend email.
+
+def notify_failure(
+    context: str,
+    error: str,
+    *,
+    run_id: Optional[str] = None,
+    key: str = 'maine_pipeline_failure',
+    detail: Optional[str] = None,
+    severity: str = 'error',
+) -> None:
+    """Failure alert: Project Board log line + Pushover (priority 1).
+
+    ``detail`` is the board text: short, plain, no secrets or contact data.
+    The email (raw ``error`` text) is sent only with OPS_ALERT_EMAIL=1.
     """
+    ops_alert(key, f'Maine Listings: {context}', detail or context,
+              severity=severity)
     title = 'Maine Listings: pipeline failure'
     run_tag = f' [{run_id}]' if run_id else ''
     message = f'{context}{run_tag}\n\nError: {error[:800]}'
     send_pushover(title, message, priority=1)
-    send_email(
-        subject=f'[Maine Listings] FAILURE: {context}',
-        body_text=message,
-    )
+    if failure_email_enabled():
+        send_email(
+            subject=f'[Maine Listings] FAILURE: {context}',
+            body_text=message,
+        )
 
 
 def notify_success(summary: str, *, details: Optional[str] = None) -> None:

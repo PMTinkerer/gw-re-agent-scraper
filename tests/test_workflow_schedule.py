@@ -73,3 +73,16 @@ def test_weekly_mode_covers_closed_active_and_verification():
     assert '--status Active' in weekly
     assert '--sweep' in weekly
     assert '--enrich' in weekly
+
+
+def test_job_fails_at_the_end_when_an_ops_alert_fired():
+    """Data is still committed and published; then the run goes red."""
+    steps = _workflow()['jobs']['maine']['steps']
+    pipeline = next(s for s in steps if s.get('name') == 'Run Maine Listings pipeline')
+    last = steps[-1]
+
+    assert pipeline['env']['OPS_ALERT_ERRORS_FILE'] == (
+        '${{ runner.temp }}/ops_alert_errors')
+    assert last['if'] == 'always()'
+    assert 'OPS_ALERT_ERRORS_FILE' in last['env']
+    assert 'exit 1' in last['run']

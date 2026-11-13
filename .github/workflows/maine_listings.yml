@@ -86,6 +86,8 @@ jobs:
           PUSHOVER_API_TOKEN: ${{ secrets.PUSHOVER_API_TOKEN }}
           PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          # Error alerts are recorded here; the last step fails the run.
+          OPS_ALERT_ERRORS_FILE: ${{ runner.temp }}/ops_alert_errors
           EFFECTIVE_MODE: ${{ steps.pickmode.outputs.mode }}
           INPUT_WORKERS: ${{ github.event.inputs.workers }}
           INPUT_BATCH_SIZE: ${{ github.event.inputs.batch_size }}
@@ -241,3 +243,16 @@ jobs:
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+
+      # Failure alerts go to the Project Board (OPS_ALERT log lines and
+      # ::error annotations), not email. Data is committed and published
+      # first; then the run is marked failed so the board shows red.
+      - name: Fail the run if an ops alert fired
+        if: always()
+        env:
+          OPS_ALERT_ERRORS_FILE: ${{ runner.temp }}/ops_alert_errors
+        run: |
+          if [ -s "$OPS_ALERT_ERRORS_FILE" ]; then
+            echo "Ops alerts fired: $(sort -u "$OPS_ALERT_ERRORS_FILE" | tr '\n' ' ')"
+            exit 1
+          fi
