@@ -483,7 +483,7 @@ def test_second_live_scan_duplicate_never_becomes_complete_coverage(
     )
 
 
-@pytest.mark.parametrize("code", [404, 410, 500])
+@pytest.mark.parametrize("code", [403, 404, 410, 429, 500])
 def test_listing_page_non_200_is_a_distinct_source_unavailable_error(tmp_path, code):
     """Run 43199095933 died on one status page that did not answer 200."""
     from src.active_refresh import SourcePageUnavailable
@@ -512,3 +512,22 @@ def test_missing_source_status_code_is_not_treated_as_unavailable(tmp_path):
     with pytest.raises(RefreshIncomplete) as caught:
         transport.status("https://mainelistings.com/listings/ME/York/example")
     assert not isinstance(caught.value, SourcePageUnavailable)
+
+
+@pytest.mark.parametrize(
+    "code,removed", [(404, True), (410, True), (403, False), (500, False)]
+)
+def test_only_404_and_410_mean_the_listing_page_was_removed(tmp_path, code, removed):
+    """Run 43408069160: removed pages are expected; blocks and 5xx are not."""
+    from src.active_refresh import SourcePageRemoved, SourcePageUnavailable
+
+    session = Session({"rawHtml": "<html></html>", "metadata": {"statusCode": code}})
+    transport = RefreshTransport(
+        api_key="fixture-key",
+        policy_path=proof(tmp_path),
+        reserve=lambda *a: None,
+        session=session,
+    )
+    with pytest.raises(SourcePageUnavailable) as caught:
+        transport.status("https://mainelistings.com/listings/ME/York/example")
+    assert isinstance(caught.value, SourcePageRemoved) is removed

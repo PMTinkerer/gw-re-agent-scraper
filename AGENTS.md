@@ -1,6 +1,20 @@
 # AGENTS.md — gw-re-agent-scraper
 
-## One bad listing page no longer stops the run — 2026-11-12 (current)
+## Removed listing pages (404/410) are expected — 2026-11-13 (current)
+
+Run 43408069160 (first run with the 11-12 fix) still failed: more than
+`MAX_UNAVAILABLE_STATUS_PAGES` status pages answered HTTP 404. A listing
+already missing from a complete Active search is usually delisted, and the
+site 404s a delisted page, so 404/410 now raise `SourcePageRemoved` and are
+NOT counted toward the cap of 5; the row goes Unverified (reason
+`absent_from_complete_active_search_status_unresolved`, unchanged for
+consumers). Other non-200s (403, 429, 5xx) still count toward the cap. If
+every check in a run of at least `MIN_CHECKS_FOR_ALL_REMOVED_GUARD` (20)
+comes back removed, the run still aborts (looks like moved URLs, not
+delistings). Known follow-up: removed pages are re-checked weekly like any
+Unverified row; skipping them would save status-check budget.
+
+## One bad listing page no longer stops the run — 2026-11-12
 
 Run 43199095933 stopped during targeted status checks: one listing's detail
 page answered with a non-200 status, `_scrape` raised RefreshIncomplete, and

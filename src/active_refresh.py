@@ -41,6 +41,15 @@ class SourcePageUnavailable(RefreshIncomplete):
     """
 
 
+class SourcePageRemoved(SourcePageUnavailable):
+    """The listing site says this listing's page no longer exists (HTTP 404/410).
+
+    For a listing already missing from a complete Active search this is the
+    normal answer for a delisted home, so status checks record it as
+    Unverified without counting it toward MAX_UNAVAILABLE_STATUS_PAGES.
+    """
+
+
 @dataclass(frozen=True)
 class SummaryPage:
     town: str
@@ -51,10 +60,14 @@ class SummaryPage:
 
 
 _INACTIVE = {"Closed", "Sold", "Pending", "Withdrawn", "Cancelled", "Unverified"}
-# A listing page the site no longer serves (removed listing) leaves that row
-# Unverified rather than aborting the whole run. More than this many in one
+# A status page that answers with any other non-200 (403, 429, 5xx) leaves that
+# row Unverified rather than aborting the whole run. More than this many in one
 # run looks systemic (a block or outage), so the run still fails closed.
 MAX_UNAVAILABLE_STATUS_PAGES = 5
+# Removed pages (404/410) are expected for delisted homes and are not capped,
+# unless EVERY check in a run of at least this many comes back removed, which
+# looks like the site moved its listing URLs rather than delisted them all.
+MIN_CHECKS_FOR_ALL_REMOVED_GUARD = 20
 _STATUSES = _INACTIVE | {"Active"}
 
 # Targeted status checks run one paid request at a time (~15 s each). Unbounded,
@@ -829,9 +842,19 @@ def run_active_refresh(
                         "deferred_status",
                     )
                 unavailable_pages = 0
+                removed_pages = 0
+                if len(checks) >= MIN_CHECKS_FOR_ALL_REMOVED_GUARD:
+                    removed_limit = len(checks) - 1
+                else:
+                    removed_limit = len(checks)
                 for url, row in checks:
                     try:
                         detail = fetch_status(url)
+                    except SourcePageRemoved:
+                        removed_pages += 1
+                        if removed_pages > removed_limit:
+                            raise
+                        detail = None
                     except SourcePageUnavailable:
                         unavailable_pages += 1
                         if unavailable_pages > MAX_UNAVAILABLE_STATUS_PAGES:
