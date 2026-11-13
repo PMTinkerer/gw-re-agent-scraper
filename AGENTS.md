@@ -1,5 +1,19 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Failure alerts moved from email to the Project Board — 2026-11-13
+
+Lucas asked for the automated failure emails to stop and the alerts to show
+on the Project Board. `notify_failure` (weekly Maine Listings run) now emits
+one `OPS_ALERT {json}` line via `src/ops_alert.py` (contract v1, keys
+`maine_active_zero_deltas`, `maine_enrichment_circuit_breaker`,
+`maine_enrichment_crashed`: error; `maine_enrichment_failure_rate`: warn) and
+a GitHub `::error`/`::warning` annotation. Pushover is unchanged. The
+"[Maine Listings] FAILURE: ..." email is sent only with `OPS_ALERT_EMAIL=1`
+(rollback switch). The weekly workflow writes error keys to
+`OPS_ALERT_ERRORS_FILE`; its last step fails the run after the data commit
+and Pages deploy, so the board shows red. The run-summary email
+(`notify_success`) is not changed. The incremental lane still sends nothing.
+
 ## Removed listing pages (404/410) are expected — 2026-11-13 (current)
 
 Run 43408069160 (first run with the 11-12 fix) still failed: more than
@@ -524,7 +538,7 @@ the finished run, matching database hash and consumer acceptance evidence.
 - Phase 1 (search page discovery): Complete. 16,029 listings across all 10 towns.
 - Phase 2 (detail page enrichment): Complete. 16,024 enriched (5 Firecrawl 500 errors, 99.97% success). Concurrent with 25 Firecrawl workers, ~3h wall time.
 - Weekly incremental (`--discover --recent-only --enrich`): ~50-100 credits/week, fits Hobby tier.
-- Alerting: Pushover + Resend fire on circuit-breaker aborts and run summaries.
+- Alerting: failures go to the Project Board (OPS_ALERT) + Pushover; run summaries still email (Pushover + Resend).
 - DB backup before every mutating run (last 3 timestamped copies).
 
 ### Firecrawl Account Limits (verified live 2026-09-21)

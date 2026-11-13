@@ -23,7 +23,7 @@ Identifies the top real estate agents and brokerages across 10 southern coastal 
 - **15-year history** (2011-02 → 2026-04)
 - **232 unit tests passing**
 - **Weekly GitHub Actions workflow** (Monday 6:30am ET) keeps the data fresh at ~50-100 Firecrawl credits/week
-- **Pushover + Resend alerting** for run failures
+- **Failure alerts on the Project Board** (OPS_ALERT log line + run annotation, run fails) plus Pushover; failure email only with `OPS_ALERT_EMAIL=1`. Run-summary email unchanged.
 - Redfin pipeline archived (strictly a subset of MLS data — 4x/day cron disabled)
 - Zillow pipeline archived (agent profiles kept for photo/bio/reviews reference — manual dispatch only)
 
@@ -37,6 +37,7 @@ pip install -r requirements.txt
 export FIRECRAWL_API_KEY=fc-...    # required for scraping
 # optional alerting (reads from ~/.env shared secrets file):
 # PUSHOVER_API_TOKEN, PUSHOVER_USER_KEY, RESEND_API_KEY
+# OPS_ALERT_EMAIL=1 restores the old failure email (rollback switch; default off)
 ```
 
 ## Local usage
@@ -107,7 +108,8 @@ src/                           # Python pipeline
   maine_kpis.py                # Period queries + rank movers (leaderboard data layer)
   maine_report.py              # Markdown leaderboard + unified agent search index
   maine_dashboard.py           # Standalone HTML dashboard
-  maine_notifier.py            # Pushover + Resend alerts
+  maine_notifier.py            # Failure alerts (ops_alert + Pushover), run-summary email
+  ops_alert.py                 # OPS_ALERT log line for the Project Board
   index_page.py                # Tabbed wrapper + interactive Leaderboard tab
   # Archived (kept for reference):
   scraper.py / main.py / report.py / dashboard.py   (Redfin)
