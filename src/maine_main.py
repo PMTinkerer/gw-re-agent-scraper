@@ -86,13 +86,24 @@ def _backup_db(db_path: str | None) -> str | None:
     return backup_path
 
 
-def detect_daily_active_anomaly(discovery_result: dict) -> bool:
+def detect_daily_active_anomaly(
+    discovery_result: dict, already_refreshed_today: int = 0,
+) -> bool:
     """Return True if a daily-active run looks suspiciously quiet.
 
     Criteria: all 10 towns scraped successfully AND zero new listings AND
     zero status changes. Partial-coverage days (fewer towns scraped) are
     not anomalies — per-town failures have their own alerts.
+
+    ``already_refreshed_today`` is the number of current listings another
+    refresh had already stamped as seen today before this discovery began.
+    The weekday incremental lane writes the same database and finishes
+    before the Monday weekly run, so it has already recorded the day's new
+    listings and status changes; zero deltas is then expected, not a broken
+    scraper.
     """
+    if already_refreshed_today > 0:
+        return False
     return (
         discovery_result.get('towns_scraped', 0) >= TOWNS_EXPECTED
         and discovery_result.get('new_listings', 0) == 0
@@ -251,6 +262,14 @@ def main() -> int:
     set_credit_limit(args.max_credits)
 
     if args.discover:
+        # Measured before discovery stamps anything, so it only counts
+        # listings another refresh (the weekday incremental lane) already
+        # saw today.
+        already_refreshed_today = 0
+        if args.status == 'Active':
+            from .maine_database import count_active_seen_on
+            already_refreshed_today = count_active_seen_on(
+                conn, datetime.utcnow().strftime('%Y-%m-%d'))
         logger.info('Starting Maine Listings discovery (status=%s, max_pages=%d, recent_only=%s, workers=%d)...',
                      args.status, args.max_pages, args.recent_only, args.workers)
         result = discover_listings(
@@ -269,7 +288,13 @@ def main() -> int:
 
         if args.status == 'Active':
             run_id = datetime.utcnow().strftime('%Y%m%d-%H%M%S')
-            if detect_daily_active_anomaly(result):
+            if already_refreshed_today:
+                logger.info(
+                    'Zero-delta check skipped: %d current listings were '
+                    'already refreshed earlier today by another run',
+                    already_refreshed_today)
+            if detect_daily_active_anomaly(
+                    result, already_refreshed_today=already_refreshed_today):
                 send_anomaly_alert(run_id=run_id)
 
     if args.reverify_withdrawn:

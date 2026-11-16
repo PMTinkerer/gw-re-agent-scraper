@@ -1,5 +1,20 @@
 # AGENTS.md — gw-re-agent-scraper
 
+## Weekly zero-delta alert was a false alarm — 2026-11-16 (current)
+
+Run 43859418040 (weekly, Monday 11:37Z) failed on `maine_active_zero_deltas`:
+all ten towns scraped, zero new listings, zero status changes. Not a broken
+scraper. The weekday incremental refresh (run 43848272765, 10:22Z) writes the
+same `data/maine_listings.db` and committed at 11:14Z, before the weekly run
+started; it had already stamped 854 current listings as seen that day and
+recorded the day's new listings and status flips, so the weekly scan had
+nothing left to find. The check only started failing runs on 11-13, when
+alerts moved to the Project Board. Fix: before discovery, `maine_main` counts
+Active/Pending/Active Under Contract rows already seen today
+(`count_active_seen_on`); when that is above zero the zero-delta check is
+skipped and logged. A Monday where the incremental lane did not finish first
+still gets the check.
+
 ## Failure alerts moved from email to the Project Board — 2026-11-13
 
 Lucas asked for the automated failure emails to stop and the alerts to show

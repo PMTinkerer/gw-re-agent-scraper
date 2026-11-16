@@ -450,6 +450,27 @@ def queue_stale_for_verification(
     )
 
 
+def count_active_seen_on(conn: sqlite3.Connection, day: str) -> int:
+    """Count current (Active/Pending) listings last seen on a UTC date.
+
+    Args:
+        conn: Open database connection.
+        day: UTC calendar date, ``YYYY-MM-DD``.
+
+    Returns:
+        Number of Active, Pending or Active Under Contract rows whose
+        last_seen_at falls on ``day``. Both timestamp styles in the table
+        (naive and ``+00:00``) start with the date, so a prefix match works.
+    """
+    row = conn.execute(
+        "SELECT COUNT(*) FROM maine_transactions "
+        "WHERE status IN ('Active', 'Pending', 'Active Under Contract') "
+        "AND substr(last_seen_at, 1, 10) = ?",
+        (day,),
+    ).fetchone()
+    return int(row[0])
+
+
 def queue_withdrawn_for_reverification(
     conn: sqlite3.Connection, *, limit: int | None = None,
 ) -> int:
