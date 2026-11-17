@@ -28,7 +28,7 @@ from .maine_parser import (
     parse_total_results,
 )
 
-TRANSIENT_STATUSES = frozenset({502, 503, 504})
+TRANSIENT_STATUSES = frozenset({500, 502, 503, 504})
 TRANSIENT_BACKOFF_SECONDS = (5, 15)
 API = "https://api.firecrawl.dev/v2"
 STATUS_JS = r"""(() => {
@@ -171,8 +171,10 @@ class RefreshTransport:
         """One paid request, retried only for transient provider gateway failures.
 
         Lucas approved at most two retries (5 s, then 15 s) on 2026-10-04 after a
-        single Firecrawl 502 ended an otherwise complete canary. Every attempt is
-        reserved first; other errors and content failures still stop the run.
+        single Firecrawl 502 ended an otherwise complete canary. Luke added Firecrawl
+        500 on 2026-11-17 after one 500 stopped run 44063520897 eight minutes in.
+        Every attempt is reserved first; other errors and content failures still
+        stop the run.
         """
         for attempt, wait in enumerate((0, *TRANSIENT_BACKOFF_SECONDS)):
             last = attempt == len(TRANSIENT_BACKOFF_SECONDS)
