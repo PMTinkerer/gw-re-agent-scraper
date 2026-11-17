@@ -1,4 +1,4 @@
-"""Bounded retries for transient Firecrawl gateway failures (Lucas, 2026-10-04)."""
+"""Bounded retries for transient Firecrawl failures (Lucas, 2026-10-04; 500 added 2026-11-17)."""
 
 import pytest
 import requests
@@ -54,7 +54,7 @@ def no_sleep(monkeypatch):
 
 @pytest.mark.parametrize(
     "failures",
-    [[502], [503, 504], [requests.ConnectionError("reset")], [requests.Timeout()]],
+    [[500], [502], [503, 504], [requests.ConnectionError("reset")], [requests.Timeout()]],
     ids=str,
 )
 def test_transient_failures_retry_and_reserve_every_attempt(
@@ -77,7 +77,7 @@ def test_three_transient_failures_still_stop_the_run(tmp_path, no_sleep):
     assert len(session.posts) == 3 and reservations == ["summary"] * 3
 
 
-@pytest.mark.parametrize("status", [400, 401, 402, 403, 404, 500])
+@pytest.mark.parametrize("status", [400, 401, 402, 403, 404, 429])
 def test_non_transient_errors_never_retry(tmp_path, status, no_sleep):
     reservations = []
     session = Flaky([status])
@@ -125,7 +125,7 @@ class FlakyBalance(Session):
 
 @pytest.mark.parametrize(
     "failures",
-    [[requests.Timeout()], [requests.ConnectionError("reset"), 503], [502, 504]],
+    [[requests.Timeout()], [requests.ConnectionError("reset"), 503], [500, 504]],
     ids=str,
 )
 def test_balance_read_retries_transient_failures(tmp_path, failures, no_sleep):
@@ -142,7 +142,7 @@ def test_balance_read_stops_after_three_timeouts(tmp_path, no_sleep):
     assert session.gets == 3
 
 
-@pytest.mark.parametrize("status", [401, 402, 403, 500])
+@pytest.mark.parametrize("status", [401, 402, 403, 429])
 def test_balance_read_never_retries_other_errors(tmp_path, status, no_sleep):
     session = FlakyBalance([status])
     with pytest.raises(requests.HTTPError):

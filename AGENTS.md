@@ -1,6 +1,17 @@
 # AGENTS.md — gw-re-agent-scraper
 
-## Weekly zero-delta alert was a false alarm — 2026-11-16 (current)
+## Firecrawl 500 is now retried like 502/503/504 — 2026-11-17 (current)
+
+Weekday run 44063520897 stopped eight minutes in on one Firecrawl
+`500 Internal Server Error` during price-range discovery. Nothing was
+published; the day's reservation was spent. Luke approved fixing it
+("fix them both", 2026-11-17), so 500 joins `TRANSIENT_STATUSES`: at most
+two retries (5 s, 15 s), every attempt reserved first, same caps. Other
+4xx (including 429) and all content failures still stop the run. This is
+the provider's HTTP status, not the listing page's own status code, which
+keeps its separate handling.
+
+## Weekly zero-delta alert was a false alarm — 2026-11-16
 
 Run 43859418040 (weekly, Monday 11:37Z) failed on `maine_active_zero_deltas`:
 all ten towns scraped, zero new listings, zero status changes. Not a broken
