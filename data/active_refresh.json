@@ -73,7 +73,6 @@
     "1656898",
     "1657031",
     "1657257",
-    "1657308",
     "1657407",
     "1657722",
     "1657723",
@@ -152,7 +151,6 @@
     "1665473",
     "1665476",
     "1665504",
-    "1665557",
     "1665679",
     "1665822",
     "1665977",
@@ -161,7 +159,6 @@
     "1666240",
     "1666353",
     "1666453",
-    "1666532",
     "1666761",
     "1667012",
     "1667015",
@@ -193,7 +190,6 @@
     "1668552",
     "1668689",
     "1668711",
-    "1668735",
     "1668746",
     "1668802",
     "1668831",
@@ -248,12 +244,12 @@
     "1673024",
     "1673027",
     "1673123",
-    "1673216",
     "1673289",
     "1673304",
     "1673325",
     "1673329",
     "1673392",
+    "1673530",
     "1673611",
     "1673615",
     "1673651",
@@ -274,7 +270,6 @@
     "1674261",
     "1674266",
     "1674334",
-    "1674361",
     "1674366",
     "1674391",
     "1674472",
@@ -339,7 +334,6 @@
     "1676776",
     "1676884",
     "1676896",
-    "1676898",
     "1677001",
     "1677009",
     "1677028",
@@ -368,7 +362,6 @@
     "1677692",
     "1677716",
     "1677727",
-    "1677741",
     "1677809",
     "1677815",
     "1677863",
@@ -403,7 +396,6 @@
     "1678581",
     "1678603",
     "1678628",
-    "1678659",
     "1678733",
     "1678744",
     "1678754",
@@ -425,7 +417,6 @@
     "1679241",
     "1679261",
     "1679285",
-    "1679358",
     "1679375",
     "1679412",
     "1679415",
@@ -457,7 +448,6 @@
     "1680100",
     "1680136",
     "1680157",
-    "1680205",
     "1680210",
     "1680213",
     "1680236",
@@ -469,6 +459,7 @@
     "1680351",
     "1680474",
     "1680553",
+    "1680652",
     "1680658",
     "1680663",
     "1680755",
@@ -482,8 +473,6 @@
     "1680930",
     "1680949",
     "1680967",
-    "1680976",
-    "1680978",
     "1680981",
     "1681018",
     "1681026",
@@ -495,7 +484,6 @@
     "1681158",
     "1681159",
     "1681191",
-    "1681240",
     "1681289",
     "1681320",
     "1681322",
@@ -507,7 +495,6 @@
     "1681445",
     "1681447",
     "1681470",
-    "1681481",
     "1681525",
     "1681529",
     "1681530",
@@ -601,7 +588,6 @@
     "1683408",
     "1683437",
     "1683438",
-    "1683471",
     "1683486",
     "1683489",
     "1683501",
@@ -658,7 +644,6 @@
     "1684455",
     "1684461",
     "1684468",
-    "1684475",
     "1684515",
     "1684532",
     "1684537",
@@ -675,7 +660,6 @@
     "1684900",
     "1684973",
     "1684974",
-    "1685066",
     "1685067",
     "1685070",
     "1685078",
@@ -727,7 +711,6 @@
     "1685806",
     "1685834",
     "1685867",
-    "1685888",
     "1685892",
     "1685895",
     "1685905",
@@ -791,7 +774,6 @@
     "1686670",
     "1686672",
     "1686673",
-    "1686682",
     "1686708",
     "1686740",
     "1686751",
@@ -801,7 +783,6 @@
     "1686771",
     "1686789",
     "1686815",
-    "1686839",
     "1686848",
     "1686859",
     "1686869",
@@ -822,7 +803,6 @@
     "1687219",
     "1687248",
     "1687255",
-    "1687266",
     "1687294",
     "1687295",
     "1687307",
@@ -849,26 +829,40 @@
     "1687661",
     "1687683",
     "1687710",
-    "1687713",
     "1687722",
     "1687725",
     "1687745",
-    "1687826"
+    "1687826",
+    "1687843",
+    "1687899",
+    "1687926",
+    "1687933",
+    "1687939",
+    "1687940",
+    "1687958",
+    "1687959",
+    "1687964",
+    "1687993",
+    "1687997",
+    "1688005",
+    "1688009",
+    "1688014",
+    "1688042"
   ],
   "complete": true,
-  "completed_at": "2026-11-16T11:14:09.734171+00:00",
-  "database_sha256": "fa8be972f004489a443d0563dd97c51bdde8d8a1d761637aa57c2bf11115e4e8",
+  "completed_at": "2026-11-18T11:19:20.550366+00:00",
+  "database_sha256": "dde130e035be47f2f03462beec373feab8ec27c047680ea420cdbab021a5b915",
   "discovery_requests": {
-    "biddeford": 11,
-    "kennebunk": 9,
-    "kennebunkport": 5,
-    "kittery": 6,
-    "ogunquit": 5,
-    "old orchard beach": 11,
-    "saco": 7,
-    "scarborough": 7,
-    "wells": 18,
-    "york": 10
+    "biddeford": 18,
+    "kennebunk": 14,
+    "kennebunkport": 8,
+    "kittery": 8,
+    "ogunquit": 6,
+    "old orchard beach": 18,
+    "saco": 10,
+    "scarborough": 10,
+    "wells": 30,
+    "york": 16
   },
   "inactive": [
     {
@@ -110019,7 +110013,7 @@
       "city": "kittery",
       "detail_url": "https://mainelistings.com/listings/ME/Kittery/03904/10376/429-us-1-kittery-me-03904/571536647",
       "mls_number": "1608046",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -110971,7 +110965,7 @@
       "city": "kittery",
       "detail_url": "https://mainelistings.com/listings/ME/Kittery/03905/10376/12-washburn-farm-lane-3-kittery-me-03905/579917597",
       "mls_number": "1610263",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -114563,7 +114557,7 @@
       "city": "scarborough",
       "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/84-county-road-scarborough-me-04074/597550414",
       "mls_number": "1616760",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -122323,7 +122317,7 @@
       "city": "kennebunkport",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunkport/04046/10376/3-mckenney-lane-kennebunkport-me-04046/622277182",
       "mls_number": "1632058",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -125563,7 +125557,7 @@
       "city": "scarborough",
       "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/29-31-haigis-parkway-scarborough-me-04074/637251379",
       "mls_number": "1639165",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -126739,7 +126733,7 @@
       "city": "scarborough",
       "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/68-jones-creek-drive-scarborough-me-04074/643757999",
       "mls_number": "1641939",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -128891,7 +128885,7 @@
       "city": "saco",
       "detail_url": "https://mainelistings.com/listings/ME/Saco/04072/10376/3-walker-drive-101-saco-me-04072/688965520",
       "mls_number": "1649444",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -128899,7 +128893,7 @@
       "city": "saco",
       "detail_url": "https://mainelistings.com/listings/ME/Saco/04072/10376/3-walker-drive-101-saco-me-04072/688965521",
       "mls_number": "1649445",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -129595,7 +129589,7 @@
       "city": "kittery",
       "detail_url": "https://mainelistings.com/listings/ME/Kittery/03904/10376/19-aspen-circle-kittery-me-03904/708816419",
       "mls_number": "1651150",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -129771,7 +129765,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/1-cleaves-street-304-old-orchard-beach-me-04064/713290316",
       "mls_number": "1651569",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -129941,7 +129935,7 @@
       "mls_number": "1651877",
       "observed_at": "2026-10-06T19:50:17.335028+00:00",
       "reason": "absent_from_complete_active_search_status_confirmed",
-      "status": "Pending"
+      "status": "Closed"
     },
     {
       "city": "old orchard beach",
@@ -130379,7 +130373,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/1-seacoast-lane-126-old-orchard-beach-me-04064/732843948",
       "mls_number": "1652943",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -130459,7 +130453,7 @@
       "city": "kennebunkport",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunkport/04046/10376/8-tyler-brook-road-kennebunkport-me-04046/733304461",
       "mls_number": "1653075",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -130907,7 +130901,7 @@
       "city": "wells",
       "detail_url": "https://mainelistings.com/listings/ME/Wells/04090/10376/1373-post-road-10-a-wells-me-04090/736303827",
       "mls_number": "1653966",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -131211,7 +131205,7 @@
       "city": "kennebunkport",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunkport/04046/10376/20-stone-road-kennebunkport-me-04046/738006032",
       "mls_number": "1654435",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -131779,7 +131773,7 @@
       "city": "scarborough",
       "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/6-8-avenue-three-6-8-scarborough-me-04074/741787745",
       "mls_number": "1655356",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -131939,7 +131933,7 @@
       "city": "ogunquit",
       "detail_url": "https://mainelistings.com/listings/ME/Ogunquit/03907/10376/718-main-street-a3-ogunquit-me-03907/743164613",
       "mls_number": "1655520",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -132675,7 +132669,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/265-webber-hill-road-kennebunk-me-04043/746847251",
       "mls_number": "1656906",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -132779,7 +132773,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/34-oceana-avenue-old-orchard-beach-me-04064/746954808",
       "mls_number": "1657006",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -132787,7 +132781,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/9-summer-street-kennebunk-me-04043/746977527",
       "mls_number": "1657018",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -132867,7 +132861,7 @@
       "city": "kittery",
       "detail_url": "https://mainelistings.com/listings/ME/Kittery/03904/10376/14-colony-way-kittery-me-03904/747225477",
       "mls_number": "1657108",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -132891,7 +132885,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/4-willow-avenue-old-orchard-beach-me-04064/747267370",
       "mls_number": "1657145",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -132915,7 +132909,7 @@
       "city": "kittery",
       "detail_url": "https://mainelistings.com/listings/ME/Kittery/03904/10376/53-sandalwood-circle-kittery-me-03904/747296107",
       "mls_number": "1657177",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -132958,6 +132952,14 @@
       "observed_at": "2026-06-19T14:25:56.400994+00:00",
       "reason": "previously_recorded_inactive_status",
       "status": "Withdrawn"
+    },
+    {
+      "city": "york",
+      "detail_url": "https://mainelistings.com/listings/ME/York/03902/10376/18-zoes-way-york-me-03902/747590878",
+      "mls_number": "1657308",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_unresolved",
+      "status": "Unverified"
     },
     {
       "city": "scarborough",
@@ -133155,7 +133157,7 @@
       "city": "saco",
       "detail_url": "https://mainelistings.com/listings/ME/Saco/04072/10376/60-north-street-saco-me-04072/748452257",
       "mls_number": "1657648",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -133163,7 +133165,7 @@
       "city": "saco",
       "detail_url": "https://mainelistings.com/listings/ME/Saco/04072/10376/60-north-street-saco-me-04072/748452256",
       "mls_number": "1657649",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -133171,7 +133173,7 @@
       "city": "saco",
       "detail_url": "https://mainelistings.com/listings/ME/Saco/04072/10376/60-north-street-saco-me-04072/748455930",
       "mls_number": "1657651",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -133299,7 +133301,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/5-carll-avenue-old-orchard-beach-me-04064/748912411",
       "mls_number": "1657860",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -133579,7 +133581,7 @@
       "city": "saco",
       "detail_url": "https://mainelistings.com/listings/ME/Saco/04072/10376/15-thunder-road-saco-me-04072/749283580",
       "mls_number": "1658106",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -133963,7 +133965,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/37-cullen-trail-old-orchard-beach-me-04064/751819468",
       "mls_number": "1658801",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -134099,7 +134101,7 @@
       "city": "wells",
       "detail_url": "https://mainelistings.com/listings/ME/Wells/04090/10376/1413-post-road-63-wells-me-04090/752390088",
       "mls_number": "1659129",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -134123,7 +134125,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/11-smithwheel-road-17-old-orchard-beach-me-04064/752421949",
       "mls_number": "1659155",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -134283,7 +134285,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/7-oregon-avenue-499-old-orchard-beach-me-04064/753073316",
       "mls_number": "1659403",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -134547,7 +134549,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/4-ephraim-tyler-way-4-kennebunk-me-04043/753779334",
       "mls_number": "1659844",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -134715,7 +134717,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/1-seacoast-lane-80-old-orchard-beach-me-04064/753959609",
       "mls_number": "1660007",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -135715,7 +135717,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/lot-5-creekside-court-5-kennebunk-me-04043/757813276",
       "mls_number": "1661825",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -136043,7 +136045,7 @@
       "city": "ogunquit",
       "detail_url": "https://mainelistings.com/listings/ME/Ogunquit/03907/10376/22-batchelder-road-ogunquit-me-03907/758479398",
       "mls_number": "1662218",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -136067,7 +136069,7 @@
       "city": "ogunquit",
       "detail_url": "https://mainelistings.com/listings/ME/Ogunquit/03907/10376/38-batchelder-road-ogunquit-me-03907/758519473",
       "mls_number": "1662250",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -136939,7 +136941,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/12-silverbrook-drive-old-orchard-beach-me-04064/761858832",
       "mls_number": "1663946",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -137035,7 +137037,7 @@
       "city": "scarborough",
       "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/33-massacre-lane-scarborough-me-04074/762182316",
       "mls_number": "1664131",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -137339,7 +137341,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/40-11th-street-old-orchard-beach-me-04064/763337962",
       "mls_number": "1664721",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -137766,6 +137768,14 @@
       "observed_at": "2026-06-05T14:07:33.926466+00:00",
       "reason": "previously_recorded_inactive_status",
       "status": "Closed"
+    },
+    {
+      "city": "wells",
+      "detail_url": "https://mainelistings.com/listings/ME/Wells/04090/10376/100-anna-robert-circle-wells-me-04090/765759078",
+      "mls_number": "1665557",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_unresolved",
+      "status": "Unverified"
     },
     {
       "city": "york",
@@ -138272,6 +138282,14 @@
       "status": "Closed"
     },
     {
+      "city": "saco",
+      "detail_url": "https://mainelistings.com/listings/ME/Saco/04072/10376/18-park-street-405-saco-me-04072/769907426",
+      "mls_number": "1666532",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_confirmed",
+      "status": "Pending"
+    },
+    {
       "city": "scarborough",
       "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/94-gorham-road-scarborough-me-04074/769909915",
       "mls_number": "1666537",
@@ -138363,7 +138381,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/15-ross-road-kennebunk-me-04043/770146777",
       "mls_number": "1666711",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -138739,7 +138757,7 @@
       "city": "wells",
       "detail_url": "https://mainelistings.com/listings/ME/Wells/04090/10376/113-libby-lane-wells-me-04090/771404967",
       "mls_number": "1667444",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -138899,7 +138917,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/207-e-grand-avenue-c2-old-orchard-beach-me-04064/772027756",
       "mls_number": "1667863",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -138939,7 +138957,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/21-trinity-way-21-old-orchard-beach-me-04064/772068771",
       "mls_number": "1667903",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -139027,7 +139045,7 @@
       "city": "wells",
       "detail_url": "https://mainelistings.com/listings/ME/Wells/04090/10376/15-cherry-tree-trail-wells-me-04090/772331485",
       "mls_number": "1668036",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -139307,7 +139325,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/9-fen-way-kennebunk-me-04043/773487862",
       "mls_number": "1668684",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -139334,6 +139352,14 @@
       "observed_at": "2026-06-25T13:36:44.416939+00:00",
       "reason": "previously_recorded_inactive_status",
       "status": "Closed"
+    },
+    {
+      "city": "old orchard beach",
+      "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/1-seacoast-lane-53-old-orchard-beach-me-04064/773527777",
+      "mls_number": "1668735",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_unresolved",
+      "status": "Unverified"
     },
     {
       "city": "wells",
@@ -139469,7 +139495,7 @@
       "mls_number": "1669025",
       "observed_at": "2026-10-13T10:30:45.111565+00:00",
       "reason": "absent_from_complete_active_search_status_confirmed",
-      "status": "Pending"
+      "status": "Closed"
     },
     {
       "city": "wells",
@@ -139923,7 +139949,7 @@
       "city": "wells",
       "detail_url": "https://mainelistings.com/listings/ME/Wells/04090/10376/190-glenwood-road-wells-me-04090/775873358",
       "mls_number": "1670112",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -140019,7 +140045,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/20-lewis-avenue-old-orchard-beach-me-04064/776379420",
       "mls_number": "1670346",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -140147,7 +140173,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/129-portland-avenue-31-old-orchard-beach-me-04064/776913531",
       "mls_number": "1670716",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -140275,7 +140301,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/27-sycamore-lane-1-kennebunk-me-04043/777444078",
       "mls_number": "1670984",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -140363,7 +140389,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/25-evergreen-avenue-old-orchard-beach-me-04064/777564751",
       "mls_number": "1671099",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -140387,7 +140413,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/9-benjamin-hubbard-lane-9-kennebunk-me-04043/777685014",
       "mls_number": "1671135",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -140595,7 +140621,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/14-creekside-court-12-kennebunk-me-04043/778913456",
       "mls_number": "1671586",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -140667,7 +140693,7 @@
       "city": "kennebunkport",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunkport/04046/10376/669-kings-highway-kennebunkport-me-04046/779414020",
       "mls_number": "1671727",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -140771,7 +140797,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/170-east-grand-avenue-1-old-orchard-beach-me-04064/779795999",
       "mls_number": "1672040",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -140891,7 +140917,7 @@
       "city": "kennebunkport",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunkport/04046/10376/2-poets-lane-kennebunkport-me-04046/780569107",
       "mls_number": "1672420",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -140915,7 +140941,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/27-go-camping-way-237-old-orchard-beach-me-04064/781001691",
       "mls_number": "1672505",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -140987,7 +141013,7 @@
       "city": "wells",
       "detail_url": "https://mainelistings.com/listings/ME/Wells/04090/10376/120-bears-den-road-24e-wells-me-04090/781395905",
       "mls_number": "1672665",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -141179,7 +141205,7 @@
       "city": "ogunquit",
       "detail_url": "https://mainelistings.com/listings/ME/Ogunquit/03907/10376/17-eastwind-lane-ogunquit-me-03907/782176090",
       "mls_number": "1673040",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -141235,7 +141261,7 @@
       "city": "ogunquit",
       "detail_url": "https://mainelistings.com/listings/ME/Ogunquit/03907/10376/24-ho-hum-hill-ogunquit-me-03907/782530676",
       "mls_number": "1673190",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -141246,6 +141272,14 @@
       "observed_at": "2026-08-13T11:47:56.822029+00:00",
       "reason": "previously_recorded_inactive_status",
       "status": "Closed"
+    },
+    {
+      "city": "wells",
+      "detail_url": "https://mainelistings.com/listings/ME/Wells/04090/10376/165-championship-way-34-wells-me-04090/782569097",
+      "mls_number": "1673216",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_unresolved",
+      "status": "Unverified"
     },
     {
       "city": "biddeford",
@@ -141299,7 +141333,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/16-boundary-way-kennebunk-me-04043/782869834",
       "mls_number": "1673320",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -141379,7 +141413,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/5-dogwood-circle-kennebunk-me-04043/783029451",
       "mls_number": "1673452",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -141387,7 +141421,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/3-dogwood-circle-kennebunk-me-04043/783029450",
       "mls_number": "1673453",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -141395,7 +141429,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/2-dogwood-circle-kennebunk-me-04043/783114667",
       "mls_number": "1673469",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -141422,14 +141456,6 @@
       "observed_at": "2026-07-26T12:38:55.310318+00:00",
       "reason": "previously_recorded_inactive_status",
       "status": "Closed"
-    },
-    {
-      "city": "kennebunk",
-      "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/2-beacon-street-kennebunk-me-04043/783347255",
-      "mls_number": "1673530",
-      "observed_at": "2026-11-16T10:23:03.245762+00:00",
-      "reason": "absent_from_complete_active_search_status_unresolved",
-      "status": "Unverified"
     },
     {
       "city": "old orchard beach",
@@ -141509,7 +141535,7 @@
       "mls_number": "1673669",
       "observed_at": "2026-10-23T10:25:28.353924+00:00",
       "reason": "absent_from_complete_active_search_status_confirmed",
-      "status": "Pending"
+      "status": "Closed"
     },
     {
       "city": "wells",
@@ -141643,7 +141669,7 @@
       "city": "saco",
       "detail_url": "https://mainelistings.com/listings/ME/Saco/04072/10376/lot-5-b-new-county-road-102-saco-me-04072/784507794",
       "mls_number": "1673907",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -141651,7 +141677,7 @@
       "city": "saco",
       "detail_url": "https://mainelistings.com/listings/ME/Saco/04072/10376/lot-5-b-new-county-road-102-saco-me-04072/784518228",
       "mls_number": "1673917",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -141699,9 +141725,9 @@
       "city": "kennebunkport",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunkport/04046/10376/40-haley-road-kennebunkport-me-04046/784808599",
       "mls_number": "1674025",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
-      "reason": "absent_from_complete_active_search_status_unresolved",
-      "status": "Unverified"
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_confirmed",
+      "status": "Pending"
     },
     {
       "city": "old orchard beach",
@@ -141811,7 +141837,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/12-summer-winds-drive-12-old-orchard-beach-me-04064/785275906",
       "mls_number": "1674248",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -141852,6 +141878,14 @@
       "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/16-webster-way-0-scarborough-me-04074/785436712",
       "mls_number": "1674359",
       "observed_at": "2026-11-11T10:17:45.939971+00:00",
+      "reason": "absent_from_complete_active_search_status_confirmed",
+      "status": "Pending"
+    },
+    {
+      "city": "kennebunk",
+      "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/8-railroad-avenue-kennebunk-me-04043/785443152",
+      "mls_number": "1674361",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_confirmed",
       "status": "Pending"
     },
@@ -142059,7 +142093,7 @@
       "city": "saco",
       "detail_url": "https://mainelistings.com/listings/ME/Saco/04072/10376/5-blaine-street-101-saco-me-04072/787056261",
       "mls_number": "1674797",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -142075,7 +142109,7 @@
       "city": "saco",
       "detail_url": "https://mainelistings.com/listings/ME/Saco/04072/10376/284-bradley-street-3-saco-me-04072/787201705",
       "mls_number": "1674866",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -142259,7 +142293,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/2-schooner-way-old-orchard-beach-me-04064/787978166",
       "mls_number": "1675238",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -142459,7 +142493,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/3-hardwood-lane-kennebunk-me-04043/789455607",
       "mls_number": "1675820",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -142563,7 +142597,7 @@
       "city": "scarborough",
       "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/15-leighton-farm-road-scarborough-me-04074/789887822",
       "mls_number": "1676011",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -142579,7 +142613,7 @@
       "city": "saco",
       "detail_url": "https://mainelistings.com/listings/ME/Saco/04072/10376/3-roaring-rock-road-0-saco-me-04072/789945913",
       "mls_number": "1676065",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -142731,7 +142765,7 @@
       "city": "scarborough",
       "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/5-marsh-bend-drive-scarborough-me-04074/791069384",
       "mls_number": "1676453",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -142771,7 +142805,7 @@
       "city": "kittery",
       "detail_url": "https://mainelistings.com/listings/ME/Kittery/03904/10376/42-state-road-203-kittery-me-03904/791326478",
       "mls_number": "1676516",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -142928,6 +142962,14 @@
       "status": "Closed"
     },
     {
+      "city": "saco",
+      "detail_url": "https://mainelistings.com/listings/ME/Saco/04072/10376/18-dyer-street-saco-me-04072/792164413",
+      "mls_number": "1676898",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_confirmed",
+      "status": "Pending"
+    },
+    {
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/1-preston-lane-kennebunk-me-04043/792186433",
       "mls_number": "1676910",
@@ -142979,7 +143021,7 @@
       "city": "old orchard beach",
       "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/129-portland-avenue-55-old-orchard-beach-me-04064/792533571",
       "mls_number": "1677008",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -143019,7 +143061,7 @@
       "city": "saco",
       "detail_url": "https://mainelistings.com/listings/ME/Saco/04072/10376/64-ocean-park-road-2-saco-me-04072/792933152",
       "mls_number": "1677185",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -143091,7 +143133,7 @@
       "city": "scarborough",
       "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/91-running-hill-road-scarborough-me-04074/793498517",
       "mls_number": "1677370",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -143099,7 +143141,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/7-christensen-lane-kennebunk-me-04043/793707234",
       "mls_number": "1677418",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -143153,6 +143195,14 @@
     },
     {
       "city": "biddeford",
+      "detail_url": "https://mainelistings.com/listings/ME/Biddeford/04005/10376/8-debbie-avenue-biddeford-me-04005/794864627",
+      "mls_number": "1677741",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_confirmed",
+      "status": "Pending"
+    },
+    {
+      "city": "biddeford",
       "detail_url": "https://mainelistings.com/listings/ME/Biddeford/04005/10376/361-elm-street-biddeford-me-04005/795162126",
       "mls_number": "1677787",
       "observed_at": "2026-10-15T10:25:55.252246+00:00",
@@ -143203,7 +143253,7 @@
       "city": "saco",
       "detail_url": "https://mainelistings.com/listings/ME/Saco/04072/10376/2-sullivan-lane-saco-me-04072/795308537",
       "mls_number": "1677855",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -143379,7 +143429,7 @@
       "city": "kennebunkport",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunkport/04046/10376/12-bellevue-avenue-kennebunkport-me-04046/796825745",
       "mls_number": "1678300",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -143520,6 +143570,14 @@
       "status": "Pending"
     },
     {
+      "city": "wells",
+      "detail_url": "https://mainelistings.com/listings/ME/Wells/04090/10376/55-schooner-way-31-wells-me-04090/798070467",
+      "mls_number": "1678659",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_confirmed",
+      "status": "Pending"
+    },
+    {
       "city": "scarborough",
       "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/74-ritzcraft-street-scarborough-me-04074/798135580",
       "mls_number": "1678716",
@@ -143541,7 +143599,7 @@
       "mls_number": "1678746",
       "observed_at": "2026-09-27T17:48:59.029865+00:00",
       "reason": "observed_in_complete_active_search",
-      "status": "Pending"
+      "status": "Closed"
     },
     {
       "city": "wells",
@@ -143710,6 +143768,14 @@
       "observed_at": "2026-09-06T12:37:37.516920+00:00",
       "reason": "previously_recorded_inactive_status",
       "status": "Closed"
+    },
+    {
+      "city": "old orchard beach",
+      "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/18-union-avenue-old-orchard-beach-me-04064/799578143",
+      "mls_number": "1679358",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_unresolved",
+      "status": "Unverified"
     },
     {
       "city": "kennebunkport",
@@ -143939,7 +144005,7 @@
       "city": "wells",
       "detail_url": "https://mainelistings.com/listings/ME/Wells/04090/10376/1126-coles-hill-road-wells-me-04090/801830651",
       "mls_number": "1679972",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -144027,7 +144093,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/29-agatha-james-drive-29-kennebunk-me-04043/802076576",
       "mls_number": "1680112",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -144048,6 +144114,14 @@
       "status": "Pending"
     },
     {
+      "city": "kennebunk",
+      "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/8-railroad-avenue-kennebunk-me-04043/802503330",
+      "mls_number": "1680205",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_confirmed",
+      "status": "Pending"
+    },
+    {
       "city": "york",
       "detail_url": "https://mainelistings.com/listings/ME/York/03909/10376/44-b-chases-pond-road-b-york-me-03909/802508004",
       "mls_number": "1680209",
@@ -144061,7 +144135,7 @@
       "mls_number": "1680301",
       "observed_at": "2026-09-27T17:48:59.029865+00:00",
       "reason": "observed_in_complete_active_search",
-      "status": "Pending"
+      "status": "Closed"
     },
     {
       "city": "saco",
@@ -144083,7 +144157,7 @@
       "city": "scarborough",
       "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/5-iris-drive-scarborough-me-04074/803117164",
       "mls_number": "1680338",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -144208,14 +144282,6 @@
       "status": "Pending"
     },
     {
-      "city": "kennebunkport",
-      "detail_url": "https://mainelistings.com/listings/ME/Kennebunkport/04046/10376/8-west-street-kennebunkport-me-04046/804379152",
-      "mls_number": "1680652",
-      "observed_at": "2026-09-27T17:48:59.029865+00:00",
-      "reason": "absent_from_complete_active_search_status_confirmed",
-      "status": "Pending"
-    },
-    {
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/60-brown-street-14-kennebunk-me-04043/804392050",
       "mls_number": "1680664",
@@ -144267,7 +144333,7 @@
       "city": "wells",
       "detail_url": "https://mainelistings.com/listings/ME/Wells/04090/10376/1373-post-road-13f-wells-me-04090/804696238",
       "mls_number": "1680761",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -144275,7 +144341,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/8-landing-drive-8-kennebunk-me-04043/804812465",
       "mls_number": "1680769",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -144347,7 +144413,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/lot-2-webber-hill-road-kennebunk-me-04043/805229966",
       "mls_number": "1680937",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -144355,7 +144421,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/lot-3-webber-hill-road-kennebunk-me-04043/805234783",
       "mls_number": "1680938",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -144363,7 +144429,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/lot-1-webber-hill-road-kennebunk-me-04043/805239094",
       "mls_number": "1680941",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -144382,6 +144448,22 @@
       "observed_at": "2026-10-06T19:50:17.335028+00:00",
       "reason": "absent_from_complete_active_search_status_confirmed",
       "status": "Pending"
+    },
+    {
+      "city": "old orchard beach",
+      "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/28-seacliff-avenue-old-orchard-beach-me-04064/805422231",
+      "mls_number": "1680976",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_unresolved",
+      "status": "Unverified"
+    },
+    {
+      "city": "old orchard beach",
+      "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/28-seacliff-avenue-old-orchard-beach-me-04064/805427503",
+      "mls_number": "1680978",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_unresolved",
+      "status": "Unverified"
     },
     {
       "city": "scarborough",
@@ -144448,6 +144530,14 @@
       "status": "Pending"
     },
     {
+      "city": "scarborough",
+      "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/224-gorham-road-scarborough-me-04074/806080993",
+      "mls_number": "1681240",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_confirmed",
+      "status": "Pending"
+    },
+    {
       "city": "biddeford",
       "detail_url": "https://mainelistings.com/listings/ME/Biddeford/04005/10376/137-may-street-biddeford-me-04005/806518423",
       "mls_number": "1681307",
@@ -144489,9 +144579,17 @@
     },
     {
       "city": "scarborough",
+      "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/2-seal-rock-drive-scarborough-me-04074/807239604",
+      "mls_number": "1681481",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_unresolved",
+      "status": "Unverified"
+    },
+    {
+      "city": "scarborough",
       "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/5-lary-falls-drive-scarborough-me-04074/807293683",
       "mls_number": "1681497",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -144507,7 +144605,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/7-creekside-court-4-kennebunk-me-04043/807617449",
       "mls_number": "1681574",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -144531,7 +144629,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/14-nottingham-court-39-kennebunk-me-04043/807715783",
       "mls_number": "1681615",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -144555,7 +144653,7 @@
       "city": "scarborough",
       "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/77-two-rod-road-scarborough-me-04074/808056045",
       "mls_number": "1681662",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -144587,7 +144685,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/63-factory-pasture-lane-kennebunk-me-04043/808160684",
       "mls_number": "1681720",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -144621,7 +144719,7 @@
       "mls_number": "1681862",
       "observed_at": "2026-10-16T10:25:55.697895+00:00",
       "reason": "absent_from_complete_active_search_status_confirmed",
-      "status": "Pending"
+      "status": "Closed"
     },
     {
       "city": "scarborough",
@@ -144635,7 +144733,7 @@
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/22-kingsbury-lane-kennebunk-me-04043/808711019",
       "mls_number": "1681894",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -144941,7 +145039,7 @@
       "mls_number": "1682742",
       "observed_at": "2026-10-09T10:29:09.961293+00:00",
       "reason": "absent_from_complete_active_search_status_confirmed",
-      "status": "Pending"
+      "status": "Closed"
     },
     {
       "city": "scarborough",
@@ -145184,6 +145282,14 @@
       "status": "Pending"
     },
     {
+      "city": "old orchard beach",
+      "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/39-smithwheel-road-2-old-orchard-beach-me-04064/817116530",
+      "mls_number": "1683471",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_confirmed",
+      "status": "Pending"
+    },
+    {
       "city": "scarborough",
       "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/35-clearview-drive-35-scarborough-me-04074/817150129",
       "mls_number": "1683484",
@@ -145341,7 +145447,7 @@
       "mls_number": "1683942",
       "observed_at": "2026-10-26T10:29:33.776293+00:00",
       "reason": "absent_from_complete_active_search_status_confirmed",
-      "status": "Pending"
+      "status": "Closed"
     },
     {
       "city": "saco",
@@ -145389,7 +145495,7 @@
       "mls_number": "1684056",
       "observed_at": "2026-10-26T10:29:33.776293+00:00",
       "reason": "observed_in_complete_active_search",
-      "status": "Pending"
+      "status": "Closed"
     },
     {
       "city": "york",
@@ -145509,13 +145615,13 @@
       "mls_number": "1684293",
       "observed_at": "2026-10-23T10:25:28.353924+00:00",
       "reason": "absent_from_complete_active_search_status_confirmed",
-      "status": "Pending"
+      "status": "Closed"
     },
     {
       "city": "kennebunk",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/265-webber-hill-road-kennebunk-me-04043/822393877",
       "mls_number": "1684296",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -145542,6 +145648,14 @@
       "observed_at": "2026-10-26T10:29:33.776293+00:00",
       "reason": "observed_in_complete_active_search",
       "status": "Pending"
+    },
+    {
+      "city": "york",
+      "detail_url": "https://mainelistings.com/listings/ME/York/03909/10376/3-jeffrey-drive-york-me-03909/823195440",
+      "mls_number": "1684475",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_unresolved",
+      "status": "Unverified"
     },
     {
       "city": "wells",
@@ -145603,7 +145717,7 @@
       "city": "kennebunkport",
       "detail_url": "https://mainelistings.com/listings/ME/Kennebunkport/04046/10376/7-ebs-cove-lane-kennebunkport-me-04046/824946546",
       "mls_number": "1684737",
-      "observed_at": "2026-10-26T10:29:33.776293+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_unresolved",
       "status": "Unverified"
     },
@@ -145646,6 +145760,14 @@
       "observed_at": "2026-10-26T10:29:33.776293+00:00",
       "reason": "observed_in_complete_active_search",
       "status": "Pending"
+    },
+    {
+      "city": "wells",
+      "detail_url": "https://mainelistings.com/listings/ME/Wells/04090/10376/114-furbish-road-2-wells-me-04090/826135137",
+      "mls_number": "1685066",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_unresolved",
+      "status": "Unverified"
     },
     {
       "city": "york",
@@ -145800,6 +145922,14 @@
       "status": "Pending"
     },
     {
+      "city": "saco",
+      "detail_url": "https://mainelistings.com/listings/ME/Saco/04072/10376/12-oakland-street-saco-me-04072/830533835",
+      "mls_number": "1685888",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_confirmed",
+      "status": "Pending"
+    },
+    {
       "city": "kittery",
       "detail_url": "https://mainelistings.com/listings/ME/Kittery/03904/10376/14-colony-way-kittery-me-03904/830596781",
       "mls_number": "1685910",
@@ -145881,6 +146011,22 @@
     },
     {
       "city": "york",
+      "detail_url": "https://mainelistings.com/listings/ME/York/03902/10376/13-intervale-road-york-me-03902/833745818",
+      "mls_number": "1686682",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_confirmed",
+      "status": "Pending"
+    },
+    {
+      "city": "wells",
+      "detail_url": "https://mainelistings.com/listings/ME/Wells/04090/10376/1334-sanford-road-wells-me-04090/834623708",
+      "mls_number": "1686839",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_confirmed",
+      "status": "Pending"
+    },
+    {
+      "city": "york",
       "detail_url": "https://mainelistings.com/listings/ME/York/03909/10376/2-grover-lane-york-me-03909/834666923",
       "mls_number": "1686847",
       "observed_at": "2026-11-16T10:23:03.245762+00:00",
@@ -145900,6 +146046,22 @@
       "detail_url": "https://mainelistings.com/listings/ME/Wells/04090/10376/43-michaels-road-wells-me-04090/837627929",
       "mls_number": "1687223",
       "observed_at": "2026-11-16T10:23:03.245762+00:00",
+      "reason": "absent_from_complete_active_search_status_confirmed",
+      "status": "Pending"
+    },
+    {
+      "city": "kittery",
+      "detail_url": "https://mainelistings.com/listings/ME/Kittery/03904/10376/40-landmark-hill-lane-7-kittery-me-03904/837925572",
+      "mls_number": "1687266",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
+      "reason": "absent_from_complete_active_search_status_confirmed",
+      "status": "Pending"
+    },
+    {
+      "city": "kennebunk",
+      "detail_url": "https://mainelistings.com/listings/ME/Kennebunk/04043/10376/25-longwood-drive-kennebunk-me-04043/840820472",
+      "mls_number": "1687713",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "absent_from_complete_active_search_status_confirmed",
       "status": "Pending"
     },
@@ -146325,98 +146487,102 @@
     "towns": {
       "biddeford": [
         {
-          "maximum": 284900,
+          "maximum": 295000,
           "minimum": null
         },
         {
-          "maximum": 409000,
-          "minimum": 284901
+          "maximum": 410000,
+          "minimum": 295001
         },
         {
-          "maximum": 455000,
-          "minimum": 409001
+          "maximum": 459000,
+          "minimum": 410001
         },
         {
           "maximum": 489900,
-          "minimum": 455001
+          "minimum": 459001
         },
         {
-          "maximum": 619000,
+          "maximum": 609000,
           "minimum": 489901
         },
         {
-          "maximum": 725000,
-          "minimum": 619001
+          "maximum": 699000,
+          "minimum": 609001
         },
         {
-          "maximum": 940000,
-          "minimum": 725001
+          "maximum": 894900,
+          "minimum": 699001
         },
         {
-          "maximum": 1499000,
-          "minimum": 940001
+          "maximum": 1449000,
+          "minimum": 894901
         },
         {
           "maximum": null,
-          "minimum": 1499001
+          "minimum": 1449001
         }
       ],
       "kennebunk": [
         {
-          "maximum": 474900,
+          "maximum": 475000,
           "minimum": null
         },
         {
-          "maximum": 550000,
-          "minimum": 474901
+          "maximum": 569999,
+          "minimum": 475001
         },
         {
           "maximum": 674900,
-          "minimum": 550001
+          "minimum": 570000
         },
         {
-          "maximum": 845000,
+          "maximum": 824900,
           "minimum": 674901
         },
         {
-          "maximum": 1050000,
-          "minimum": 845001
+          "maximum": 990000,
+          "minimum": 824901
         },
         {
-          "maximum": 1695000,
-          "minimum": 1050001
+          "maximum": 1675000,
+          "minimum": 990001
         },
         {
           "maximum": null,
-          "minimum": 1695001
+          "minimum": 1675001
         }
       ],
       "kennebunkport": [
         {
-          "maximum": 1850000,
+          "maximum": 950000,
           "minimum": null
         },
         {
-          "maximum": 2845000,
-          "minimum": 1850001
+          "maximum": 1899000,
+          "minimum": 950001
+        },
+        {
+          "maximum": 3399000,
+          "minimum": 1899001
         },
         {
           "maximum": null,
-          "minimum": 2845001
+          "minimum": 3399001
         }
       ],
       "kittery": [
         {
-          "maximum": 499000,
+          "maximum": 500000,
           "minimum": null
         },
         {
-          "maximum": 699000,
-          "minimum": 499001
+          "maximum": 699900,
+          "minimum": 500001
         },
         {
           "maximum": 1200000,
-          "minimum": 699001
+          "minimum": 699901
         },
         {
           "maximum": null,
@@ -146425,12 +146591,12 @@
       ],
       "ogunquit": [
         {
-          "maximum": 1149000,
+          "maximum": 1099000,
           "minimum": null
         },
         {
           "maximum": 1495000,
-          "minimum": 1149001
+          "minimum": 1099001
         },
         {
           "maximum": null,
@@ -146439,58 +146605,58 @@
       ],
       "old orchard beach": [
         {
-          "maximum": 250000,
+          "maximum": 149900,
           "minimum": null
         },
         {
-          "maximum": 312400,
-          "minimum": 250001
+          "maximum": 300000,
+          "minimum": 149901
         },
         {
-          "maximum": 474995,
-          "minimum": 312401
+          "maximum": 449900,
+          "minimum": 300001
         },
         {
-          "maximum": 535000,
-          "minimum": 474996
+          "maximum": 520000,
+          "minimum": 449901
         },
         {
-          "maximum": 589900,
-          "minimum": 535001
+          "maximum": 575000,
+          "minimum": 520001
         },
         {
-          "maximum": 699000,
-          "minimum": 589901
+          "maximum": 695000,
+          "minimum": 575001
         },
         {
-          "maximum": 849900,
-          "minimum": 699001
+          "maximum": 825000,
+          "minimum": 695001
         },
         {
-          "maximum": 1090000,
-          "minimum": 849901
+          "maximum": 999999,
+          "minimum": 825001
         },
         {
           "maximum": null,
-          "minimum": 1090001
+          "minimum": 1000000
         }
       ],
       "saco": [
         {
-          "maximum": 465000,
+          "maximum": 455000,
           "minimum": null
         },
         {
-          "maximum": 525000,
-          "minimum": 465001
+          "maximum": 515000,
+          "minimum": 455001
         },
         {
-          "maximum": 625000,
-          "minimum": 525001
+          "maximum": 675000,
+          "minimum": 515001
         },
         {
           "maximum": 1075000,
-          "minimum": 625001
+          "minimum": 675001
         },
         {
           "maximum": null,
@@ -146499,131 +146665,127 @@
       ],
       "scarborough": [
         {
-          "maximum": 650000,
+          "maximum": 635000,
           "minimum": null
         },
         {
-          "maximum": 774900,
-          "minimum": 650001
+          "maximum": 765000,
+          "minimum": 635001
         },
         {
-          "maximum": 995000,
-          "minimum": 774901
-        },
-        {
-          "maximum": 1475000,
-          "minimum": 995001
-        },
-        {
-          "maximum": null,
-          "minimum": 1475001
-        }
-      ],
-      "wells": [
-        {
-          "maximum": 69000,
-          "minimum": null
-        },
-        {
-          "maximum": 88000,
-          "minimum": 69001
-        },
-        {
-          "maximum": 145000,
-          "minimum": 88001
-        },
-        {
-          "maximum": 229900,
-          "minimum": 145001
-        },
-        {
-          "maximum": 324900,
-          "minimum": 229901
-        },
-        {
-          "maximum": 384900,
-          "minimum": 324901
-        },
-        {
-          "maximum": 460000,
-          "minimum": 384901
-        },
-        {
-          "maximum": 549900,
-          "minimum": 460001
-        },
-        {
-          "maximum": 599900,
-          "minimum": 549901
-        },
-        {
-          "maximum": 689900,
-          "minimum": 599901
-        },
-        {
-          "maximum": 749000,
-          "minimum": 689901
-        },
-        {
-          "maximum": 829000,
-          "minimum": 749001
-        },
-        {
-          "maximum": 944900,
-          "minimum": 829001
-        },
-        {
-          "maximum": 1145000,
-          "minimum": 944901
+          "maximum": 950000,
+          "minimum": 765001
         },
         {
           "maximum": 1450000,
-          "minimum": 1145001
+          "minimum": 950001
         },
         {
           "maximum": null,
           "minimum": 1450001
         }
       ],
-      "york": [
+      "wells": [
         {
-          "maximum": 625000,
+          "maximum": 79900,
           "minimum": null
         },
         {
-          "maximum": 749900,
-          "minimum": 625001
+          "maximum": 115000,
+          "minimum": 79901
         },
         {
-          "maximum": 895000,
-          "minimum": 749901
+          "maximum": 215000,
+          "minimum": 115001
         },
         {
-          "maximum": 1089000,
-          "minimum": 895001
+          "maximum": 299000,
+          "minimum": 215001
         },
         {
-          "maximum": 1395000,
-          "minimum": 1089001
+          "maximum": 365000,
+          "minimum": 299001
         },
         {
-          "maximum": 1625000,
-          "minimum": 1395001
+          "maximum": 415500,
+          "minimum": 365001
         },
         {
-          "maximum": 2990000,
-          "minimum": 1625001
+          "maximum": 478000,
+          "minimum": 415501
+        },
+        {
+          "maximum": 586000,
+          "minimum": 478001
+        },
+        {
+          "maximum": 659500,
+          "minimum": 586001
+        },
+        {
+          "maximum": 715000,
+          "minimum": 659501
+        },
+        {
+          "maximum": 799900,
+          "minimum": 715001
+        },
+        {
+          "maximum": 879000,
+          "minimum": 799901
+        },
+        {
+          "maximum": 1090000,
+          "minimum": 879001
+        },
+        {
+          "maximum": 1399000,
+          "minimum": 1090001
         },
         {
           "maximum": null,
-          "minimum": 2990001
+          "minimum": 1399001
+        }
+      ],
+      "york": [
+        {
+          "maximum": 525000,
+          "minimum": null
+        },
+        {
+          "maximum": 749000,
+          "minimum": 525001
+        },
+        {
+          "maximum": 875000,
+          "minimum": 749001
+        },
+        {
+          "maximum": 1050000,
+          "minimum": 875001
+        },
+        {
+          "maximum": 1295000,
+          "minimum": 1050001
+        },
+        {
+          "maximum": 1550000,
+          "minimum": 1295001
+        },
+        {
+          "maximum": 2500000,
+          "minimum": 1550001
+        },
+        {
+          "maximum": null,
+          "minimum": 2500001
         }
       ]
     }
   },
-  "run_id": "43848272765-1",
+  "run_id": "44284018359-1",
   "schema_version": 1,
-  "started_at": "2026-11-16T10:23:03.245762+00:00",
+  "started_at": "2026-11-18T10:18:15.101333+00:00",
   "towns": [
     "biddeford",
     "kennebunk",
@@ -146640,31 +146802,31 @@
     {
       "detail_url": "https://mainelistings.com/listings/823917930",
       "discovery_town": "kittery",
-      "observed_at": "2026-11-16T10:23:03.245762+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "new_listing_details_unresolved_or_retry_exhausted"
     },
     {
       "detail_url": "https://mainelistings.com/listings/759917817",
       "discovery_town": "old orchard beach",
-      "observed_at": "2026-11-16T10:23:03.245762+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "new_listing_details_unresolved_or_retry_exhausted"
     },
     {
       "detail_url": "https://mainelistings.com/listings/790443908",
       "discovery_town": "wells",
-      "observed_at": "2026-11-16T10:23:03.245762+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "new_listing_details_unresolved_or_retry_exhausted"
     },
     {
       "detail_url": "https://mainelistings.com/listings/792603254",
       "discovery_town": "wells",
-      "observed_at": "2026-11-16T10:23:03.245762+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "new_listing_details_unresolved_or_retry_exhausted"
     },
     {
       "detail_url": "https://mainelistings.com/listings/ME/York/03909/10376/83-ocean-ave-extension-york-me-03909/833954833",
       "discovery_town": "york",
-      "observed_at": "2026-11-16T10:23:03.245762+00:00",
+      "observed_at": "2026-11-18T10:18:15.101333+00:00",
       "reason": "new_listing_details_unresolved_or_retry_exhausted"
     }
   ]
