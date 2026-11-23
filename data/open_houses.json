@@ -1,19 +1,7 @@
 {
-  "generated_at": "2026-11-20T11:09:14.797288+00:00",
+  "generated_at": "2026-11-23T10:43:54.789412+00:00",
   "min_list_price": 1000000,
   "open_houses": [
-    {
-      "address": "12 Barrell Lane Extension",
-      "card_open_house_text": [
-        "Open House: Sat. 1:00pm-3:00pm"
-      ],
-      "city": "York",
-      "detail_url": "https://mainelistings.com/listings/ME/York/03909/10376/12-barrell-lane-extension-york-me-03909/812299085",
-      "list_price": 3350000,
-      "listing_id": "812299085",
-      "listing_office": "Anne Erwin Sotheby's International Realty",
-      "windows": []
-    },
     {
       "address": "2 Elm Street",
       "card_open_house_text": [
@@ -39,47 +27,6 @@
       "windows": []
     },
     {
-      "address": "2 Main Street, #18-501",
-      "card_open_house_text": [
-        "Open House: Sun. 10:30am-12:00pm"
-      ],
-      "city": "Biddeford",
-      "detail_url": "https://mainelistings.com/listings/ME/Biddeford/04005/10376/2-main-street-18-501-biddeford-me-04005/813227351",
-      "list_price": 1499000,
-      "listing_id": "813227351",
-      "listing_office": "Portside Real Estate Group",
-      "windows": [
-        {
-          "end": "2026-11-22T17:00:00+00:00",
-          "start": "2026-11-22T15:30:00+00:00",
-          "type": "Public"
-        }
-      ]
-    },
-    {
-      "address": "188 E Grand Avenue, #1",
-      "card_open_house_text": [
-        "Open House: Sat. 2:00pm-3:30pm"
-      ],
-      "city": "Old Orchard Beach",
-      "detail_url": "https://mainelistings.com/listings/ME/Old-Orchard-Beach/04064/10376/188-e-grand-avenue-1-old-orchard-beach-me-04064/773735292",
-      "list_price": 1495000,
-      "listing_id": "773735292",
-      "listing_office": "Keller Williams Realty",
-      "windows": [
-        {
-          "end": "2026-11-21T20:30:00+00:00",
-          "start": "2026-11-21T19:00:00+00:00",
-          "type": "Public"
-        },
-        {
-          "end": "2026-11-22T20:30:00+00:00",
-          "start": "2026-11-22T19:00:00+00:00",
-          "type": "Public"
-        }
-      ]
-    },
-    {
       "address": "7 Harbor Woods, #7",
       "card_open_house_text": [
         "Open House: Sun. 11:00am-1:00pm"
@@ -89,36 +36,6 @@
       "list_price": 1450000,
       "listing_id": "841685574",
       "listing_office": "Green & Co Development",
-      "windows": []
-    },
-    {
-      "address": "24 Island Avenue",
-      "card_open_house_text": [
-        "Open House: Sat. 10:00am-12:00pm"
-      ],
-      "city": "Kittery",
-      "detail_url": "https://mainelistings.com/listings/ME/Kittery/03904/10376/24-island-avenue-kittery-me-03904/834156398",
-      "list_price": 1423300,
-      "listing_id": "834156398",
-      "listing_office": "Berkshire Hathaway HomeServices Verani Realty",
-      "windows": [
-        {
-          "end": "2026-11-21T17:00:00+00:00",
-          "start": "2026-11-21T15:00:00+00:00",
-          "type": "Public"
-        }
-      ]
-    },
-    {
-      "address": "31 Birch Hill Road",
-      "card_open_house_text": [
-        "Open House: Sat. 11:00am-1:00pm"
-      ],
-      "city": "York",
-      "detail_url": "https://mainelistings.com/listings/ME/York/03909/10376/31-birch-hill-road-york-me-03909/827304179",
-      "list_price": 1350000,
-      "listing_id": "827304179",
-      "listing_office": "Keller Williams Coastal and Lakes & Mountains Realty",
       "windows": []
     },
     {
@@ -146,24 +63,6 @@
       "windows": []
     },
     {
-      "address": "12 Shipwreck Road",
-      "card_open_house_text": [
-        "Open House: Sun. 11:00am-1:00pm"
-      ],
-      "city": "Scarborough",
-      "detail_url": "https://mainelistings.com/listings/ME/Scarborough/04074/10376/12-shipwreck-road-scarborough-me-04074/836453705",
-      "list_price": 1260000,
-      "listing_id": "836453705",
-      "listing_office": "Keller Williams Realty",
-      "windows": [
-        {
-          "end": "2026-11-22T18:00:00+00:00",
-          "start": "2026-11-22T16:00:00+00:00",
-          "type": "Public"
-        }
-      ]
-    },
-    {
       "address": "2 Harbor Woods, #2",
       "card_open_house_text": [
         "Open House: Sun. 11:00am-1:00pm"
@@ -174,49 +73,14 @@
       "listing_id": "749280760",
       "listing_office": "Green & Co Development",
       "windows": []
-    },
-    {
-      "address": "14 Pine Street",
-      "card_open_house_text": [
-        "Open House: Sat. 11:00am-12:30pm"
-      ],
-      "city": "York",
-      "detail_url": "https://mainelistings.com/listings/ME/York/03909/10376/14-pine-street-york-me-03909/840299567",
-      "list_price": 1198000,
-      "listing_id": "840299567",
-      "listing_office": "Keller Williams Coastal and Lakes & Mountains Realty",
-      "windows": []
-    },
-    {
-      "address": "105 Harbor Road",
-      "card_open_house_text": [
-        "Open House: Sat. 1:00pm-3:00pm"
-      ],
-      "city": "Wells",
-      "detail_url": "https://mainelistings.com/listings/ME/Wells/04090/10376/105-harbor-road-wells-me-04090/778557344",
-      "list_price": 1150000,
-      "listing_id": "778557344",
-      "listing_office": "Keller Williams Coastal and Lakes & Mountains Realty",
-      "windows": [
-        {
-          "end": "2026-11-21T20:00:00+00:00",
-          "start": "2026-11-21T18:00:00+00:00",
-          "type": "Public"
-        },
-        {
-          "end": "2026-11-22T20:00:00+00:00",
-          "start": "2026-11-22T18:00:00+00:00",
-          "type": "Public"
-        }
-      ]
     }
   ],
-  "run_id": "44717949061-1",
+  "run_id": "45154854473-1",
   "schema_version": 1,
   "source": "mainelistings.com open_house_end_time_after=now",
   "towns": {
     "Biddeford": {
-      "count": 1,
+      "count": 0,
       "status": "complete"
     },
     "Kennebunk": {
@@ -228,7 +92,7 @@
       "status": "complete"
     },
     "Kittery": {
-      "count": 1,
+      "count": 0,
       "status": "complete"
     },
     "Ogunquit": {
@@ -236,7 +100,7 @@
       "status": "complete"
     },
     "Old Orchard Beach": {
-      "count": 1,
+      "count": 0,
       "status": "complete"
     },
     "Saco": {
@@ -244,15 +108,15 @@
       "status": "complete"
     },
     "Scarborough": {
-      "count": 1,
+      "count": 0,
       "status": "complete"
     },
     "Wells": {
-      "count": 1,
+      "count": 0,
       "status": "complete"
     },
     "York": {
-      "count": 7,
+      "count": 4,
       "status": "complete"
     }
   }
