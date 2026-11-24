@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-23T10:43:54.789412+00:00",
+  "generated_at": "2026-11-24T11:07:07.321879+00:00",
   "min_list_price": 1000000,
   "open_houses": [
     {
@@ -75,7 +75,7 @@
       "windows": []
     }
   ],
-  "run_id": "45154854473-1",
+  "run_id": "45373341576-1",
   "schema_version": 1,
   "source": "mainelistings.com open_house_end_time_after=now",
   "towns": {
