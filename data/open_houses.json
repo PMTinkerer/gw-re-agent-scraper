@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-25T11:06:39.595170+00:00",
+  "generated_at": "2026-11-26T10:38:46.297084+00:00",
   "min_list_price": 1000000,
   "open_houses": [
     {
@@ -51,6 +51,18 @@
       "windows": []
     },
     {
+      "address": "81 Ridge Road",
+      "card_open_house_text": [
+        "Open House: Sun. 11:30am-1:00pm"
+      ],
+      "city": "York",
+      "detail_url": "https://mainelistings.com/listings/ME/York/03909/10376/81-ridge-road-york-me-03909/827315314",
+      "list_price": 1395000,
+      "listing_id": "827315314",
+      "listing_office": "Anne Erwin Sotheby's International Realty",
+      "windows": []
+    },
+    {
       "address": "6 Harbor Woods, #6",
       "card_open_house_text": [
         "Open House: Sun. 11:00am-1:00pm"
@@ -75,6 +87,24 @@
       "windows": []
     },
     {
+      "address": "150 South Tibbetts Avenue",
+      "card_open_house_text": [
+        "Open House: Sat. 11:00am-1:00pm"
+      ],
+      "city": "Wells",
+      "detail_url": "https://mainelistings.com/listings/ME/Wells/04090/10376/150-south-tibbetts-avenue-wells-me-04090/831028345",
+      "list_price": 1250000,
+      "listing_id": "831028345",
+      "listing_office": "Keller Williams Coastal and Lakes & Mountains Realty",
+      "windows": [
+        {
+          "end": "2026-11-28T18:00:00+00:00",
+          "start": "2026-11-28T16:00:00+00:00",
+          "type": "Public"
+        }
+      ]
+    },
+    {
       "address": "2 Harbor Woods, #2",
       "card_open_house_text": [
         "Open House: Sun. 11:00am-1:00pm"
@@ -84,6 +114,18 @@
       "list_price": 1200000,
       "listing_id": "749280760",
       "listing_office": "Green & Co Development",
+      "windows": []
+    },
+    {
+      "address": "14 Pine Street",
+      "card_open_house_text": [
+        "Open House: Sat. 10:30am-12:00pm"
+      ],
+      "city": "York",
+      "detail_url": "https://mainelistings.com/listings/ME/York/03909/10376/14-pine-street-york-me-03909/840299567",
+      "list_price": 1198000,
+      "listing_id": "840299567",
+      "listing_office": "Keller Williams Coastal and Lakes & Mountains Realty",
       "windows": []
     },
     {
@@ -105,7 +147,7 @@
       ]
     }
   ],
-  "run_id": "45593696063-1",
+  "run_id": "45800037084-1",
   "schema_version": 1,
   "source": "mainelistings.com open_house_end_time_after=now",
   "towns": {
@@ -142,11 +184,11 @@
       "status": "complete"
     },
     "Wells": {
-      "count": 0,
+      "count": 1,
       "status": "complete"
     },
     "York": {
-      "count": 5,
+      "count": 7,
       "status": "complete"
     }
   }
