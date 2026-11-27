@@ -911,3 +911,49 @@ def test_zero_status_budget_makes_no_requests(setup):
 def test_invalid_status_limits_rejected(setup, option, value):
     with pytest.raises(ValueError):
         _run(setup, 2, [card("old")], [], **{option: value})
+
+
+def _removed_run(setup, day, cards, checked):
+    def fetch_status(url):
+        checked.append(url.rsplit("/", 1)[1])
+        raise SourcePageRemoved("Listing source page no longer exists (HTTP 404)")
+
+    return run_active_refresh(
+        **setup,
+        fetch_summary=lambda town, page: SummaryPage(town, page, 1, len(cards), cards),
+        fetch_detail=lambda url: None,
+        fetch_status=fetch_status,
+        now=_at(day),
+    )
+
+
+def test_weekly_rechecks_of_removed_pages_do_not_trip_the_all_removed_guard(setup):
+    """Run 45980868422: 3 newly absent rows plus 104 week-old re-checks all 404'd."""
+    old = [f"gone{i}" for i in range(MIN_CHECKS_FOR_ALL_REMOVED_GUARD)]
+    _add_active(setup, old)
+    checked = []
+    _run(setup, 2, [card("old")], checked)  # unresolved last week
+    assert {rows(setup)[k]["status"] for k in ["gone", *old]} == {"Unverified"}
+    _add_active(setup, ["new1", "new2", "new3"])
+    later = []
+    manifest = _removed_run(setup, 10, [card("old")], later)
+    assert manifest["complete"] is True
+    assert set(later) == {"gone", *old, "new1", "new2", "new3"}
+    assert {rows(setup)[k]["status"] for k in ["new1", "new2", "new3"]} == {
+        "Unverified"
+    }
+
+
+def test_every_first_check_removed_still_aborts_beside_rechecks(setup):
+    """A URL move shows up in today's newly absent rows: still fail closed."""
+    checked = []
+    _removed_run(setup, 2, [card("old")], checked)  # gone: checked once, Unverified
+    fresh = [f"fresh{i}" for i in range(MIN_CHECKS_FOR_ALL_REMOVED_GUARD)]
+    _add_active(setup, fresh)
+    conn = get_connection(str(setup["db_path"]))
+    conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    conn.close()
+    before = setup["db_path"].read_bytes()
+    with pytest.raises(SourcePageRemoved):
+        _removed_run(setup, 10, [card("old")], [])
+    assert setup["db_path"].read_bytes() == before
