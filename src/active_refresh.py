@@ -65,8 +65,10 @@ _INACTIVE = {"Closed", "Sold", "Pending", "Withdrawn", "Cancelled", "Unverified"
 # run looks systemic (a block or outage), so the run still fails closed.
 MAX_UNAVAILABLE_STATUS_PAGES = 5
 # Removed pages (404/410) are expected for delisted homes and are not capped,
-# unless EVERY check in a run of at least this many comes back removed, which
-# looks like the site moved its listing URLs rather than delisted them all.
+# unless EVERY first check (a row newly absent today or never checked before)
+# in a run with at least this many first checks comes back removed, which looks
+# like the site moved its listing URLs rather than delisted them all. Weekly
+# re-checks of Unverified rows do not count: those pages usually 404'd before.
 MIN_CHECKS_FOR_ALL_REMOVED_GUARD = 20
 _STATUSES = _INACTIVE | {"Active"}
 
@@ -842,18 +844,35 @@ def run_active_refresh(
                         "deferred_status",
                     )
                 unavailable_pages = 0
-                removed_pages = 0
-                if len(checks) >= MIN_CHECKS_FOR_ALL_REMOVED_GUARD:
-                    removed_limit = len(checks) - 1
+                # The all-removed guard looks only at first checks: rows newly
+                # absent today, or never checked before. An Unverified row
+                # re-checked after 7 days usually 404'd last time too, so a
+                # queue of those coming back removed is expected, not moved
+                # URLs (run 45980868422: 3 new + 104 re-checks, all 404).
+                first_checks = {
+                    url
+                    for url, row in checks
+                    if row["status"] == "Active"
+                    or conn.execute(
+                        """SELECT 1 FROM active_refresh_observations
+                        WHERE detail_url=? AND source='targeted_status' LIMIT 1""",
+                        (url,),
+                    ).fetchone()
+                    is None
+                }
+                removed_first = 0
+                if len(first_checks) >= MIN_CHECKS_FOR_ALL_REMOVED_GUARD:
+                    removed_limit = len(first_checks) - 1
                 else:
-                    removed_limit = len(checks)
+                    removed_limit = len(first_checks)
                 for url, row in checks:
                     try:
                         detail = fetch_status(url)
                     except SourcePageRemoved:
-                        removed_pages += 1
-                        if removed_pages > removed_limit:
-                            raise
+                        if url in first_checks:
+                            removed_first += 1
+                            if removed_first > removed_limit:
+                                raise
                         detail = None
                     except SourcePageUnavailable:
                         unavailable_pages += 1

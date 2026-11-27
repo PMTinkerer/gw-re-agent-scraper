@@ -1,6 +1,21 @@
 # AGENTS.md — gw-re-agent-scraper
 
-## Firecrawl 500 is now retried like 502/503/504 — 2026-11-17 (current)
+## Weekly re-checks no longer trip the all-removed guard — 2026-11-27 (current)
+
+Weekday run 45980868422 stopped during targeted status checks with
+`SourcePageRemoved` and published nothing. It made 107 checks: 3 Active rows
+newly absent that day and 104 Unverified rows due their weekly re-check, all
+last checked 2026-11-20 and left unresolved then. All 107 answered 404, so the
+guard (every check removed in a run of at least 20) read it as moved URLs. The
+one new-detail fetch in the same run succeeded, so detail URLs had not moved:
+the re-check queue is mostly delisted pages that 404 every week. The guard now
+counts only first checks (rows Active until today, or never checked before);
+removed re-checks stay Unverified and never abort. A run whose first checks
+number at least `MIN_CHECKS_FOR_ALL_REMOVED_GUARD` and are all removed still
+aborts. The known follow-up stands: skipping long-removed pages would save
+status-check budget.
+
+## Firecrawl 500 is now retried like 502/503/504 — 2026-11-17
 
 Weekday run 44063520897 stopped eight minutes in on one Firecrawl
 `500 Internal Server Error` during price-range discovery. Nothing was
